@@ -8,6 +8,8 @@ Rank seniority, responsibilities, skills, domain, outcomes, tools, repeated term
 
 Fit beats fixed counts. Prefer ≤3 experiences/projects; remove weakest to keep one page. Follow `generation_constraints.cv_word_budget`. DOCX renderer owns font, alignment, bullets, dates, margins, spacing.
 
+`experience_assessment.count_status` controls required-year credit, not whether a role may appear. Prefer direct roles and strong projects; use relevant supporting/excluded roles only as fallback when stronger evidence is sparse. Never present excluded experience as satisfying required years.
+
 ## Output
 
 Return structured CV Markdown only; no analysis, score, notes, or code fence. Markdown feeds a Word-style DOCX/PDF renderer. Order: Header, Summary, Experience, Projects, Education, Skills, Languages.

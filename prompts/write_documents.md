@@ -8,6 +8,8 @@ Keep truth, tone, ATS, and one-page gates. Use STAR/Google XYZ only with source 
 
 Before writing, obey concepts, headings, budgets, questions, and renderer limits. Before returning, do one silent natural-language audit: use concrete details/simple verbs; vary sentence length; remove hype, vague praise, filler, forced trios, repeated shapes, formulaic transitions, generic conclusions, and chatbot commentary. Preserve tone. No humanization pass.
 
+Use `experience_assessment` only for required-year claims, not as a CV visibility filter. Prefer direct roles and strong projects; supporting or excluded roles may fill evidence gaps when relevant and space permits. Never imply excluded experience satisfies required years.
+
 Use renderer-native Markdown, no HTML. Header: candidate name and contacts from `MASTER_CV`. CV: summary<=280 chars; experience/education `*Title | Dates*`; projects `*Supported Name*`, no dates; next line organization/institution, no location/dates; experience/project items <=4 bullets, each <=105 chars; if space after 2 experiences, add 3rd project. Skills: `**Category:** ...`. Languages: comma `Language (Level)` copied from `MASTER_CV`.
 
 Return short JSON matching `agent_run.schema.json`; put document content only in assigned files.

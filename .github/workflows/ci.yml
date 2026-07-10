@@ -19,5 +19,6 @@ jobs:
           cache: pip
       - run: sudo apt-get update && sudo apt-get install -y libreoffice poppler-utils
       - run: python -m pip install -r requirements.txt
+      - run: cp config.example.yaml config.yaml && cp master_cv.example.md master_cv.md
       - run: python -m unittest discover -s tests -q
       - run: git diff --check

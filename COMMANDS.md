@@ -4,6 +4,8 @@ Use this file as the cross-agent command catalog. When a user starts a message
 with one of these commands, expand it to the matching workflow. Keep all
 `AGENTS.md` and `AUTOMATION.md` safety rules active.
 
+Initial or updated user configuration is collected with `python jobflow.py setup`, including multiple studies and the recommended roles the user wants to keep.
+
 ## `/full-run`
 
 Run `prompts/start_all_now.md`.
@@ -76,7 +78,7 @@ python jobflow.py general-cv --title "TITLE"
 Purpose: write a general one-page CV for a job title, without using a vacancy
 description and without delivering anything.
 
-Required user input: title, for example `Data Scientist` or `AI Engineer`.
+Required user input: a title supported by the selected preset, for example `TARGET ROLE`.
 
 ## `/general-cvs`
 

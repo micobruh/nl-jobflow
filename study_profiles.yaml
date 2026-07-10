@@ -1,0 +1,17 @@
+profiles:
+  data_science_ai:
+    label: Data Science and AI
+    roles: [data_scientist, data_analyst, data_engineer, machine_learning_engineer, ai_engineer]
+    policy: presets/data_ai.yaml
+  computer_science:
+    label: Computer Science
+    roles: [software_engineer, backend_engineer, frontend_engineer, full_stack_engineer, data_engineer, machine_learning_engineer, data_scientist]
+    policy: presets/software_engineering.yaml
+  statistics:
+    label: Statistics
+    roles: [statistician, data_scientist, data_analyst, quantitative_analyst]
+    policy: presets/data_ai.yaml
+  software_engineering:
+    label: Software Engineering
+    roles: [software_engineer, backend_engineer, frontend_engineer, full_stack_engineer]
+    policy: presets/software_engineering.yaml

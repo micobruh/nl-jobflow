@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["job_title", "company", "seniority", "applicant_profile", "job_summary", "responsibilities", "required_skills", "preferred_skills", "ats_keywords", "application_questions", "contacts", "evidence_map", "gaps", "screening_warnings", "verification_needed", "generation_constraints"],
+  "required": ["job_title", "company", "seniority", "applicant_profile", "job_summary", "responsibilities", "required_skills", "preferred_skills", "ats_keywords", "application_questions", "contacts", "evidence_map", "gaps", "screening_warnings", "verification_needed", "experience_assessment", "generation_constraints"],
   "properties": {
     "job_title": {"type": "string"},
     "company": {"type": "string"},
@@ -19,6 +19,46 @@
     "gaps": {"type": "array", "items": {"type": "string"}},
     "screening_warnings": {"type": "array", "items": {"type": "string"}},
     "verification_needed": {"type": "array", "items": {"type": "string"}},
+    "experience_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirement", "confirmed_months", "confirmed_or_possible_months", "status", "caution", "roles"],
+      "properties": {
+        "requirement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "minimum_months", "wording"],
+          "properties": {
+            "kind": {"enum": ["mandatory", "preferred", "ambiguous", "none"]},
+            "minimum_months": {"type": "integer", "minimum": 0},
+            "wording": {"type": "string"}
+          }
+        },
+        "confirmed_months": {"type": "integer", "minimum": 0},
+        "confirmed_or_possible_months": {"type": "integer", "minimum": 0},
+        "status": {"enum": ["not_applicable", "sufficient", "sufficient_with_caution", "insufficient"]},
+        "caution": {"type": "string"},
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["role", "experience_type", "relevance", "count_status", "evidence", "rationale", "start_month", "end_month", "elapsed_months"],
+            "properties": {
+              "role": {"type": "string"},
+              "experience_type": {"enum": ["professional_employment", "formal_internship", "academic_employment", "volunteering", "student_team", "other"]},
+              "relevance": {"enum": ["direct", "supporting", "unrelated"]},
+              "count_status": {"enum": ["confirmed", "possible", "excluded"]},
+              "evidence": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+              "rationale": {"type": "string"},
+              "start_month": {"type": "string"},
+              "end_month": {"type": ["string", "null"]},
+              "elapsed_months": {"type": "integer", "minimum": 0}
+            }
+          }
+        }
+      }
+    },
     "generation_constraints": {
       "type": "object",
       "additionalProperties": false,

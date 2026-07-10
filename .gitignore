@@ -1,5 +1,6 @@
 .env
 config.yaml
+config.override.yaml
 master_cv.md
 data/
 artifacts/

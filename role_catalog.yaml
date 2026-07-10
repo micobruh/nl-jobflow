@@ -1,0 +1,89 @@
+roles:
+  data_scientist:
+    label: Data Scientist
+    queries: [Data Scientist]
+    title_pattern: "\\bdata scientist\\b|\\bdecision scientist\\b"
+    strong: [data science, machine learning, predictive modelling, statistical modelling]
+    weak: [python, sql, analytics, statistics]
+    cv_role: data-scientist
+    prompt: prompts/presets/data_ai_general_cv.md
+  data_analyst:
+    label: Data Analyst
+    queries: [Data Analyst]
+    title_pattern: "\\bdata analyst\\b|\\banalytics analyst\\b"
+    strong: [data analysis, data analytics, business intelligence, reporting analytics]
+    weak: [sql, python, dashboard, statistics]
+    cv_role: data-analyst
+    prompt: prompts/presets/data_ai_general_cv.md
+  data_engineer:
+    label: Data Engineer
+    queries: [Data Engineer]
+    title_pattern: "\\bdata(?: platform)? engineer\\b|\\banalytics engineer\\b"
+    strong: [data engineering, data pipeline, etl, data platform]
+    weak: [sql, python, database, cloud]
+    cv_role: data-engineer
+    prompt: prompts/presets/data_ai_general_cv.md
+  machine_learning_engineer:
+    label: Machine Learning Engineer
+    queries: [Machine Learning Engineer]
+    title_pattern: "\\bmachine learning engineer\\b|\\bml engineer\\b"
+    strong: [machine learning engineering, machine learning, mlops, model serving]
+    weak: [python, ai, deployment, modelling]
+    cv_role: ai-ml-engineer
+    prompt: prompts/presets/data_ai_general_cv.md
+  ai_engineer:
+    label: AI Engineer
+    queries: [AI Engineer]
+    title_pattern: "\\bai engineer\\b|\\bartificial intelligence engineer\\b"
+    strong: [artificial intelligence, ai engineering, generative ai, llm]
+    weak: [python, machine learning, retrieval, evaluation]
+    cv_role: ai-ml-engineer
+    prompt: prompts/presets/data_ai_general_cv.md
+  software_engineer:
+    label: Software Engineer
+    queries: [Junior Software Engineer, Graduate Software Engineer]
+    title_pattern: "\\bsoftware (?:engineer|developer)\\b"
+    strong: [software engineering, software development, application development]
+    weak: [programming, coding, testing, debugging, git]
+    cv_role: software-engineer
+    prompt: prompts/presets/software_engineering_general_cv.md
+  backend_engineer:
+    label: Backend Engineer
+    queries: [Junior Backend Developer]
+    title_pattern: "\\bback[- ]?end (?:engineer|developer)\\b"
+    strong: [backend engineering, backend development, api development]
+    weak: [database, api, testing, deployment]
+    cv_role: backend-engineer
+    prompt: prompts/presets/software_engineering_general_cv.md
+  frontend_engineer:
+    label: Frontend Engineer
+    queries: [Junior Frontend Developer]
+    title_pattern: "\\bfront[- ]?end (?:engineer|developer)\\b"
+    strong: [frontend engineering, frontend development, web development]
+    weak: [javascript, accessibility, testing, api]
+    cv_role: frontend-engineer
+    prompt: prompts/presets/software_engineering_general_cv.md
+  full_stack_engineer:
+    label: Full-stack Engineer
+    queries: [Junior Full-stack Developer]
+    title_pattern: "\\bfull[- ]?stack (?:engineer|developer)\\b"
+    strong: [full stack development, full-stack development, web application development]
+    weak: [frontend, backend, database, api]
+    cv_role: full-stack-engineer
+    prompt: prompts/presets/software_engineering_general_cv.md
+  statistician:
+    label: Statistician
+    queries: [Junior Statistician]
+    title_pattern: "\\bstatistician\\b|\\bstatistical analyst\\b"
+    strong: [statistics, statistical analysis, statistical modelling, biostatistics]
+    weak: [r, python, analysis, research]
+    cv_role: data-scientist
+    prompt: prompts/presets/data_ai_general_cv.md
+  quantitative_analyst:
+    label: Quantitative Analyst
+    queries: [Junior Quantitative Analyst]
+    title_pattern: "\\bquantitative analyst\\b|\\bquant analyst\\b"
+    strong: [quantitative analysis, quantitative modelling, econometrics]
+    weak: [statistics, python, r, forecasting]
+    cv_role: data-analyst
+    prompt: prompts/presets/data_ai_general_cv.md

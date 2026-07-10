@@ -1,6 +1,6 @@
 # nl-jobflow
 
-Local, Codex-first job discovery, screening, and application-draft generation for non-EEA Data Science and AI applicants in the Netherlands.
+Local, Codex-first job discovery, screening, and application-draft generation for non-EEA applicants in the Netherlands. Data Science/AI is the first maintained study-background preset.
 
 The workflow finds vacancies, checks configurable eligibility and CV fit, and drafts reviewable CVs and motivation letters. It never applies, submits forms, contacts employers, or invents candidate facts.
 
@@ -24,9 +24,10 @@ cp master_cv.example.md master_cv.md
 cp .env.example .env
 ```
 
-Replace every synthetic fact in `master_cv.md`, then edit `config.yaml`. Check the installation:
+Replace every placeholder in `master_cv.md`, then run the setup form and check the installation:
 
 ```bash
+python jobflow.py setup
 python jobflow.py preflight
 python -m unittest discover -s tests -q
 ```
@@ -41,7 +42,9 @@ Runtime state, generated documents, credentials, the user configuration, and the
 
 ## Configuration
 
-`config.example.yaml` is the complete v1 Data Science/AI profile.
+`config.example.yaml` contains only normal user choices. `python jobflow.py setup` safely regenerates `config.yaml` through a terminal questionnaire.
+
+Maintained policy lives in `config.defaults.yaml`. `study_profiles.yaml` recommends roles from the shared `role_catalog.yaml`; specialized CV checks and guidance remain under `presets/` and `prompts/presets/`. Advanced users may create ignored `config.override.yaml`.
 
 ### Applicant
 
@@ -54,14 +57,15 @@ Runtime state, generated documents, credentials, the user configuration, and the
 
 ### Search criteria
 
-- `preset`: `data_ai` in v1.
+- `study_profiles`: select one or more of `data_science_ai`, `computer_science`, `statistics`, and `software_engineering`.
+- `roles`: choose from the deduplicated roles recommended by the selected studies; setup initially selects all recommendations.
 - `max_required_education_level`: rejects vacancies explicitly requiring a higher level.
 - `max_required_experience_years`: rejects higher explicit minimums; preferred experience remains reviewable.
 - `internships.regular`, `.graduation`, and `.enrollment_required`: independent internship gates.
 - `schedules`: any of `full_time` and `part_time`.
 - `workplaces`: any of `onsite`, `hybrid`, and `remote`.
 - `locations.selected`: desired city groups. Selecting Eindhoven also accepts configured nearby places such as Veldhoven.
-- `locations.groups`: editable municipality aliases; matching is intentionally local and dependency-free.
+- Location groups are maintained defaults; users select groups rather than editing municipality aliases.
 - `eligibility.require_recognized_sponsor`: require an exact IND register or configured alias match.
 - `eligibility.reject_explicit_visa_denial`: reject explicit sponsorship refusal.
 - `eligibility.accept_security_screening`: allow or reject explicit nationality, clearance, screening, or export-control requirements.
@@ -117,4 +121,4 @@ python -m unittest discover -s tests -q
 git diff --check
 ```
 
-The v1 role preset is deliberately limited to Data Science/AI. Later disciplines should add data-only preset values and matching tests instead of introducing a plugin framework.
+Study profiles recommend shared role IDs; overlapping studies reuse the same role definition. Later disciplines normally add a profile and reuse catalogue roles, adding new role policy only when necessary.

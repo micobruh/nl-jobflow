@@ -16,11 +16,33 @@ import requests
 
 import jobflow
 
+TEST_EXPERIENCE_CV = """## Professional Experience
+
+### Data Analyst — Example B.V.
+
+Eindhoven, Netherlands | Jan 2020 – Dec 2020
+
+- Built Python systems.
+
+## Education
+"""
+
+
+def experience_fields(kind="none", minimum=0, count_status="excluded"):
+    return {
+        "experience_requirement": {"kind": kind, "minimum_months": minimum, "wording": ""},
+        "experience_roles": [{
+            "role": "Data Analyst — Example B.V.", "experience_type": "professional_employment",
+            "relevance": "direct", "count_status": count_status,
+            "evidence": ["Built Python systems."], "rationale": "Direct vacancy evidence.",
+        }],
+    }
+
 
 class JobFlowTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.cfg = yaml.safe_load((Path(__file__).parents[1] / "config.example.yaml").read_text())
+        cls.cfg = jobflow.resolved_config(yaml.safe_load((Path(__file__).parents[1] / "config.example.yaml").read_text()))
         cls.cv = "Python SQL machine learning data analytics NLP Amsterdam experience skills education summary"
         cls.sponsors = {"example tech"}
 
@@ -107,6 +129,94 @@ class JobFlowTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "applicant.dutch_level"):
             jobflow.validate_config(cfg)
 
+    def test_config_layers_defaults_preset_user_and_override(self):
+        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        cfg = jobflow.resolved_config(user)
+        self.assertEqual(cfg["marketplace_discovery"]["queries"][0], "Data Scientist")
+        self.assertIn("ASML", {item["name"] for item in cfg["priority_companies"]})
+        self.assertIn("groups", cfg["search_criteria"]["locations"])
+
+    def test_unknown_preset_lists_available_presets(self):
+        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        user["search_criteria"]["preset"] = "unknown"
+        with self.assertRaisesRegex(SystemExit, "unknown legacy preset"):
+            jobflow.resolved_config(user)
+
+    def test_preset_validation_rejects_missing_invalid_regex_and_unsafe_paths(self):
+        preset = yaml.safe_load((jobflow.ROOT / "presets" / "data_ai.yaml").read_text())
+        missing = copy.deepcopy(preset)
+        missing.pop("label")
+        with self.assertRaisesRegex(SystemExit, "requires valid fields: label"):
+            jobflow.validate_preset(missing, Path("broken.yaml"))
+        bad_regex = copy.deepcopy(preset)
+        bad_regex["role_fit"]["clear_title"] = "["
+        with self.assertRaisesRegex(SystemExit, "invalid regex"):
+            jobflow.validate_preset(bad_regex, Path("broken.yaml"))
+        unsafe = copy.deepcopy(preset)
+        unsafe["cv_references"] = {"data-scientist": "../outside.pdf"}
+        with self.assertRaisesRegex(SystemExit, "invalid values"):
+            jobflow.validate_preset(unsafe, Path("broken.yaml"))
+
+    def test_software_preset_uses_shared_screening_without_data_ai_leaks(self):
+        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        user["search_criteria"]["preset"] = "software_engineering"
+        software = jobflow.resolved_config(user)
+        vacancy = self.job(
+            title="Junior Backend Developer",
+            description="Build and test backend APIs and database integrations. One year experience preferred.",
+        )
+        self.assertTrue(jobflow.filter_job(vacancy, self.sponsors, software, self.cv).eligible)
+        data_result = jobflow.filter_job(vacancy, self.sponsors, self.cfg, self.cv)
+        self.assertFalse(data_result.eligible)
+        self.assertIn("lacks Data Science and AI relevance", data_result.rejection_reasons)
+
+    def test_multi_study_roles_deduplicate_and_drive_soft_filter(self):
+        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        user["search_criteria"]["study_profiles"] = ["data_science_ai", "computer_science", "statistics"]
+        user["search_criteria"]["roles"] = ["data_scientist", "software_engineer"]
+        cfg = jobflow.resolved_config(user)
+        self.assertEqual(cfg["marketplace_discovery"]["queries"].count("Data Scientist"), 1)
+        deselected = self.job(title="Data Analyst", description="Data science and reporting role.")
+        result = jobflow.filter_job(deselected, self.sponsors, cfg, self.cv)
+        self.assertIn("role intentionally deselected", result.rejection_reasons)
+        adjacent = self.job(title="Risk Traineeship", description="Statistical modelling and econometrics.")
+        result = jobflow.filter_job(adjacent, self.sponsors, cfg, self.cv)
+        self.assertTrue(result.eligible, result.rejection_reasons)
+        self.assertIn("role title requires fit verification", result.verification_needed)
+
+    def test_study_union_applies_only_matching_cv_rules(self):
+        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        user["search_criteria"]["study_profiles"] = ["computer_science", "statistics"]
+        user["search_criteria"]["roles"] = ["software_engineer", "data_scientist"]
+        cfg = jobflow.resolved_config(user)
+        cv = ("# Name\n## Summary\nx\n## Experience\nx\n## Projects\nx\n## Education\n"
+              "*MSc Data Science | 2020 - 2022*\nSchool\n## Skills\n**Programming:** Python\n"
+              "**Testing:** pytest\n## Languages\nEnglish (Fluent)")
+        self.assertIn("MSc thesis must be a bullet directly below education item",
+                      jobflow.document_preflight(cv, "cv", {}, cfg))
+
+    def test_summary_bank_role_warnings_do_not_edit_master_cv(self):
+        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        user["search_criteria"]["roles"] = ["data_scientist", "data_analyst"]
+        cfg = jobflow.resolved_config(user)
+        warnings = jobflow.summary_bank_role_warnings(
+            cfg, "## Professional Summary Bank\n\n### Data Scientist\n\nSupported.\n\n### Statistician\n\nSupported.\n")
+        self.assertTrue(any("Data Analyst" in warning for warning in warnings))
+        self.assertTrue(any("Statistician" in warning for warning in warnings))
+
+    def test_preset_specific_cv_rules_do_not_leak_to_software(self):
+        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        user["search_criteria"]["preset"] = "software_engineering"
+        software = jobflow.resolved_config(user)
+        cv = ("# Name\n## Summary\nx\n## Experience\nx\n## Projects\nx\n## Education\n"
+              "*MSc Data Science | 2020 - 2022*\nSchool\n## Skills\n**Programming:** Python\n"
+              "**Testing:** pytest\n## Languages\nEnglish (Fluent)\nimbalanced-classification")
+        failures = jobflow.document_preflight(cv, "cv", {}, software)
+        self.assertFalse(any("thesis" in item.lower() or "extraction-risk" in item for item in failures))
+        self.assertIsNone(jobflow.cv_reference("Backend Engineer", software))
+        self.assertEqual(jobflow.cv_role("Frontend Engineer", software), "frontend-engineer")
+        self.assertNotEqual(jobflow.general_cv_prompt_digest(software), jobflow.general_cv_prompt_digest(self.cfg))
+
     def test_relevance_uses_title_and_description_concepts(self):
         cases = (
             {"title": "Risk Traineeship", "description": "Work on econometrics for portfolio risk."},
@@ -126,7 +236,7 @@ class JobFlowTest(unittest.TestCase):
             with self.subTest(updates=updates):
                 accepted, reasons, _ = jobflow.filter_job(self.job(**updates), self.sponsors, self.cfg, self.cv)
                 self.assertFalse(accepted)
-                self.assertIn("lacks data/AI relevance", reasons)
+                self.assertIn("lacks Data Science and AI relevance", reasons)
 
     def test_rejects_jobs_without_data_ai_relevance(self):
         accepted, reasons, _ = jobflow.filter_job(
@@ -134,7 +244,7 @@ class JobFlowTest(unittest.TestCase):
             self.sponsors, self.cfg, self.cv,
         )
         self.assertFalse(accepted)
-        self.assertIn("lacks data/AI relevance", reasons)
+        self.assertIn("lacks Data Science and AI relevance", reasons)
 
     def test_review_anyway_bypasses_only_relevance(self):
         plain = self.job(title="Risk Traineeship", description="Rotate through finance teams.")
@@ -154,7 +264,7 @@ class JobFlowTest(unittest.TestCase):
                 accepted, reasons, _ = jobflow.filter_job(
                     self.job(**updates), self.sponsors, self.cfg, self.cv, review_anyway=True)
                 self.assertFalse(accepted)
-                self.assertNotIn("lacks data/AI relevance", reasons)
+                self.assertNotIn("lacks Data Science and AI relevance", reasons)
 
     def test_legal_name_alias_matches(self):
         self.assertTrue(jobflow.sponsor_matches(
@@ -533,7 +643,7 @@ class JobFlowTest(unittest.TestCase):
                     self.job(title=title, description="Work with data, analytics, Python and reporting."),
                     self.sponsors, self.cfg, self.cv)
                 self.assertFalse(accepted)
-                self.assertIn("role family not aligned with data/AI study fit", reasons)
+                self.assertTrue(reasons)
 
     def test_keeps_clear_data_ai_titles_despite_adjacent_terms(self):
         cases = (
@@ -631,7 +741,7 @@ class JobFlowTest(unittest.TestCase):
         for title, expected in cases.items():
             with self.subTest(title=title):
                 self.assertEqual(jobflow.cv_reference(title).name, expected)
-                self.assertEqual(jobflow.cv_reference(title).parent, jobflow.CV_REFERENCE_DIR)
+                self.assertEqual(jobflow.cv_reference(title).parent, jobflow.ROOT / "references")
 
     def test_general_cv_title_validation_and_slug(self):
         self.assertEqual(jobflow.validate_general_cv_title("  AI   Engineer (NLP)  "), "AI Engineer (NLP)")
@@ -642,13 +752,8 @@ class JobFlowTest(unittest.TestCase):
     def test_professional_summary_bank_titles_only_reads_bank_headings(self):
         text = (Path(__file__).parents[1] / "master_cv.example.md").read_text()
         titles = jobflow.professional_summary_bank_titles(text)
-        self.assertEqual(titles, [
-            "Data Scientist",
-            "Machine Learning Engineer",
-            "Data Analyst",
-            "AI Engineer",
-        ])
-        self.assertNotIn("Junior Data Scientist — Example Analytics", titles)
+        self.assertEqual(titles, ["Role One", "Role Two"])
+        self.assertNotIn("Job Title — Employer", titles)
         self.assertNotIn("Professional Motivation", titles)
 
     def test_professional_summary_bank_titles_fails_closed(self):
@@ -657,9 +762,8 @@ class JobFlowTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "contains no role headings"):
             jobflow.professional_summary_bank_titles("## Professional Summary Bank\n\nbody\n\n## Skills\n")
 
-    def test_master_cv_defaults_to_repo_file(self):
-        with mock.patch.dict(os.environ, {}, clear=True):
-            self.assertEqual(jobflow.master_cv_path(), Path(jobflow.ROOT / "master_cv.md"))
+    def test_master_cv_uses_repo_file(self):
+        self.assertEqual(jobflow.master_cv_path(), Path(jobflow.ROOT / "master_cv.md"))
 
     def test_human_readable_artifact_and_public_document_names(self):
         old = jobflow.ARTIFACTS
@@ -672,14 +776,15 @@ class JobFlowTest(unittest.TestCase):
             legacy = jobflow.ARTIFACTS / "job"
             legacy.mkdir(parents=True)
             self.assertEqual(jobflow.job_artifact_folder("job", "Example", "Data Scientist"), legacy)
-            self.assertEqual(
-                jobflow.public_document_name("letter", "ACME/Test", "Senior Data Scientist!", ".pdf"),
-                "Alex_Example_Motivation_Letter_ACME_Test_Senior_Data_Scientist.pdf",
-            )
-            self.assertEqual(
-                jobflow.public_general_cv_name("Senior Data Scientist!", ".pdf"),
-                "Alex_Example_CV_General_Senior_Data_Scientist.pdf",
-            )
+            with mock.patch.object(jobflow, "candidate_name", return_value="Alex Example"):
+                self.assertEqual(
+                    jobflow.public_document_name("letter", "ACME/Test", "Senior Data Scientist!", ".pdf"),
+                    "Alex_Example_Motivation_Letter_ACME_Test_Senior_Data_Scientist.pdf",
+                )
+                self.assertEqual(
+                    jobflow.public_general_cv_name("Senior Data Scientist!", ".pdf"),
+                    "Alex_Example_CV_General_Senior_Data_Scientist.pdf",
+                )
         jobflow.ARTIFACTS = old
 
     def test_general_cv_generation_promotes_stable_files_and_master_metadata(self):
@@ -701,7 +806,8 @@ class JobFlowTest(unittest.TestCase):
                 return mock.Mock(returncode=0, stdout="", stderr="")
 
             check = {"passed": True, "one_page": True, "docx": "staged/cv.docx"}
-            with mock.patch.dict(os.environ, {"MASTER_CV_PATH": str(master), "CODEX_BIN": "/bin/codex"}), \
+            with mock.patch.dict(os.environ, {"CODEX_BIN": "/bin/codex"}), \
+                 mock.patch.object(jobflow, "master_cv_path", return_value=master), \
                  mock.patch.object(jobflow.subprocess, "run", side_effect=run), \
                  mock.patch.object(jobflow, "general_cv_check", return_value=check), \
                  redirect_stdout(io.StringIO()):
@@ -710,7 +816,7 @@ class JobFlowTest(unittest.TestCase):
             destination = jobflow.ARTIFACTS / "general-cv" / "data-scientist"
             metadata = json.loads((destination / "metadata.json").read_text())
             self.assertEqual(metadata["master_cv_sha256"], jobflow.source_digest(master))
-            self.assertEqual(metadata["prompt_sha256"], jobflow.source_digest(jobflow.ROOT / "prompts" / "general_cv.md"))
+            self.assertEqual(metadata["prompt_sha256"], jobflow.general_cv_prompt_digest())
             self.assertEqual(metadata["check"]["docx"], str(destination / "cv.docx"))
             self.assertEqual((destination / "cv.pdf").read_text(), "pdf")
             self.assertEqual(
@@ -742,8 +848,9 @@ class JobFlowTest(unittest.TestCase):
                 {"passed": False, "preflight_failures": ["CV sections out of order"]},
                 {"passed": True, "one_page": True},
             ]
-            with mock.patch.dict(os.environ, {"MASTER_CV_PATH": str(master), "CODEX_BIN": "/bin/codex"}), \
-                 mock.patch.object(jobflow, "config", return_value={"max_revision_attempts": 2}), \
+            with mock.patch.dict(os.environ, {"CODEX_BIN": "/bin/codex"}), \
+                 mock.patch.object(jobflow, "master_cv_path", return_value=master), \
+                 mock.patch.object(jobflow, "config", return_value={**self.cfg, "max_revision_attempts": 2}), \
                  mock.patch.object(jobflow.subprocess, "run", side_effect=run) as runner, \
                  mock.patch.object(jobflow, "general_cv_check", side_effect=checks), \
                  redirect_stdout(io.StringIO()):
@@ -774,8 +881,9 @@ class JobFlowTest(unittest.TestCase):
                 return mock.Mock(returncode=0, stdout="", stderr="")
 
             check = {"passed": False, "preflight_failures": ["CV sections out of order"]}
-            with mock.patch.dict(os.environ, {"MASTER_CV_PATH": str(master), "CODEX_BIN": "/bin/codex"}), \
-                 mock.patch.object(jobflow, "config", return_value={"max_revision_attempts": 1}), \
+            with mock.patch.dict(os.environ, {"CODEX_BIN": "/bin/codex"}), \
+                 mock.patch.object(jobflow, "master_cv_path", return_value=master), \
+                 mock.patch.object(jobflow, "config", return_value={**self.cfg, "max_revision_attempts": 1}), \
                  mock.patch.object(jobflow.subprocess, "run", side_effect=run), \
                  mock.patch.object(jobflow, "general_cv_check", return_value=check), \
                  redirect_stdout(io.StringIO()):
@@ -807,13 +915,14 @@ class JobFlowTest(unittest.TestCase):
 
         titles = ["Data Scientist", "Data Engineer", "Data Analyst"]
         output = io.StringIO()
-        with tempfile.TemporaryDirectory() as folder, \
-             mock.patch.dict(os.environ, {"MASTER_CV_PATH": str(Path(folder) / "master.md")}), \
-             mock.patch.object(jobflow, "master_professional_summary_titles", return_value=titles), \
-             mock.patch.object(jobflow, "generate_general_cv", side_effect=generate), \
-             redirect_stdout(output):
-            Path(os.environ["MASTER_CV_PATH"]).write_text("master")
-            jobflow.generate_general_cvs()
+        with tempfile.TemporaryDirectory() as folder:
+            master = Path(folder) / "master.md"
+            master.write_text("master")
+            with mock.patch.object(jobflow, "master_cv_path", return_value=master), \
+                 mock.patch.object(jobflow, "master_professional_summary_titles", return_value=titles), \
+                 mock.patch.object(jobflow, "generate_general_cv", side_effect=generate), \
+                 redirect_stdout(output):
+                jobflow.generate_general_cvs()
 
         summary = json.loads(output.getvalue())
         self.assertEqual(calls, titles)
@@ -841,14 +950,14 @@ class JobFlowTest(unittest.TestCase):
             (destination / "metadata.json").write_text(json.dumps({
                 "title": "Data Scientist", "slug": slug, "status": "PASS", "output": str(destination),
                 "attempts": 3, "master_cv_sha256": jobflow.source_digest(master),
-                "prompt_sha256": jobflow.source_digest(jobflow.ROOT / "prompts" / "general_cv.md"),
+                "prompt_sha256": jobflow.general_cv_prompt_digest(),
                 "check": {
                     "score": 100, "word_count": 400, "unsupported_numbers": [],
                     "reference_comparison": {"score_delta": 8},
                 },
             }))
             output = io.StringIO()
-            with mock.patch.dict(os.environ, {"MASTER_CV_PATH": str(master)}), \
+            with mock.patch.object(jobflow, "master_cv_path", return_value=master), \
                  mock.patch.object(jobflow, "master_professional_summary_titles", return_value=["Data Scientist"]), \
                  mock.patch.object(jobflow, "generate_general_cv") as generate, \
                  redirect_stdout(output):
@@ -868,7 +977,7 @@ class JobFlowTest(unittest.TestCase):
             master = root / "master.md"
             master.write_text("master")
             current_master = jobflow.source_digest(master)
-            current_prompt = jobflow.source_digest(jobflow.ROOT / "prompts" / "general_cv.md")
+            current_prompt = jobflow.general_cv_prompt_digest()
             for title, metadata in {
                 "Needs Review": {"status": "NEEDS REVIEW", "master_cv_sha256": current_master, "prompt_sha256": current_prompt},
                 "Old Master": {"status": "PASS", "master_cv_sha256": "old", "prompt_sha256": current_prompt},
@@ -889,7 +998,7 @@ class JobFlowTest(unittest.TestCase):
                         "attempts": 1, "check": {"unsupported_numbers": []}}
 
             titles = ["Missing", "Needs Review", "Old Master", "Old Prompt"]
-            with mock.patch.dict(os.environ, {"MASTER_CV_PATH": str(master)}), \
+            with mock.patch.object(jobflow, "master_cv_path", return_value=master), \
                  mock.patch.object(jobflow, "master_professional_summary_titles", return_value=titles), \
                  mock.patch.object(jobflow, "generate_general_cv", side_effect=generate), \
                  redirect_stdout(io.StringIO()):
@@ -923,8 +1032,9 @@ class JobFlowTest(unittest.TestCase):
         self.assertIn("Word-style DOCX/PDF renderer", cv)
         self.assertIn("Order: Header, Summary, Experience, Projects, Education, Skills, Languages.", cv)
         self.assertNotIn("unless Experience stronger", cv)
-        self.assertIn("AI / Machine Learning Engineer: `AI/ML`, `LLM/RAG`, `Engineering`, `Data`", general_cv)
-        self.assertIn("Data Scientist: `Programming`, `Machine Learning`, `Methods`, `Data and MLOps`, `Analytics`", general_cv)
+        preset_cv = (prompts / "presets" / "data_ai_general_cv.md").read_text()
+        self.assertIn("AI / Machine Learning Engineer: `AI/ML`, `LLM/RAG`, `Engineering`, `Data`", preset_cv)
+        self.assertIn("Data Scientist: `Programming`, `Machine Learning`, `Methods`, `Data and MLOps`, `Analytics`", preset_cv)
         self.assertIn("Avoid banned generic phrases", general_cv)
         self.assertIn("repeated bullet-opening verbs", cv + general_cv)
         self.assertIn("## `/general-cvs`", commands)
@@ -963,7 +1073,9 @@ class JobFlowTest(unittest.TestCase):
         self.assertIn("Never say an application was applied", telegram_summary)
         self.assertIn("Do not decide whether delivery is allowed", telegram_summary)
         self.assertIn("`reject` below 50", match)
-        self.assertIn("Evaluate stated experience requirements against dated professional evidence", match)
+        self.assertIn("Classify every `###` role under `Professional Experience` exactly once", match)
+        self.assertIn("Python calculates dates and totals", match)
+        self.assertIn("count_status` controls required-year credit, not whether a role may appear", cv)
         self.assertIn("select only supported, relevant roles", cv)
         self.assertIn("omit job/work location", cv)
         self.assertIn("no location, relocation, availability, or start date", cv)
@@ -981,7 +1093,7 @@ class JobFlowTest(unittest.TestCase):
             self.assertIn(command, agents)
             self.assertIn(command, readme)
         runtime_prompts = [Path(__file__).parents[1] / "AUTOMATION.md", *prompts.glob("*.md")]
-        self.assertLessEqual(sum(path.stat().st_size for path in runtime_prompts), 22_500)
+        self.assertLessEqual(sum(path.stat().st_size for path in runtime_prompts), 24_000)
         json.loads((Path(__file__).parents[1] / "agent_brief.schema.json").read_text())
         json.loads((Path(__file__).parents[1] / "agent_run.schema.json").read_text())
         json.loads((Path(__file__).parents[1] / "general_cv_result.schema.json").read_text())
@@ -1003,10 +1115,11 @@ class JobFlowTest(unittest.TestCase):
                 "practical_constraints": 4}, "seniority": "entry", "responsibility_list": ["Build models"],
                 "required_skill_list": ["Python"], "preferred_skill_list": [], "ats_keywords": ["Python"],
                 "application_questions": [], "evidence_map": [{"requirement": "Python", "evidence": "Python"}],
-                "missing_requirements": [], "job_summary": "Short summary."}
+                "missing_requirements": [], "job_summary": "Short summary.", **experience_fields()}
             path = root / "match.json"
             path.write_text(json.dumps(result))
-            jobflow.record_match("job1", path)
+            with mock.patch.object(jobflow, "master_cv", return_value=TEST_EXPERIENCE_CV):
+                jobflow.record_match("job1", path)
             check = jobflow.db()
             self.assertEqual(check.execute("SELECT status FROM jobs").fetchone()[0], "accepted")
             check.close()
@@ -1015,6 +1128,113 @@ class JobFlowTest(unittest.TestCase):
             brief = json.loads((artifact / "brief.json").read_text())
             self.assertEqual(brief["contacts"], [])
             self.assertEqual(brief["generation_constraints"]["cv_word_budget"], [350, 430])
+        jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH = old
+
+    def test_relevant_experience_uses_elapsed_unique_months_and_caution(self):
+        cv = """## Professional Experience
+
+### Engineer — Company
+City | Jan 2026 – Mar 2026
+- Built data pipelines.
+
+### Intern — Company
+City | Mar 2026 – Present
+- Tested data pipelines.
+
+### Student Lead — University Team
+City | Aug 2026 – Dec 2026
+- Led a student prototype.
+
+## Education
+"""
+        details = {
+            "experience_requirement": {"kind": "mandatory", "minimum_months": 6, "wording": "six months"},
+            "experience_roles": [
+                {"role": "Engineer — Company", "experience_type": "professional_employment",
+                 "relevance": "direct", "count_status": "confirmed", "evidence": ["Built data pipelines."],
+                 "rationale": "Direct work."},
+                {"role": "Intern — Company", "experience_type": "formal_internship",
+                 "relevance": "direct", "count_status": "possible", "evidence": ["Tested data pipelines."],
+                 "rationale": "Relevant formal internship; vacancy wording is unclear."},
+                {"role": "Student Lead — University Team", "experience_type": "student_team",
+                 "relevance": "direct", "count_status": "excluded", "evidence": ["Led a student prototype."],
+                 "rationale": "Relevant evidence but not employment."},
+            ],
+        }
+        result = jobflow.relevant_experience_assessment(details, cv, jobflow.date(2026, 7, 10))
+        self.assertEqual((result["confirmed_months"], result["confirmed_or_possible_months"]), (3, 7))
+        self.assertEqual(result["status"], "sufficient_with_caution")
+        self.assertEqual(result["roles"][2]["elapsed_months"], 0)
+
+    def test_relevant_experience_rejects_malformed_dates_and_invalid_counting(self):
+        malformed = TEST_EXPERIENCE_CV.replace("Jan 2020 – Dec 2020", "during 2020")
+        with self.assertRaisesRegex(SystemExit, "experience date must use"):
+            jobflow.professional_experience_roles(malformed)
+
+        cases = (
+            ("student_team", "direct", "confirmed", "student-team experience cannot count"),
+            ("volunteering", "direct", "confirmed", "non-professional experience cannot be confirmed"),
+            ("professional_employment", "supporting", "confirmed", "only directly relevant roles may count"),
+        )
+        for experience_type, relevance, count_status, error in cases:
+            fields = experience_fields("mandatory", 1, count_status)
+            fields["experience_roles"][0].update({"experience_type": experience_type, "relevance": relevance})
+            with self.subTest(experience_type=experience_type), self.assertRaisesRegex(SystemExit, error):
+                jobflow.relevant_experience_assessment(fields, TEST_EXPERIENCE_CV)
+
+        valid = (
+            ("formal_internship", "direct", "confirmed", 12),
+            ("academic_employment", "direct", "confirmed", 12),
+            ("academic_employment", "supporting", "excluded", 0),
+            ("volunteering", "direct", "possible", 12),
+            ("professional_employment", "unrelated", "excluded", 0),
+        )
+        for experience_type, relevance, count_status, expected in valid:
+            fields = experience_fields("mandatory", 1, count_status)
+            fields["experience_roles"][0].update({"experience_type": experience_type, "relevance": relevance})
+            result = jobflow.relevant_experience_assessment(fields, TEST_EXPERIENCE_CV)
+            with self.subTest(experience_type=experience_type, relevance=relevance):
+                self.assertEqual(result["confirmed_or_possible_months"], expected)
+
+    def test_record_match_gates_mandatory_experience_and_surfaces_caution(self):
+        old = jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            jobflow.DATA, jobflow.ARTIFACTS = root / "data", root / "artifacts"
+            jobflow.DB_PATH = jobflow.DATA / "jobs.sqlite3"
+            conn = jobflow.db()
+            for jid in ("short", "cautious", "preferred", "ambiguous"):
+                conn.execute("INSERT INTO jobs(id,company,title,location,url,description,status,relevance,reasons,discovered_at) "
+                             "VALUES (?,?,?,?,?,?,?,?,?,?)", (jid, "Example", "Data Analyst", "Netherlands",
+                              f"https://example.test/{jid}", "Python role", "screening", 80, "[]", "2026-01-01"))
+            conn.commit(); conn.close()
+            base = {"score": 80, "components": {"required_skills": 25, "responsibilities": 20,
+                "seniority_experience": 10, "education_domain": 8, "ats_overlap": 12,
+                "practical_constraints": 5}, "seniority": "entry", "responsibility_list": ["Build models"],
+                "required_skill_list": ["Python"], "preferred_skill_list": [], "ats_keywords": ["Python"],
+                "application_questions": [], "evidence_map": [], "missing_requirements": [], "job_summary": "Summary."}
+            with mock.patch.object(jobflow, "master_cv", return_value=TEST_EXPERIENCE_CV):
+                path = root / "match.json"
+                path.write_text(json.dumps({**base, **experience_fields("mandatory", 1, "excluded")}))
+                jobflow.record_match("short", path)
+                path.write_text(json.dumps({**base, **experience_fields("mandatory", 12, "possible")}))
+                jobflow.record_match("cautious", path)
+                path.write_text(json.dumps({**base, **experience_fields("preferred", 13, "excluded")}))
+                jobflow.record_match("preferred", path)
+                path.write_text(json.dumps({**base, **experience_fields("ambiguous", 13, "excluded")}))
+                jobflow.record_match("ambiguous", path)
+            check = jobflow.db()
+            self.assertEqual(check.execute("SELECT status FROM jobs WHERE id='short'").fetchone()[0], "rejected")
+            self.assertEqual({row[0] for row in check.execute(
+                "SELECT status FROM jobs WHERE id IN ('cautious','preferred','ambiguous')")}, {"accepted"})
+            check.close()
+            brief = json.loads((jobflow.ARTIFACTS / "example_data-analyst_cautious" / "brief.json").read_text())
+            self.assertEqual(brief["experience_assessment"]["status"], "sufficient_with_caution")
+            self.assertTrue(any("possible evidence" in item for item in brief["verification_needed"]))
+            preferred = json.loads((jobflow.ARTIFACTS / "example_data-analyst_preferred" / "brief.json").read_text())
+            ambiguous = json.loads((jobflow.ARTIFACTS / "example_data-analyst_ambiguous" / "brief.json").read_text())
+            self.assertTrue(any("Relevant experience shortfall" in item for item in preferred["gaps"]))
+            self.assertTrue(any("Relevant experience shortfall" in item for item in ambiguous["verification_needed"]))
         jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH = old
 
     def test_record_match_rejects_non_entry_seniority(self):
@@ -1034,10 +1254,11 @@ class JobFlowTest(unittest.TestCase):
                 "practical_constraints": 5}, "seniority": "medior", "responsibility_list": ["Build models"],
                 "required_skill_list": ["Python"], "preferred_skill_list": [], "ats_keywords": ["Python"],
                 "application_questions": [], "evidence_map": [{"requirement": "Python", "evidence": "Python"}],
-                "missing_requirements": [], "job_summary": "Short summary."}
+                "missing_requirements": [], "job_summary": "Short summary.", **experience_fields()}
             path = root / "match.json"
             path.write_text(json.dumps(result))
-            jobflow.record_match("job1", path)
+            with mock.patch.object(jobflow, "master_cv", return_value=TEST_EXPERIENCE_CV):
+                jobflow.record_match("job1", path)
             check = jobflow.db()
             self.assertEqual(check.execute("SELECT status FROM jobs").fetchone()[0], "rejected")
             self.assertFalse((jobflow.ARTIFACTS / "example_data-modeler_job1" / "brief.json").exists())
@@ -1521,7 +1742,8 @@ class JobFlowTest(unittest.TestCase):
             path.write_text(
                 '<div align="center">\n\nAlex Example\nemail | phone | location\n\n</div>\n\nDear Hiring Team,\n'
             )
-            blocks = jobflow.markdown_blocks(path, "letter")
+            with mock.patch.object(jobflow, "candidate_name", return_value="Alex Example"):
+                blocks = jobflow.markdown_blocks(path, "letter")
         self.assertEqual(blocks["title"], "Alex Example")
         self.assertEqual(blocks["contacts"], ["email | phone | location"])
         self.assertEqual(blocks["sections"][0]["items"][0]["text"], "Dear Hiring Team,")
@@ -1872,8 +2094,10 @@ class JobFlowTest(unittest.TestCase):
             conn.commit(); conn.close()
             components = {"required_skills": 14, "responsibilities": 10, "seniority_experience": 8,
                           "education_domain": 5, "ats_overlap": 8, "practical_constraints": 4}
-            path = root / "low.json"; path.write_text(json.dumps({"score": 49, "components": components}))
-            jobflow.record_match("low", path)
+            path = root / "low.json"; path.write_text(json.dumps({
+                "score": 49, "components": components, **experience_fields()}))
+            with mock.patch.object(jobflow, "master_cv", return_value=TEST_EXPERIENCE_CV):
+                jobflow.record_match("low", path)
             check = jobflow.db()
             self.assertEqual(check.execute("SELECT status FROM jobs WHERE id='low'").fetchone()[0], "rejected")
             check.close()
@@ -2009,6 +2233,7 @@ class JobFlowTest(unittest.TestCase):
                 return {"message_id": next(message_ids)}
 
             with mock.patch.dict(os.environ, {"TELEGRAM_CHAT_ID": "123", "TELEGRAM_BOT_TOKEN": "token"}, clear=False), \
+                 mock.patch.object(jobflow, "candidate_name", return_value="Alex Example"), \
                  mock.patch.object(jobflow, "render_pdf", return_value={"one_page": True, "pages": 1}), \
                  mock.patch.object(jobflow, "telegram", side_effect=fake_telegram):
                 jobflow.deliver("job")

@@ -24,7 +24,7 @@ accepted:
 	$(PYTHON) jobflow.py jobs --status active --workflow-status accepted
 
 general-cv:
-	@test -n "$(TITLE)" || (echo 'usage: make general-cv TITLE="Data Scientist"' >&2; exit 2)
+	@test -n "$(TITLE)" || (echo 'usage: make general-cv TITLE="TARGET ROLE"' >&2; exit 2)
 	$(PYTHON) jobflow.py general-cv --title "$(TITLE)"
 
 general-cvs:

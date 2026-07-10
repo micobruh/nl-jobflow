@@ -1,0 +1,166 @@
+search_criteria:
+  locations:
+    groups:
+      Amsterdam: [Amsterdam, Amstelveen, Diemen, Hoofddorp, Schiphol, Zaandam]
+      Eindhoven: [Eindhoven, Veldhoven, Best, Geldrop, Helmond]
+      Rotterdam: [Rotterdam, Schiedam, Delft, Capelle aan den IJssel]
+      Utrecht: [Utrecht, Nieuwegein, Zeist, De Bilt]
+      The Hague: [The Hague, Den Haag, Rijswijk, Voorburg, Leiden]
+ind_register_url: https://ind.nl/en/public-register-recognised-sponsors/public-register-work
+relevance_threshold: 75
+job_match_threshold: 50
+ats_threshold: 90
+max_revision_attempts: 8
+tier2_batch_size: 40
+retention_days: 30
+ollama_url: http://127.0.0.1:11434
+slm_model: qwen3:4b-instruct
+marketplace_discovery:
+  enabled: true
+  max_age_hours: 24
+  max_results_per_source: 100
+seniority_title_exclusions:
+  - senior
+  - sr
+  - medior
+  - mid-level
+  - mid senior
+  - lead
+  - team lead
+  - tech lead
+  - principal
+  - staff
+  - head
+  - director
+  - manager
+  - architect
+  - vp
+  - vice president
+  - chief
+  - cto
+  - cio
+  - cdo
+  - ceo
+sponsor_aliases:
+  akzonobel: akzo nobel nederland
+  bol: bol com
+  bunq: bunq bv
+  dell: dell benelux call centre
+  ebay: ebay international management
+  ey: ernst young nederland
+  ibm: ibm nederland
+  ing: ing bank
+  imc: imc trading
+  klm: koninklijke luchtvaart maatschappij
+  kpmg: kpmg staffing facility services
+  nike: nike retail
+  hp: hewlett packard nederland
+  pwc: pricewaterhousecoopers
+  sap: sap nederland
+  sony: sony europe
+  takeaway: takeaway com group
+  uber: uber nederland
+  visa: visa europe netherlands
+  tno: nederlandse organisatie voor toegepast natuurwetenschappelijk onderzoek tno
+  vdl: vdl enabling technologies group eindhoven
+priority_companies:
+  - {name: ASML, career_url: "https://www.asml.com/en/careers/find-your-job"}
+  - {name: Booking.com, career_url: "https://jobs.booking.com/booking/jobs?location=Netherlands"}
+  - {name: Philips, career_url: "https://www.careers.philips.com/nl/en/search-results"}
+  - {name: Adyen, career_url: "https://careers.adyen.com/vacancies"}
+  - {name: ING, career_url: "https://careers.ing.com/en/search-jobs/Netherlands"}
+  - {name: Rabobank, career_url: "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=Rabobank&location=Netherlands&start=0"}
+  - {name: ABN AMRO, career_url: "https://www.werkenbijabnamro.nl/vacatures/land/nederland"}
+  - {name: KLM, career_url: "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=KLM&location=Netherlands&start=0"}
+  - {name: bol, career_url: "https://careers.bol.com/en/jobs/"}
+  - {name: Coolblue, career_url: "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=Coolblue&location=Netherlands&start=0"}
+  - {name: TomTom, career_url: "https://www.tomtom.com/careers/joboverview/"}
+  - {name: NXP, career_url: "https://nxp.wd3.myworkdayjobs.com/careers"}
+  - {name: Thales, career_url: "https://careers.thalesgroup.com/global/en/search-results?keywords=&location=Netherlands"}
+  - {name: Airbus, career_url: "https://ag.wd3.myworkdayjobs.com/Airbus"}
+  - {name: Shell, career_url: "https://jobs.shell.com/search-jobs/Netherlands"}
+  - {name: IBM, career_url: "https://www.ibm.com/careers/search?field_keyword_18[0]=Netherlands"}
+  - {name: Microsoft, career_url: "https://jobs.careers.microsoft.com/global/en/search?lc=Netherlands"}
+  - {name: Google, career_url: "https://www.google.com/about/careers/applications/jobs/results/?location=Netherlands"}
+  - {name: Amazon, career_url: "https://www.amazon.jobs/en/search?base_query=&loc_query=Netherlands"}
+  - {name: Deloitte, career_url: "https://www.deloitte.com/nl/en/careers.html"}
+  - {name: PwC, career_url: "https://www.pwc.nl/careers"}
+  - {name: EY, career_url: "https://careers.ey.com/ey/search/?locationsearch=Netherlands"}
+  - {name: KPMG, career_url: "https://www.werkenbijkpmg.nl/vacatures"}
+  - {name: Accenture, career_url: "https://www.accenture.com/nl-en/careers/jobsearch"}
+  - {name: Capgemini, career_url: "https://www.capgemini.com/careers/join-capgemini/job-search/"}
+  - {name: TNO, career_url: "https://www.tno.nl/en/careers/vacancies/"}
+  - {name: Elsevier, career_url: "https://relx.wd3.myworkdayjobs.com/ElsevierJobs"}
+  - {name: Vanderlande, career_url: "https://careers.vanderlande.com/all-jobs"}
+  - {name: VDL, career_url: "https://www.werkenbijvdl.nl/vacatures"}
+  - {name: Uber, career_url: "https://jobs.uber.com/en/jobs/?location=Amsterdam"}
+  - {name: Databricks, career_url: "https://www.databricks.com/company/careers/open-positions?location=Netherlands"}
+  - {name: Mollie, career_url: "https://jobs.mollie.com/"}
+  - {name: Picnic, career_url: "https://jobs.picnic.app/en/"}
+  - {name: MessageBird, career_url: "https://bird.com/careers/"}
+  - {name: Mambu, career_url: "https://mambu.com/en/careers"}
+  - {name: bunq, career_url: "https://careers.bunq.com/"}
+  - {name: Elastic, career_url: "https://jobs.elastic.co/"}
+  - {name: Snowflake, career_url: "https://careers.snowflake.com/us/en/search-results?location=Netherlands"}
+  - {name: Oracle, career_url: "https://careers.oracle.com/en/sites/jobsearch/jobs?location=Netherlands"}
+  - {name: SAP, career_url: "https://jobs.sap.com/search/?locationsearch=Netherlands"}
+  - {name: Cisco, career_url: "https://jobs.cisco.com/jobs/SearchJobs/?21178=%5B169482%5D"}
+  - {name: Intel, career_url: "https://jobs.intel.com/en/search-jobs/Netherlands"}
+  - {name: NVIDIA, career_url: "https://jobs.nvidia.com/careers?location=Netherlands"}
+  - {name: Netflix, career_url: "https://jobs.netflix.com/?location=Amsterdam%2C+Netherlands"}
+  - {name: Spotify, career_url: "https://www.lifeatspotify.com/jobs?l=amsterdam"}
+  - {name: Tesla, career_url: "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=Tesla&location=Netherlands&start=0"}
+  - {name: Nike, career_url: "https://careers.nike.com/nl"}
+  - {name: Heineken, career_url: "https://careers.theheinekencompany.com/Job-Listing?field_location_country_code_1[]=NL"}
+  - {name: Unilever, career_url: "https://careers.unilever.com/location/netherlands-jobs/34155/2750405/2"}
+  - {name: AkzoNobel, career_url: "https://careers.akzonobel.com/"}
+  - {name: Siemens, career_url: "https://jobs.siemens.com/careers?location=Netherlands"}
+  - {name: Boston Consulting Group, career_url: "https://careers.bcg.com/global/en/search-results?location=Netherlands"}
+  - {name: McKinsey, career_url: "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=McKinsey&location=Netherlands&start=0"}
+  - {name: Apple, career_url: "https://jobs.apple.com/en-us/search?location=netherlands-NLD"}
+  - {name: Atlassian, career_url: "https://www.atlassian.com/company/careers/all-jobs?location=Netherlands"}
+  - {name: Cloudflare, career_url: "https://www.cloudflare.com/careers/jobs/?location=Netherlands"}
+  - {name: Datadog, career_url: "https://careers.datadoghq.com/all-jobs/?location=Amsterdam"}
+  - {name: GitHub, career_url: "https://www.github.careers/careers-home/jobs"}
+  - {name: GitLab, career_url: "https://about.gitlab.com/jobs/all-jobs/"}
+  - {name: Stripe, career_url: "https://stripe.com/jobs/search?office_locations=Europe--Amsterdam"}
+  - {name: TikTok, career_url: "https://lifeattiktok.com/search?location=Amsterdam"}
+  - {name: Twilio, career_url: "https://www.twilio.com/en-us/company/jobs"}
+  - {name: Workday, career_url: "https://workday.wd5.myworkdayjobs.com/Workday"}
+  - {name: ServiceNow, career_url: "https://careers.servicenow.com/jobs/?location=Netherlands"}
+  - {name: Palantir, career_url: "https://jobs.lever.co/palantir"}
+  - {name: Optiver, career_url: "https://optiver.com/working-at-optiver/career-opportunities/"}
+  - {name: IMC, career_url: "https://www.imc.com/eu/search-careers"}
+  - {name: Flow Traders, career_url: "https://www.flowtraders.com/careers"}
+  - {name: Jane Street, career_url: "https://www.janestreet.com/join-jane-street/open-roles/?location=amsterdam"}
+  - {name: Jump Trading, career_url: "https://www.jumptrading.com/careers/"}
+  - {name: Mendix, career_url: "https://www.mendix.com/careers/"}
+  - {name: Klarna, career_url: "https://jobs.deel.com/klarna?locationIds[]=a013b13b-89f0-4d4b-9675-88594255fd0c"}
+  - {name: Airbnb, career_url: "https://careers.airbnb.com/positions/?location=netherlands"}
+  - {name: American Express, career_url: "https://aexp.eightfold.ai/careers?location=Netherlands"}
+  - {name: Broadcom, career_url: "https://broadcom.wd1.myworkdayjobs.com/External_Career"}
+  - {name: Canon, career_url: "https://ejqe.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs?location=Netherlands+%28all+locations%29%2C+Netherlands&locationId=300033327714180&locationLevel=state&mode=location"}
+  - {name: Dell, career_url: "https://jobs.dell.com/en/search-jobs/Netherlands"}
+  - {name: Ericsson, career_url: "https://jobs.ericsson.com/careers?location=Netherlands"}
+  - {name: Expedia, career_url: "https://careers.expediagroup.com/jobs/?location=Netherlands"}
+  - {name: Fujitsu, career_url: "https://www.fujitsu.com/global/about/careers/job-search/"}
+  - {name: HP, career_url: "https://apply.hp.com/careers?start=0&location=Netherlands&sort_by=distance&filter_include_remote=1"}
+  - {name: Huawei, career_url: "https://career.huawei.com/reccampportal/portal5/index.html"}
+  - {name: Lenovo, career_url: "https://jobs.lenovo.com/en_US/careers/SearchJobs/?location=Netherlands"}
+  - {name: Nokia, career_url: "https://careers.nokia.com/jobs/search?location=Netherlands"}
+  - {name: Panasonic, career_url: "https://recruiting.panasonic.eu/Jobs/2"}
+  - {name: PayPal, career_url: "https://paypal.eightfold.ai/careers?location=Netherlands"}
+  - {name: Qualcomm, career_url: "https://careers.qualcomm.com/careers?location=Netherlands"}
+  - {name: Red Hat, career_url: "https://redhat.wd5.myworkdayjobs.com/jobs"}
+  - {name: Reddit, career_url: "https://www.redditinc.com/careers"}
+  - {name: Samsung, career_url: "https://www.samsung.com/nl/about-us/careers/"}
+  - {name: Sony, career_url: "https://www.sonyjobs.com/jobs.html"}
+  - {name: Framer, career_url: "https://www.framer.com/careers/"}
+  - {name: Visa, career_url: "https://corporate.visa.com/en/jobs/?location=Netherlands"}
+  - {name: eBay, career_url: "https://jobs.ebayinc.com/us/en/search-results?location=Netherlands"}
+  - {name: Backbase, career_url: "https://www.backbase.com/careers/jobs"}
+  - {name: Bitvavo, career_url: "https://jobs.bitvavo.com/find-your-role"}
+  - {name: Catawiki, career_url: "https://catawiki.careers/vacancies"}
+  - {name: Takeaway, career_url: "https://careers.justeattakeaway.com/global/en/search-results?location=Netherlands"}
+  - {name: Bynder, career_url: "https://careers.bynder.com/"}
+  - {name: Wolters Kluwer, career_url: "https://careers.wolterskluwer.com/en"}
