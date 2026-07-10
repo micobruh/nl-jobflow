@@ -1,0 +1,10 @@
+.env
+config.yaml
+master_cv.md
+data/
+artifacts/
+__pycache__/
+.pytest_cache/
+*.pyc
+.venv/
+tmp/

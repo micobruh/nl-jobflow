@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "occurred_at"],
+  "properties": {
+    "status": {
+      "enum": ["applied", "interview", "offer", "hired", "rejected", "no_response", "withdrawn", "offer_declined"]
+    },
+    "occurred_at": {
+      "type": "string",
+      "anyOf": [{"format": "date"}, {"format": "date-time"}]
+    },
+    "stage": {"enum": ["screening", "phone", "technical", "case", "final", "other"]},
+    "channel": {"type": "string", "minLength": 1},
+    "notes": {"type": "string"},
+    "feedback": {"type": "string"},
+    "submitted_files": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    }
+  }
+}

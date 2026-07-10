@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["job_title", "company", "seniority", "applicant_profile", "job_summary", "responsibilities", "required_skills", "preferred_skills", "ats_keywords", "application_questions", "contacts", "evidence_map", "gaps", "screening_warnings", "verification_needed", "generation_constraints"],
+  "properties": {
+    "job_title": {"type": "string"},
+    "company": {"type": "string"},
+    "seniority": {"type": "string"},
+    "applicant_profile": {"type": "object"},
+    "job_summary": {"type": "string"},
+    "responsibilities": {"type": "array", "maxItems": 10, "items": {"type": "string"}},
+    "required_skills": {"type": "array", "items": {"type": "string"}},
+    "preferred_skills": {"type": "array", "items": {"type": "string"}},
+    "ats_keywords": {"type": "array", "maxItems": 15, "items": {"type": "string"}},
+    "application_questions": {"type": "array", "items": {"type": "string"}},
+    "contacts": {"type": "array", "items": {"type": "object"}},
+    "evidence_map": {"type": "array", "items": {"type": "object"}},
+    "gaps": {"type": "array", "items": {"type": "string"}},
+    "screening_warnings": {"type": "array", "items": {"type": "string"}},
+    "verification_needed": {"type": "array", "items": {"type": "string"}},
+    "generation_constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cv_word_budget", "letter_word_budget", "required_cv_sections", "supported_concepts", "natural_writing"],
+      "properties": {
+        "cv_word_budget": {"type": "array", "prefixItems": [{"type": "integer"}, {"type": "integer"}], "items": false},
+        "letter_word_budget": {"type": "array", "prefixItems": [{"type": "integer"}, {"type": "integer"}], "items": false},
+        "required_cv_sections": {"type": "array", "items": {"type": "string"}},
+        "supported_concepts": {"type": "array", "items": {"type": "string"}},
+        "natural_writing": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

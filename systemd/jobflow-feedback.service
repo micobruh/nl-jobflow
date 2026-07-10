@@ -1,0 +1,14 @@
+[Unit]
+Description=Jobflow Telegram feedback worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/nl-jobflow
+ExecStart=%h/nl-jobflow/.venv/bin/python jobflow.py feedback-worker
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

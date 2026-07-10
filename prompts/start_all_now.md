@@ -1,0 +1,1 @@
+Run AUTOMATION.md now. Follow every step. Use required writer and reviewer subagents.
