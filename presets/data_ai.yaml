@@ -27,11 +27,7 @@ cv_role_patterns:
   data-analyst: "\\banalyst\\b"
   data-engineer: "\\bengineer\\b"
 cv_default_role: data-scientist
-cv_references:
-  ai-ml-engineer: cv-ai-ml-engineer.pdf
-  data-analyst: cv-data-analyst.pdf
-  data-engineer: cv-data-engineer.pdf
-  data-scientist: cv-data-scientist.pdf
+cv_references: {}
 cv_phrase_replacements:
   imbalanced-classification: imbalanced classification
 pdf_text_defects: [imbalancedclassification]

@@ -119,6 +119,65 @@ class JobFlowTest(unittest.TestCase):
         secured = self.job(description="Python ML role. Security clearance required.")
         self.assertTrue(jobflow.filter_job(secured, set(), cfg, self.cv).eligible)
 
+    def test_sponsor_snapshot_refresh_and_fail_closed(self):
+        old = jobflow.DATA, jobflow.DB_PATH
+        with tempfile.TemporaryDirectory() as folder:
+            jobflow.DATA, jobflow.DB_PATH = Path(folder), Path(folder) / "jobs.sqlite3"
+            conn = jobflow.db()
+            current = jobflow.datetime.now(jobflow.timezone.utc)
+            fresh = current.isoformat()
+            conn.executemany("INSERT INTO sponsors VALUES (?,?,?,?)",
+                             [(f"sponsor {index}", f"Sponsor {index}", None, fresh) for index in range(100)])
+            conn.commit()
+            with mock.patch.object(jobflow, "refresh_sponsors") as refresh:
+                status = jobflow.ensure_sponsor_snapshot(conn, self.cfg, current)
+            self.assertEqual(status["status"], "fresh")
+            refresh.assert_not_called()
+
+            stale = (current - jobflow.timedelta(days=2)).isoformat()
+            conn.execute("UPDATE sponsors SET fetched_at=?", (stale,)); conn.commit()
+            with mock.patch.object(jobflow, "refresh_sponsors", side_effect=RuntimeError("offline")):
+                status = jobflow.ensure_sponsor_snapshot(conn, self.cfg, current)
+            self.assertEqual(status["status"], "stale_fallback")
+
+            conn.execute("DELETE FROM sponsors")
+            conn.execute("INSERT INTO sponsors VALUES ('example','Example',NULL,'test')"); conn.commit()
+            with mock.patch.object(jobflow, "refresh_sponsors", side_effect=RuntimeError("offline")):
+                with self.assertRaisesRegex(RuntimeError, "invalid sponsor snapshot \\(1 entries\\)"):
+                    jobflow.ensure_sponsor_snapshot(conn, self.cfg, current)
+            conn.close()
+        jobflow.DATA, jobflow.DB_PATH = old
+
+    def test_zero_result_scan_records_empty_current_run_and_creates_no_outputs(self):
+        old = jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            jobflow.DATA, jobflow.ARTIFACTS = root / "data", root / "artifacts"
+            jobflow.DB_PATH = jobflow.DATA / "jobs.sqlite3"
+            marketplace = {"found": 0, "screening": 0, "rejected": 0, "duplicate": 0,
+                           "unmatched": 0, "errors": 0, "screening_job_ids": []}
+            output = io.StringIO()
+            with mock.patch.object(jobflow, "config", return_value=self.cfg), \
+                 mock.patch.object(jobflow, "ensure_sponsor_snapshot",
+                                   return_value={"count": 100, "fetched_at": "now", "status": "fresh"}), \
+                 mock.patch.object(jobflow, "master_cv", return_value=self.cv), \
+                 mock.patch.object(jobflow, "discover_marketplaces", return_value=marketplace), \
+                 redirect_stdout(output):
+                jobflow.scan()
+            summary = json.loads(output.getvalue().splitlines()[-1])
+            self.assertEqual(summary["found"], 0)
+            self.assertEqual(summary["screening_job_ids"], [])
+            self.assertIsInstance(summary["scan_run_id"], int)
+            conn = jobflow.db()
+            run = conn.execute("SELECT screening_job_ids FROM scan_runs WHERE id=?",
+                               (summary["scan_run_id"],)).fetchone()
+            self.assertEqual(json.loads(run[0]), [])
+            self.assertEqual(conn.execute("SELECT COUNT(*) FROM evaluations").fetchone()[0], 0)
+            self.assertEqual(conn.execute("SELECT COUNT(*) FROM telegram_deliveries").fetchone()[0], 0)
+            conn.close()
+            self.assertFalse(jobflow.ARTIFACTS.exists())
+        jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH = old
+
     def test_selected_city_group_includes_veldhoven(self):
         result = jobflow.filter_job(self.job(location="Veldhoven, Netherlands"), self.sponsors, self.cfg, self.cv)
         self.assertTrue(result.eligible, result.rejection_reasons)
@@ -213,7 +272,7 @@ class JobFlowTest(unittest.TestCase):
               "**Testing:** pytest\n## Languages\nEnglish (Fluent)\nimbalanced-classification")
         failures = jobflow.document_preflight(cv, "cv", {}, software)
         self.assertFalse(any("thesis" in item.lower() or "extraction-risk" in item for item in failures))
-        self.assertIsNone(jobflow.cv_reference("Backend Engineer", software))
+        self.assertEqual(jobflow.cv_reference("Backend Engineer", software).name, "cv-data-scientist.pdf")
         self.assertEqual(jobflow.cv_role("Frontend Engineer", software), "frontend-engineer")
         self.assertNotEqual(jobflow.general_cv_prompt_digest(software), jobflow.general_cv_prompt_digest(self.cfg))
 
@@ -483,6 +542,35 @@ class JobFlowTest(unittest.TestCase):
             conn.close()
         jobflow.DATA, jobflow.DB_PATH = old
 
+    def test_agent_marketplace_results_use_shared_pipeline_and_other_source_falls_back(self):
+        old = jobflow.DATA, jobflow.DB_PATH
+        with tempfile.TemporaryDirectory() as folder:
+            jobflow.DATA, jobflow.DB_PATH = Path(folder), Path(folder) / "jobs.sqlite3"
+            path = Path(folder) / "indeed.json"
+            path.write_text(json.dumps([self.job(url="https://nl.indeed.com/viewjob?jk=abc")]))
+            conn = jobflow.db()
+            cfg = {**self.cfg, "marketplace_discovery": {
+                "enabled": True, "queries": ["Data Analyst"],
+                "max_results_per_source": 10, "max_age_hours": 24}}
+            with mock.patch.object(jobflow, "marketplace_jobs", return_value=[]) as fallback:
+                totals = jobflow.discover_marketplaces(
+                    conn, cfg, {"example tech"}, self.cv, {"indeed": path})
+            self.assertEqual((totals["found"], totals["screening"]), (1, 1))
+            self.assertEqual(totals["screening_job_ids"], [jobflow.job_id(self.job(
+                url="https://nl.indeed.com/viewjob?jk=abc"))])
+            fallback.assert_called_once()
+            self.assertEqual(fallback.call_args.args[0], "linkedin")
+            self.assertEqual(conn.execute("SELECT discovery_source FROM jobs").fetchone()[0], "indeed")
+            conn.close()
+        jobflow.DATA, jobflow.DB_PATH = old
+
+    def test_agent_marketplace_results_reject_wrong_host(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "indeed.json"
+            path.write_text(json.dumps([self.job(url="https://example.test/jobs/1")]))
+            with self.assertRaisesRegex(ValueError, "not from indeed.com"):
+                jobflow.marketplace_jobs_from_file("indeed", path, 10)
+
     def test_fetch_retries_timeout_and_server_errors(self):
         response = mock.Mock(status_code=200, text="x " * 400)
         with mock.patch.object(jobflow.requests, "get", side_effect=[requests.Timeout(), response]) as get, \
@@ -731,17 +819,16 @@ class JobFlowTest(unittest.TestCase):
             self.assertIn("<w:numPr>", document)
             self.assertIn("<w:numFmt w:val=\"bullet\"/>", numbering)
 
-    def test_cv_reference_matches_role_and_defaults_to_data_scientist(self):
-        cases = {
-            "Machine Learning Engineer": "cv-ai-ml-engineer.pdf",
-            "Junior Data Analyst": "cv-data-analyst.pdf",
-            "Data Platform Engineer": "cv-data-engineer.pdf",
-            "Analytics Consultant": "cv-data-scientist.pdf",
-        }
-        for title, expected in cases.items():
+    def test_cv_reference_defaults_all_roles_and_allows_role_override(self):
+        for title in ("Machine Learning Engineer", "Junior Data Analyst", "Data Platform Engineer",
+                      "Analytics Consultant", "Backend Engineer"):
             with self.subTest(title=title):
-                self.assertEqual(jobflow.cv_reference(title).name, expected)
+                self.assertEqual(jobflow.cv_reference(title).name, "cv-data-scientist.pdf")
                 self.assertEqual(jobflow.cv_reference(title).parent, jobflow.ROOT / "references")
+        cfg = copy.deepcopy(self.cfg)
+        cfg["cv_references"]["data-analyst"] = "custom-analyst.pdf"
+        self.assertEqual(jobflow.cv_reference("Junior Data Analyst", cfg).name, "custom-analyst.pdf")
+        self.assertEqual(jobflow.document_reference("letter", cfg=cfg).name, "motivation-letter.pdf")
 
     def test_general_cv_title_validation_and_slug(self):
         self.assertEqual(jobflow.validate_general_cv_title("  AI   Engineer (NLP)  "), "AI Engineer (NLP)")
@@ -1092,8 +1179,11 @@ class JobFlowTest(unittest.TestCase):
         for command in re.findall(r"^## `(/[^`]+)`", commands, re.M):
             self.assertIn(command, agents)
             self.assertIn(command, readme)
-        runtime_prompts = [Path(__file__).parents[1] / "AUTOMATION.md", *prompts.glob("*.md")]
+        marketplace_prompt = prompts / "discover_marketplaces_with_plugins.md"
+        runtime_prompts = [Path(__file__).parents[1] / "AUTOMATION.md",
+                           *(path for path in prompts.glob("*.md") if path != marketplace_prompt)]
         self.assertLessEqual(sum(path.stat().st_size for path in runtime_prompts), 24_000)
+        self.assertLessEqual(marketplace_prompt.stat().st_size, 1_500)
         json.loads((Path(__file__).parents[1] / "agent_brief.schema.json").read_text())
         json.loads((Path(__file__).parents[1] / "agent_run.schema.json").read_text())
         json.loads((Path(__file__).parents[1] / "general_cv_result.schema.json").read_text())
@@ -1547,10 +1637,25 @@ City | Aug 2026 – Dec 2026
             "cv", {})
         self.assertIn("CV project items must not show years/dates: Fraud Detection MLOps Pipeline | 2025",
                       project_date_failures)
+        heading_failures = jobflow.document_preflight(
+            "# Alex Example\n## Summary\nx\n## Experience\n### Role\n## Projects\nx\n"
+            "## Education\nx\n## Skills\n**Programming:** Python\n**Analytics:** SQL\n"
+            "## Languages\nEnglish (Fluent)", "cv", {})
+        self.assertIn("CV item headings must use single-asterisk item lines, not ### headings", heading_failures)
         letter_failures = jobflow.document_preflight(
             "short letter", "letter", {"application_questions": ["Why?"]})
         self.assertTrue(any("word count" in item for item in letter_failures))
         self.assertNotIn("application question 1 not labelled", letter_failures)
+        body = " ".join(["evidence"] * 290)
+        with mock.patch.object(jobflow, "candidate_name", return_value="Alex Example"):
+            valid_letter = jobflow.document_preflight(
+                f"# Alex Example\nalex@example.com | +31 6 00000000 | Rotterdam, Netherlands\n\n"
+                f"Dear Hiring Team,\n\n{body}\n\nKind regards,\n\nAlex Example", "letter", {})
+            invalid_letter = jobflow.document_preflight(
+                f"# Motivation Letter\nAlex Example\nExample B.V.\nDear Hiring Team,\n{body}", "letter", {})
+        self.assertFalse(valid_letter)
+        self.assertIn("letter must start with '# Candidate Name', one 'email | phone | location' line, then greeting",
+                      invalid_letter)
 
     def test_document_preflight_accepts_prior_cv_format(self):
         cv = (
@@ -1590,7 +1695,7 @@ City | Aug 2026 – Dec 2026
         self.assertTrue(any("CV missing role skill categories" in item for item in failures))
         self.assertTrue(any("CV lacks role-bank coverage" in item for item in failures))
 
-    def test_general_cv_check_records_reference_comparison_and_missing_reference_is_nonblocking(self):
+    def test_general_cv_check_records_reference_comparison_and_blocks_missing_reference(self):
         passing_cv = (
             "# Alex Example\n\n## Summary\nData Scientist with predictive modeling, NLP, time-series, process mining, "
             "reinforcement learning, imbalanced classification, dashboards, validation, and recommendations.\n"
@@ -1639,7 +1744,7 @@ City | Aug 2026 – Dec 2026
                  mock.patch.object(jobflow, "cv_reference", return_value=missing), \
                  mock.patch.object(jobflow, "make_pdf_comparison", side_effect=FileNotFoundError("missing")):
                 result = jobflow.general_cv_check("Data Scientist", folder)
-            self.assertTrue(result["passed"])
+            self.assertFalse(result["passed"])
             self.assertIn("visual_error", result)
 
     def test_letter_markdown_parser_keeps_only_header_contact_centered(self):
@@ -1875,6 +1980,57 @@ City | Aug 2026 – Dec 2026
         prior = {"source_sha256": digest, "scoring_version": "old"}
         self.assertNotEqual(prior["scoring_version"], jobflow.SCORING_VERSION)
 
+    def test_score_records_letter_comparison_and_blocks_comparison_failure(self):
+        old = jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            jobflow.DATA, jobflow.ARTIFACTS = root / "data", root / "artifacts"
+            jobflow.DB_PATH = jobflow.DATA / "jobs.sqlite3"
+            conn = jobflow.db()
+            conn.execute("INSERT INTO jobs(id,company,title,location,url,description,status,relevance,reasons,discovered_at) "
+                         "VALUES ('job','Example','Data Scientist','NL','https://example.test','Python',"
+                         "'accepted',80,'[]','now')")
+            conn.commit(); conn.close()
+            artifact = jobflow.ARTIFACTS / "job"; artifact.mkdir(parents=True)
+            letter = ("# Alex Example\nalex@example.com | +31 6 00000000 | Rotterdam, Netherlands\n\n"
+                      "Dear Hiring Team,\n\n" + " ".join(["Python"] * 290) +
+                      "\n\nKind regards,\n\nAlex Example")
+            (artifact / "letter.md").write_text(letter)
+            (artifact / "brief.json").write_text(json.dumps({"application_questions": []}))
+            reference = root / "reference.pdf"; reference.write_bytes(b"pdf")
+            render = {"pages": 1, "one_page": True, "text_words": 305, "renderer": "docx",
+                      "docx": str(artifact / "letter.docx"), "cached": False}
+            compare = lambda _generated, _reference, destination, _kind: destination.write_bytes(b"png")
+            with mock.patch.object(jobflow, "candidate_name", return_value="Alex Example"), \
+                 mock.patch.object(jobflow, "master_cv", return_value=letter), \
+                 mock.patch.object(jobflow, "render_pdf", return_value=render), \
+                 mock.patch.object(jobflow, "document_reference", return_value=reference), \
+                 mock.patch.object(jobflow, "make_pdf_comparison", side_effect=compare), \
+                 redirect_stdout(io.StringIO()):
+                jobflow.score("job", "letter")
+            check = jobflow.db()
+            first = json.loads(check.execute("SELECT details FROM evaluations WHERE attempt=1").fetchone()[0])
+            self.assertEqual(Path(first["visual_comparison"]).name, "letter-comparison-1.png")
+            self.assertTrue(Path(first["visual_comparison"]).is_file())
+            check.close()
+
+            (artifact / "letter.md").write_text(letter + "\n")
+            with mock.patch.object(jobflow, "candidate_name", return_value="Alex Example"), \
+                 mock.patch.object(jobflow, "master_cv", return_value=letter), \
+                 mock.patch.object(jobflow, "render_pdf", return_value=render), \
+                 mock.patch.object(jobflow, "document_reference", return_value=reference), \
+                 mock.patch.object(jobflow, "make_pdf_comparison", side_effect=ValueError("not A4")), \
+                 redirect_stdout(io.StringIO()):
+                jobflow.score("job", "letter")
+            check = jobflow.db()
+            second = json.loads(check.execute("SELECT details FROM evaluations WHERE attempt=2").fetchone()[0])
+            check.close()
+            self.assertIn("not A4", second["visual_error"])
+            self.assertTrue(any("visual reference comparison failed" in failure
+                                for failure in second["categorized_failures"]["layout_failures"]))
+            self.assertFalse(second["gates"]["layout_gate"])
+        jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH = old
+
     def test_score_skips_render_when_cheap_gate_fails(self):
         old = jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH
         with tempfile.TemporaryDirectory() as folder:
@@ -1950,7 +2106,7 @@ City | Aug 2026 – Dec 2026
 
     def test_preflight_reports_environment_shape(self):
         output = io.StringIO()
-        with mock.patch.object(jobflow, "telegram_api_check", return_value=False), redirect_stdout(output):
+        with mock.patch.object(jobflow, "telegram_api_check", return_value=(False, None)), redirect_stdout(output):
             jobflow.environment_preflight()
         payload = json.loads(output.getvalue())
         self.assertIn("manual_contact_fallback", payload)
@@ -1964,7 +2120,7 @@ City | Aug 2026 – Dec 2026
 
         def fake_check(token, method, data=None):
             checks.append((token, method, data))
-            return method == "getMe"
+            return method == "getMe", None
 
         with mock.patch.dict(os.environ, {"TELEGRAM_BOT_TOKEN": "token", "TELEGRAM_CHAT_ID": "123"}, clear=False), \
              mock.patch.object(jobflow, "telegram_api_check", side_effect=fake_check):
@@ -1973,6 +2129,22 @@ City | Aug 2026 – Dec 2026
         self.assertFalse(payload["telegram_chat_valid"])
         self.assertIn(("token", "getMe", None), checks)
         self.assertIn(("token", "getChat", {"chat_id": "123"}), checks)
+
+    def test_telegram_api_check_distinguishes_rejection_from_network_failure(self):
+        accepted = mock.Mock(ok=True)
+        accepted.json.return_value = {"ok": True}
+        rejected = mock.Mock(ok=False)
+        rejected.json.return_value = {"ok": False}
+        with mock.patch.object(jobflow.requests, "post", side_effect=[accepted, rejected]):
+            self.assertEqual(jobflow.telegram_api_check("token", "getMe"), (True, None))
+            self.assertEqual(jobflow.telegram_api_check("token", "getMe"), (False, None))
+
+        with mock.patch.dict(os.environ, {"TELEGRAM_BOT_TOKEN": "token", "TELEGRAM_CHAT_ID": "123"}, clear=False), \
+             mock.patch.object(jobflow.requests, "post", side_effect=requests.ConnectionError("blocked")):
+            payload = jobflow.preflight_status()
+        self.assertIsNone(payload["telegram_token_valid"])
+        self.assertIsNone(payload["telegram_chat_valid"])
+        self.assertEqual(payload["telegram_error"], "network")
 
     def test_next_actions_reports_operational_queues(self):
         old = jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH
@@ -2123,6 +2295,34 @@ City | Aug 2026 – Dec 2026
             (artifact / "quality.json").write_text(json.dumps({"status": "NEEDS REVIEW"}))
             with mock.patch.dict(os.environ, {"TELEGRAM_CHAT_ID": "123", "TELEGRAM_BOT_TOKEN": "token"}, clear=False):
                 with self.assertRaisesRegex(SystemExit, "no final document score may be below 85"):
+                    jobflow.deliver("job")
+        jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH = old
+
+    def test_pass_delivery_requires_clean_layout_risks_and_latest_comparisons(self):
+        old = jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            jobflow.DATA, jobflow.ARTIFACTS = root / "data", root / "artifacts"
+            jobflow.DB_PATH = jobflow.DATA / "jobs.sqlite3"
+            conn = jobflow.db()
+            conn.execute("INSERT INTO jobs(id,company,title,location,url,description,status,relevance,reasons,discovered_at) "
+                         "VALUES ('job','Example','Data Scientist','NL','https://example.test','Python','accepted',80,'[]','now')")
+            for document in ("cv", "letter"):
+                conn.execute("INSERT INTO evaluations VALUES (?,?,?,?,?,?)",
+                             ("job", document, 1, 90, json.dumps({"visual_comparison": str(root / f"{document}.png")}), "now"))
+            conn.commit(); conn.close()
+            artifact = jobflow.ARTIFACTS / "job"; artifact.mkdir(parents=True)
+            for name in ("cv.md", "letter.md", "outreach.md"):
+                (artifact / name).write_text("# Draft\n")
+            quality = artifact / "quality.json"
+            quality.write_text(json.dumps({"status": "PASS"}))
+            environment = {"TELEGRAM_CHAT_ID": "123", "TELEGRAM_BOT_TOKEN": "token"}
+            with mock.patch.dict(os.environ, environment, clear=False):
+                with self.assertRaisesRegex(SystemExit, "empty layout_risks"):
+                    jobflow.deliver("job")
+            quality.write_text(json.dumps({"status": "PASS", "layout_risks": []}))
+            with mock.patch.dict(os.environ, environment, clear=False):
+                with self.assertRaisesRegex(SystemExit, "latest visual comparisons: cv, letter"):
                     jobflow.deliver("job")
         jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH = old
 
@@ -2426,6 +2626,36 @@ City | Aug 2026 – Dec 2026
             with redirect_stdout(output):
                 jobflow.list_jobs("active", "screening")
             self.assertEqual([row["id"] for row in json.loads(output.getvalue())], ["screen"])
+        jobflow.DATA, jobflow.DB_PATH = old
+
+    def test_job_list_scan_run_isolates_current_jobs_but_unscoped_keeps_backlog(self):
+        old = jobflow.DATA, jobflow.DB_PATH
+        with tempfile.TemporaryDirectory() as folder:
+            jobflow.DATA, jobflow.DB_PATH = Path(folder), Path(folder) / "jobs.sqlite3"
+            conn = jobflow.db()
+            for jid, status in (("current-screen", "screening"), ("stale-screen", "screening"),
+                                ("current-accepted", "accepted"), ("backlog-accepted", "accepted")):
+                conn.execute("INSERT INTO jobs(id,company,title,location,url,description,status,relevance,reasons,discovered_at) "
+                             "VALUES (?,?,?,?,?,?,?,?,?,?)", (jid, "Example", "Data", "Amsterdam",
+                             f"https://x/{jid}", "", status, 50, "[]", "now"))
+            conn.execute("INSERT INTO scan_runs(started_at,finished_at,screening_job_ids) VALUES (?,?,?)",
+                         ("now", "now", json.dumps(["current-screen", "current-accepted"])))
+            conn.commit(); conn.close()
+
+            def listed(status, scan_run=None):
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    jobflow.list_jobs("active", status, scan_run)
+                return [row["id"] for row in json.loads(output.getvalue())]
+
+            self.assertEqual(listed("screening", "latest"), ["current-screen"])
+            self.assertEqual(listed("accepted", "latest"), ["current-accepted"])
+            self.assertEqual(set(listed("accepted")), {"current-accepted", "backlog-accepted"})
+
+            conn = jobflow.db()
+            conn.execute("INSERT INTO scan_runs(started_at,finished_at) VALUES ('later','later')")
+            conn.commit(); conn.close()
+            self.assertEqual(listed("screening", "latest"), [])
         jobflow.DATA, jobflow.DB_PATH = old
 
     def test_job_list_orders_by_original_match_then_posting_date(self):

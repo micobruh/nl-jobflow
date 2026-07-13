@@ -19,11 +19,9 @@ and blockers.
 Run discovery and screening only:
 
 1. Read `AGENTS.md` and `AUTOMATION.md`.
-2. Run `python jobflow.py scan`, then `python jobflow.py prune`.
+2. Follow the optional agent marketplace step in `AUTOMATION.md`, then run `python jobflow.py scan [--marketplace-results ...]` and `python jobflow.py prune`; capture the returned `scan_run_id` and `screening_job_ids`.
 3. Run reports: `lead-report`, `marketplace-report`, `source-health`.
-4. Evaluate every `data/screening/*.json` by ascending `priority` with
-   `prompts/evaluate_job.md`; save `data/matches/<job-id>.json`; run
-   `python jobflow.py record-match <job-id> data/matches/<job-id>.json`.
+4. If the scan found zero listings or returned no `screening_job_ids`, stop with no job decisions or PDFs. Otherwise run `python jobflow.py jobs --status active --workflow-status screening --scan-run <scan_run_id>` and evaluate only those returned jobs with `prompts/evaluate_job.md`; save `data/matches/<job-id>.json`; run `python jobflow.py record-match <job-id> data/matches/<job-id>.json`.
 5. Stop before contacts, writers, reviewers, scoring, rendering, and delivery.
 
 Report scan summary, marketplace summary, accepted/rejected/deferred jobs,

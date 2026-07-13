@@ -40,7 +40,7 @@ CHALLENGE_RE = re.compile(
     re.I,
 )
 RENDER_CACHE_VERSION = "jobflow-docx-v5"
-SCORING_VERSION = "supported-concepts-v2"
+SCORING_VERSION = "supported-concepts-v3"
 BANNED_CV_PHRASES = (
     "results-driven", "dynamic individual", "highly motivated", "team player",
     "proven track record", "passionate about", "passionate professional",
@@ -376,6 +376,15 @@ def validate_config(cfg: dict) -> None:
     criteria = cfg.get("search_criteria")
     if not isinstance(applicant, dict) or not isinstance(criteria, dict):
         raise SystemExit("config.yaml requires applicant and search_criteria sections")
+    references = cfg.get("visual_references")
+    role_references = cfg.get("cv_references")
+    if (not isinstance(references, dict) or set(references) != {"cv", "letter"} or
+            any(not isinstance(value, str) or not value or Path(value).name != value or
+                Path(value).suffix.lower() != ".pdf" for value in references.values()) or
+            not isinstance(role_references, dict) or
+            any(not isinstance(value, str) or not value or Path(value).name != value or
+                Path(value).suffix.lower() != ".pdf" for value in role_references.values())):
+        raise SystemExit("visual references must contain safe PDF filenames")
     if applicant.get("residence_route") not in RESIDENCE_ROUTES:
         raise SystemExit("applicant.residence_route must be student_permit, orientation_year, highly_skilled_migrant, or other")
     if applicant.get("study_status") not in {"enrolled", "graduated"}:
@@ -510,7 +519,7 @@ def db() -> sqlite3.Connection:
         CREATE TABLE IF NOT EXISTS scan_runs (
             id INTEGER PRIMARY KEY AUTOINCREMENT, started_at TEXT NOT NULL,
             finished_at TEXT, found INTEGER NOT NULL DEFAULT 0, accepted INTEGER NOT NULL DEFAULT 0,
-            error TEXT
+            error TEXT, screening_job_ids TEXT NOT NULL DEFAULT '[]'
         );
         CREATE TABLE IF NOT EXISTS job_matches (
             job_id TEXT PRIMARY KEY, score INTEGER NOT NULL, details TEXT NOT NULL, created_at TEXT NOT NULL
@@ -584,6 +593,9 @@ def db() -> sqlite3.Connection:
     }.items():
         if name not in company_columns:
             conn.execute(f"ALTER TABLE companies ADD COLUMN {name} {sql_type}")
+    scan_columns = {row[1] for row in conn.execute("PRAGMA table_info(scan_runs)")}
+    if "screening_job_ids" not in scan_columns:
+        conn.execute("ALTER TABLE scan_runs ADD COLUMN screening_job_ids TEXT NOT NULL DEFAULT '[]'")
     return conn
 
 
@@ -698,6 +710,29 @@ def refresh_sponsors(conn: sqlite3.Connection, cfg: dict) -> int:
             [(key, name, kvk, now) for key, (name, kvk) in entries.items()],
         )
     return len(entries)
+
+
+def ensure_sponsor_snapshot(conn: sqlite3.Connection, cfg: dict,
+                            now: datetime | None = None) -> dict:
+    row = conn.execute("SELECT COUNT(*) count,MAX(fetched_at) fetched_at FROM sponsors").fetchone()
+    count, fetched_at = row["count"], row["fetched_at"]
+    current = now or datetime.now(timezone.utc)
+    try:
+        stale = current - datetime.fromisoformat(fetched_at) >= timedelta(hours=24)
+    except (TypeError, ValueError):
+        stale = True
+    valid = count >= 100
+    if valid and not stale:
+        return {"count": count, "fetched_at": fetched_at, "status": "fresh"}
+    try:
+        count = refresh_sponsors(conn, cfg)
+    except Exception as exc:
+        if not valid:
+            raise RuntimeError(f"invalid sponsor snapshot ({count} entries) and refresh failed: {exc}") from exc
+        emit(f"sponsor refresh failed; using valid stale snapshot: {exc}", stream=sys.stderr)
+        return {"count": count, "fetched_at": fetched_at, "status": "stale_fallback"}
+    fetched_at = conn.execute("SELECT MAX(fetched_at) FROM sponsors").fetchone()[0]
+    return {"count": count, "fetched_at": fetched_at, "status": "refreshed"}
 
 
 def seed_companies(conn: sqlite3.Connection, cfg: dict) -> None:
@@ -1130,16 +1165,78 @@ def marketplace_jobs(source: str, queries: list[str], limit: int, max_age_hours:
     return jobs
 
 
-def discover_marketplaces(conn: sqlite3.Connection, cfg: dict, sponsors: set[str], cv: str) -> dict:
+def marketplace_result_files(values: list[str]) -> dict[str, Path]:
+    result = {}
+    for value in values:
+        source, separator, filename = value.partition("=")
+        if not separator or source not in {"linkedin", "indeed"} or not filename or source in result:
+            raise SystemExit("--marketplace-results must be unique linkedin=FILE or indeed=FILE values")
+        result[source] = Path(filename).expanduser()
+    return result
+
+
+def marketplace_jobs_from_file(source: str, path: Path, limit: int) -> list[dict]:
+    if not path.is_file() or path.stat().st_size > 5_000_000:
+        raise ValueError("result file must exist and be at most 5 MB")
+    try:
+        value = json.loads(path.read_text())
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"invalid JSON: {exc}") from exc
+    if not isinstance(value, list):
+        raise ValueError("result file must contain a JSON array")
+    required = {"title": 500, "company": 500, "location": 2_000,
+                "description": 200_000, "url": 4_000}
+    optional = {"employment_type": 500, "posted_at": 200}
+    expected_host = f"{source}.com"
+    jobs, seen = [], set()
+    for index, item in enumerate(value):
+        if not isinstance(item, dict):
+            raise ValueError(f"result {index} must be an object")
+        job = {}
+        for field, maximum in required.items():
+            text = item.get(field)
+            if not isinstance(text, str) or not text.strip() or len(text) > maximum:
+                raise ValueError(f"result {index} has invalid {field}")
+            job[field] = text.strip()
+        parsed = urlparse(job["url"])
+        host = parsed.netloc.lower().split(":", 1)[0]
+        if parsed.scheme != "https" or not (host == expected_host or host.endswith("." + expected_host)):
+            raise ValueError(f"result {index} URL is not from {expected_host}")
+        for field, maximum in optional.items():
+            text = item.get(field, "")
+            if not isinstance(text, str) or len(text) > maximum:
+                raise ValueError(f"result {index} has invalid {field}")
+            job[field] = text.strip()
+        if job["url"] not in seen:
+            jobs.append(job)
+            seen.add(job["url"])
+    return jobs[:limit]
+
+
+def discover_marketplaces(conn: sqlite3.Connection, cfg: dict, sponsors: set[str], cv: str,
+                          result_files: dict[str, Path] | None = None) -> dict:
     settings = cfg.get("marketplace_discovery", {})
-    totals = {"found": 0, "screening": 0, "rejected": 0, "duplicate": 0, "unmatched": 0, "errors": 0}
+    totals = {"found": 0, "screening": 0, "rejected": 0, "duplicate": 0, "unmatched": 0, "errors": 0,
+              "screening_job_ids": []}
     if not settings.get("enabled", False):
         return totals
+    result_files = result_files or {}
     for source in ("linkedin", "indeed"):
         try:
-            jobs = marketplace_jobs(source, settings["queries"], int(settings["max_results_per_source"]),
-                                    int(settings["max_age_hours"]))
-            source_counts = {key: 0 for key in totals}
+            mode = "fallback"
+            if source in result_files:
+                try:
+                    jobs = marketplace_jobs_from_file(
+                        source, result_files[source], int(settings["max_results_per_source"]))
+                    mode = "agent"
+                except ValueError as exc:
+                    emit(f"marketplace {source}: agent results rejected ({exc}); using fallback", stream=sys.stderr)
+                    jobs = marketplace_jobs(source, settings["queries"], int(settings["max_results_per_source"]),
+                                            int(settings["max_age_hours"]))
+            else:
+                jobs = marketplace_jobs(source, settings["queries"], int(settings["max_results_per_source"]),
+                                        int(settings["max_age_hours"]))
+            source_counts = {key: 0 for key in totals if key != "screening_job_ids"}
             for job in jobs:
                 source_counts["found"] += 1
                 sponsor_key = strict_sponsor_key(job.get("company", ""), sponsors, cfg)
@@ -1153,11 +1250,14 @@ def discover_marketplaces(conn: sqlite3.Connection, cfg: dict, sponsors: set[str
                 inserted = save_job(conn, job, result, sponsor_key, source)
                 status = "screening" if result.eligible and inserted else "duplicate" if not inserted else "rejected"
                 source_counts[status] += 1
+                if status == "screening":
+                    totals["screening_job_ids"].append(job_id(job))
                 record_lead_import(conn, source, job["url"], status, result.rejection_reasons,
                                    job.get("company", ""), job.get("title", ""))
             for key, value in source_counts.items():
                 totals[key] += value
-            emit(f"marketplace {source}: " + ", ".join(f"{k}={v}" for k, v in source_counts.items()))
+            emit(f"marketplace {source} [{mode}]: " +
+                 ", ".join(f"{k}={v}" for k, v in source_counts.items()))
         except Exception as exc:
             totals["errors"] += 1
             emit(f"marketplace {source}: stopped: {exc}", stream=sys.stderr)
@@ -1787,15 +1887,14 @@ def source_health() -> None:
     print(json.dumps(rows, indent=2))
 
 
-def scan() -> None:
+def scan(marketplace_results: dict[str, Path] | None = None) -> None:
     cfg, conn = config(), db()
     run = conn.execute("INSERT INTO scan_runs(started_at) VALUES (?)", (datetime.now(timezone.utc).isoformat(),)).lastrowid
     found = accepted_count = seniority_rejected = sources_ok = sources_failed = 0
+    screening_job_ids: list[str] = []
     failure_kinds: dict[str, int] = {}
     try:
-        count = conn.execute("SELECT COUNT(*) FROM sponsors").fetchone()[0]
-        if count == 0:
-            refresh_sponsors(conn, cfg)
+        sponsor_snapshot = ensure_sponsor_snapshot(conn, cfg)
         seed_companies(conn, cfg)
         cleaned = cleanup_out_of_scope_jobs(conn)
         sponsors = {r[0] for r in conn.execute("SELECT normalized_name FROM sponsors")}
@@ -1825,6 +1924,7 @@ def scan() -> None:
                                                   for reason in result.rejection_reasons))
                     if save_job(conn, job, result, row["normalized_name"], discovery_source) and result.eligible:
                         accepted_count += 1
+                        screening_job_ids.append(job_id(job))
                 if complete and discovery_source == "direct":
                     mark_source_misses(conn, row["normalized_name"], seen_urls)
                 mark_source_success(conn, row["normalized_name"], len(jobs))
@@ -1838,24 +1938,28 @@ def scan() -> None:
                      stream=sys.stderr)
             finally:
                 conn.execute("UPDATE companies SET last_scanned_at=? WHERE display_name=?", (datetime.now(timezone.utc).isoformat(), row["display_name"]))
-        marketplace = discover_marketplaces(conn, cfg, sponsors, cv)
+        marketplace = discover_marketplaces(conn, cfg, sponsors, cv, marketplace_results)
         found += marketplace["found"]
         accepted_count += marketplace["screening"]
+        screening_job_ids.extend(marketplace["screening_job_ids"])
+        screening_job_ids = list(dict.fromkeys(screening_job_ids))
         missing = conn.execute(
             "SELECT display_name FROM companies WHERE sponsor=1 AND career_url IS NULL "
             "ORDER BY COALESCE(last_scanned_at,'') LIMIT ?", (cfg["tier2_batch_size"],)
         ).fetchall()
         DATA.mkdir(exist_ok=True)
         (DATA / "discovery_needed.json").write_text(json.dumps([r[0] for r in missing], indent=2))
-        conn.execute("UPDATE scan_runs SET finished_at=?,found=?,accepted=? WHERE id=?",
-                     (datetime.now(timezone.utc).isoformat(), found, accepted_count, run))
+        conn.execute("UPDATE scan_runs SET finished_at=?,found=?,accepted=?,screening_job_ids=? WHERE id=?",
+                     (datetime.now(timezone.utc).isoformat(), found, accepted_count,
+                      json.dumps(screening_job_ids), run))
         conn.commit()
         availability = {
             "active": conn.execute("SELECT COUNT(*) FROM jobs WHERE unavailable_at IS NULL AND archived_at IS NULL").fetchone()[0],
             "unavailable": conn.execute("SELECT COUNT(*) FROM jobs WHERE unavailable_at IS NOT NULL AND archived_at IS NULL").fetchone()[0],
             "archived": conn.execute("SELECT COUNT(*) FROM jobs WHERE archived_at IS NOT NULL").fetchone()[0],
         }
-        emit(json.dumps({"found": found, "new_accepted": accepted_count,
+        emit(json.dumps({"scan_run_id": run, "found": found, "new_accepted": accepted_count,
+                         "screening_job_ids": screening_job_ids, "sponsor_snapshot": sponsor_snapshot,
                          "seniority_rejected": seniority_rejected, "sources": len(candidates),
                          "sources_ok": sources_ok, "sources_failed": sources_failed,
                          "sources_deferred": sources_deferred, "failure_kinds": failure_kinds,
@@ -1886,7 +1990,30 @@ def prune() -> None:
     print(json.dumps({"archived": len(rows), "retention_days": cfg["retention_days"]}))
 
 
-def list_jobs(availability: str, workflow_status: str | None = None) -> None:
+def scan_run_job_ids(conn: sqlite3.Connection, value: str) -> tuple[int, list[str]]:
+    if value == "latest":
+        row = conn.execute("SELECT id,screening_job_ids FROM scan_runs ORDER BY id DESC LIMIT 1").fetchone()
+    else:
+        try:
+            run_id = int(value)
+        except ValueError as exc:
+            raise SystemExit("--scan-run must be a positive integer or latest") from exc
+        if run_id <= 0:
+            raise SystemExit("--scan-run must be a positive integer or latest")
+        row = conn.execute("SELECT id,screening_job_ids FROM scan_runs WHERE id=?", (run_id,)).fetchone()
+    if not row:
+        raise SystemExit("scan run not found")
+    try:
+        ids = json.loads(row["screening_job_ids"])
+    except (TypeError, ValueError) as exc:
+        raise SystemExit("scan run has invalid screening job IDs") from exc
+    if not isinstance(ids, list) or any(not isinstance(jid, str) or not jid for jid in ids):
+        raise SystemExit("scan run has invalid screening job IDs")
+    return row["id"], list(dict.fromkeys(ids))
+
+
+def list_jobs(availability: str, workflow_status: str | None = None,
+              scan_run: str | None = None) -> None:
     conn = db()
     conditions = {
         "active": "j.unavailable_at IS NULL AND j.archived_at IS NULL",
@@ -1894,11 +2021,14 @@ def list_jobs(availability: str, workflow_status: str | None = None) -> None:
         "archived": "j.archived_at IS NOT NULL",
     }
     workflow_clause = " AND j.status=?" if workflow_status else ""
-    params = (workflow_status,) if workflow_status else ()
-    rows = [dict(row) for row in conn.execute(
+    params: list = [workflow_status] if workflow_status else []
+    ids = scan_run_job_ids(conn, scan_run)[1] if scan_run else None
+    scan_clause = f" AND j.id IN ({','.join('?' * len(ids))})" if ids else ""
+    params.extend(ids or [])
+    rows = [] if ids == [] else [dict(row) for row in conn.execute(
         f"SELECT j.id,j.company,j.title,j.url,j.status,j.relevance,j.posted_at,j.warnings,j.verification_needed,m.score match_score,"
         f"j.last_seen_at,j.unavailable_at,j.archived_at FROM jobs j LEFT JOIN job_matches m ON m.job_id=j.id "
-        f"WHERE {conditions[availability]}{workflow_clause} "
+        f"WHERE {conditions[availability]}{workflow_clause}{scan_clause} "
         f"ORDER BY COALESCE(m.score,j.relevance) DESC,j.posted_at DESC,COALESCE(j.last_seen_at,j.discovered_at) DESC",
         params)]
     for row in rows:
@@ -2156,6 +2286,8 @@ def document_preflight(document: str, document_type: str, brief: dict, cfg: dict
                   if match.group(1).lower() in required]
         if not missing and actual != list(required):
             failures.append("CV sections out of order: expected Summary, Experience, Projects, Education, Skills, Languages")
+        if re.search(r"(?m)^###\s+", document):
+            failures.append("CV item headings must use single-asterisk item lines, not ### headings")
         lower = document.lower()
         banned = [phrase for phrase in BANNED_CV_PHRASES if phrase in lower]
         if banned:
@@ -2205,6 +2337,15 @@ def document_preflight(document: str, document_type: str, brief: dict, cfg: dict
     elif document_type == "letter":
         if not 300 <= words <= 450:
             failures.append(f"letter word count outside 300-450 ({words})")
+        lines = [line.strip() for line in document.splitlines() if line.strip()]
+        expected_title = f"# {candidate_name()}"
+        contact_parts = [clean_markdown_text(part) for part in lines[1].split("|")] if len(lines) > 1 else []
+        valid_contact = (len(contact_parts) == 3 and "@" in contact_parts[0] and
+                         bool(re.search(r"\d", contact_parts[1])) and
+                         bool(contact_parts[2]) and not re.search(r"https?://|linkedin|github", lines[1], re.I))
+        if (not lines or clean_markdown_text(lines[0]) != clean_markdown_text(expected_title) or
+                not valid_contact or len(lines) < 3 or not re.match(r"(?i)^Dear\b.+,$", lines[2])):
+            failures.append("letter must start with '# Candidate Name', one 'email | phone | location' line, then greeting")
     return failures
 
 
@@ -2456,8 +2597,11 @@ def score(jid: str, documents: str = "all") -> None:
             (jid, name)).fetchone()
         if latest:
             prior = json.loads(latest["details"])
+            comparison_current = (prior.get("pdf_pages") != 1 or
+                                  isinstance(prior.get("visual_comparison"), str) and
+                                  Path(prior["visual_comparison"]).is_file())
             if (prior.get("source_sha256") == digest and
-                    prior.get("scoring_version") == SCORING_VERSION):
+                    prior.get("scoring_version") == SCORING_VERSION and comparison_current):
                 reused += 1
                 results[name] = {"score": latest["score"], "attempt": latest["attempt"], **prior,
                                  "passed": all(prior.get("gates", {}).values()),
@@ -2493,17 +2637,18 @@ def score(jid: str, documents: str = "all") -> None:
         if (not layout["one_page"] or details["generic_phrases"] or details["preflight_failures"] or
                 details["categorized_failures"]["truth_failures"] or details["categorized_failures"]["tone_failures"]):
             value = min(value, cfg["ats_threshold"] - 1)
-        if name == "cv" and layout["one_page"]:
-            reference = cv_reference(row["title"], cfg)
-            if reference:
-                details["visual_reference"] = str(reference)
-                try:
-                    comparison = folder / f"cv-comparison-{attempt}.png"
-                    make_pdf_comparison(path.with_suffix(".pdf"), reference, comparison)
-                    details["visual_comparison"] = str(comparison)
-                except Exception as exc:
-                    details["visual_error"] = str(exc)
-                    value = min(value, cfg["ats_threshold"])
+        if layout["one_page"]:
+            reference = document_reference(name, row["title"], cfg)
+            details["visual_reference"] = str(reference)
+            try:
+                comparison = folder / f"{name}-comparison-{attempt}.png"
+                make_pdf_comparison(path.with_suffix(".pdf"), reference, comparison, name)
+                details["visual_comparison"] = str(comparison)
+            except Exception as exc:
+                details["visual_error"] = str(exc)
+                details["categorized_failures"]["layout_failures"].append(
+                    f"{name} visual reference comparison failed: {exc}")
+                value = min(value, cfg["ats_threshold"] - 1)
         details["gates"] = quality_gates(value, details, cfg)
         with conn:
             conn.execute("INSERT INTO evaluations VALUES (?,?,?,?,?,?)",
@@ -2523,13 +2668,22 @@ def cv_role(title: str, cfg: dict | None = None) -> str:
                  if re.search(pattern, title, re.I)), settings.get("cv_default_role", "general"))
 
 
-def cv_reference(title: str, cfg: dict | None = None) -> Path | None:
+def cv_reference(title: str, cfg: dict | None = None) -> Path:
     settings = cfg or config()
-    filename = settings.get("cv_references", {}).get(cv_role(title, settings))
+    filename = (settings.get("cv_references", {}).get(cv_role(title, settings)) or
+                settings["visual_references"]["cv"])
     return ROOT / "references" / filename if filename else None
 
 
-def make_pdf_comparison(generated: Path, reference: Path, destination: Path) -> None:
+def document_reference(document_type: str, title: str = "", cfg: dict | None = None) -> Path:
+    settings = cfg or config()
+    if document_type == "cv":
+        return cv_reference(title, settings)
+    return ROOT / "references" / settings["visual_references"][document_type]
+
+
+def make_pdf_comparison(generated: Path, reference: Path, destination: Path,
+                        document_type: str = "cv") -> None:
     for pdf in (generated, reference):
         if not pdf.exists():
             raise FileNotFoundError(f"visual reference input missing: {pdf}")
@@ -2543,7 +2697,8 @@ def make_pdf_comparison(generated: Path, reference: Path, destination: Path) -> 
     with tempfile.TemporaryDirectory() as folder:
         folder = Path(folder)
         images = []
-        for label, pdf in (("Generated CV", generated), ("Reference CV", reference)):
+        kind = document_type.replace("_", " ").title()
+        for label, pdf in ((f"Generated {kind}", generated), (f"Reference {kind}", reference)):
             output = folder / label.lower().replace(" ", "-")
             subprocess.run(["pdftoppm", "-f", "1", "-l", "1", "-scale-to-x", "512",
                             "-scale-to-y", "-1", "-png", "-singlefile", str(pdf), str(output)], check=True)
@@ -2857,12 +3012,18 @@ def pdf_layout(destination: Path, cfg: dict | None = None) -> dict:
             "pdf_text_failures": [f"PDF text defect: {defect}" for defect in defects]}
 
 
-def telegram_api_check(token: str, method: str, data: dict | None = None) -> bool:
+def telegram_api_check(token: str, method: str, data: dict | None = None) -> tuple[bool | None, str | None]:
     try:
         response = requests.post(f"https://api.telegram.org/bot{token}/{method}", data=data or {}, timeout=10)
-        return bool(response.ok and response.json().get("ok"))
-    except Exception:
-        return False
+        return bool(response.ok and response.json().get("ok")), None
+    except requests.Timeout:
+        return None, "timeout"
+    except requests.exceptions.SSLError:
+        return None, "tls"
+    except requests.ConnectionError:
+        return None, "network"
+    except (requests.RequestException, ValueError):
+        return None, "request"
 
 
 def preflight_status() -> dict:
@@ -2895,9 +3056,13 @@ def preflight_status() -> dict:
         "manual_contact_fallback": placeholder_contacts()[0]["source"] == "unavailable",
     }
     if token:
-        status["telegram_token_valid"] = telegram_api_check(token, "getMe")
+        status["telegram_token_valid"], error = telegram_api_check(token, "getMe")
+        if error:
+            status["telegram_error"] = error
     if token and chat:
-        status["telegram_chat_valid"] = telegram_api_check(token, "getChat", {"chat_id": chat})
+        status["telegram_chat_valid"], error = telegram_api_check(token, "getChat", {"chat_id": chat})
+        if error:
+            status.setdefault("telegram_error", error)
     return status
 
 
@@ -3118,11 +3283,6 @@ def general_cv_check(title: str, folder: Path) -> dict:
     }
     if layout.get("one_page"):
         reference = cv_reference(title, cfg)
-        if not reference:
-            result["passed"] = bool(not failures and not details["unsupported_numbers"] and
-                                    not details["generic_phrases"])
-            (folder / "check.json").write_text(json.dumps(result, indent=2))
-            return result
         result["visual_reference"] = str(reference)
         try:
             comparison = folder / "cv-comparison.png"
@@ -3130,8 +3290,7 @@ def general_cv_check(title: str, folder: Path) -> dict:
             result["visual_comparison"] = str(comparison)
         except Exception as exc:
             result["visual_error"] = str(exc)
-            if reference.exists():
-                failures.append("CV visual comparison failed: " + str(exc))
+            failures.append("CV visual comparison failed: " + str(exc))
         if reference.exists():
             reference_text = subprocess.run(["pdftotext", str(reference), "-"], check=True,
                                             capture_output=True, text=True).stdout
@@ -3417,13 +3576,25 @@ def deliver(jid: str) -> None:
     quality_path = folder / "quality.json"
     quality = json.loads(quality_path.read_text()) if quality_path.exists() else {}
     gate = quality.get("status", "NEEDS REVIEW")
-    latest = {r["document"]: r["score"] for r in conn.execute(
-        "SELECT e.document,e.score FROM evaluations e JOIN (SELECT document,MAX(attempt) attempt FROM evaluations "
+    latest_rows = conn.execute(
+        "SELECT e.document,e.score,e.details FROM evaluations e JOIN (SELECT document,MAX(attempt) attempt FROM evaluations "
         "WHERE job_id=? GROUP BY document) x ON e.document=x.document AND e.attempt=x.attempt WHERE e.job_id=?", (jid, jid)
-    )}
+    ).fetchall()
+    latest = {r["document"]: r["score"] for r in latest_rows}
     caution_scores = near_pass_scores(latest, cfg["ats_threshold"])
     if gate != "PASS" and not caution_scores:
         raise SystemExit("quality.json must be PASS or no final document score may be below 85 with one or two documents scoring 85-89")
+    if gate == "PASS":
+        if quality.get("layout_risks") != []:
+            raise SystemExit("PASS quality.json requires an empty layout_risks array")
+        comparisons = {
+            row["document"]: json.loads(row["details"] or "{}").get("visual_comparison")
+            for row in latest_rows if row["document"] in {"cv", "letter"}
+        }
+        missing_comparisons = [name for name in ("cv", "letter")
+                               if not comparisons.get(name) or not Path(comparisons[name]).is_file()]
+        if missing_comparisons:
+            raise SystemExit("PASS delivery requires latest visual comparisons: " + ", ".join(missing_comparisons))
     cv_layout = render_pdf(required[0], required[0].with_suffix(".pdf"))
     if not cv_layout["one_page"]:
         raise SystemExit(f"CV PDF must be one page; rendered {cv_layout['pages']}")
@@ -3809,11 +3980,13 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("refresh-sponsors")
     sub.add_parser("setup")
-    sub.add_parser("scan")
+    scan_parser = sub.add_parser("scan")
+    scan_parser.add_argument("--marketplace-results", action="append", default=[], metavar="SOURCE=FILE")
     sub.add_parser("prune")
     jobs_parser = sub.add_parser("jobs")
     jobs_parser.add_argument("--status", choices=("active", "unavailable", "archived"), default="active")
     jobs_parser.add_argument("--workflow-status", choices=("screening", "accepted", "rejected", "needs_review", "delivered"))
+    jobs_parser.add_argument("--scan-run", metavar="ID|latest")
     rescreen_parser = sub.add_parser("rescreen")
     rescreen_parser.add_argument("--apply", action="store_true")
     add = sub.add_parser("add-source")
@@ -3873,11 +4046,11 @@ def main() -> None:
     elif args.command == "refresh-sponsors":
         print(refresh_sponsors(db(), config()))
     elif args.command == "scan":
-        scan()
+        scan(marketplace_result_files(args.marketplace_results))
     elif args.command == "prune":
         prune()
     elif args.command == "jobs":
-        list_jobs(args.status, args.workflow_status)
+        list_jobs(args.status, args.workflow_status, args.scan_run)
     elif args.command == "rescreen":
         rescreen(args.apply)
     elif args.command == "add-source":

@@ -90,6 +90,12 @@ Missing salary, sponsorship intent, security restrictions, education, or workpla
 
 `COMMANDS.md` contains the exact expansions. `AUTOMATION.md` defines scheduled orchestration. Lower-level deterministic commands are available through `python jobflow.py --help` and the `Makefile`.
 
+## Visual references
+
+Generated CVs and motivation letters must match the one-page A4 PDFs configured by
+`visual_references` in `config.defaults.yaml`. Role-specific `cv_references` in a policy may
+override the shared CV reference; filenames are resolved only inside `references/`.
+
 ## Optional Telegram drafts
 
 Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `.env` to deliver approved drafts to your own chat. Telegram is optional. Delivery still means “drafts to the applicant”; the workflow never sends anything to a recruiter.

@@ -15,6 +15,9 @@ tier2_batch_size: 40
 retention_days: 30
 ollama_url: http://127.0.0.1:11434
 slm_model: qwen3:4b-instruct
+visual_references:
+  cv: cv-data-scientist.pdf
+  letter: motivation-letter.pdf
 marketplace_discovery:
   enabled: true
   max_age_hours: 24

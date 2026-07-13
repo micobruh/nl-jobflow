@@ -10,6 +10,8 @@ Before writing, obey concepts, headings, budgets, questions, and renderer limits
 
 Use `experience_assessment` only for required-year claims, not as a CV visibility filter. Prefer direct roles and strong projects; supporting or excluded roles may fill evidence gaps when relevant and space permits. Never imply excluded experience satisfies required years.
 
-Use renderer-native Markdown, no HTML. Header: candidate name and contacts from `MASTER_CV`. CV: summary<=280 chars; experience/education `*Title | Dates*`; projects `*Supported Name*`, no dates; next line organization/institution, no location/dates; experience/project items <=4 bullets, each <=105 chars; if space after 2 experiences, add 3rd project. Skills: `**Category:** ...`. Languages: comma `Language (Level)` copied from `MASTER_CV`.
+Use renderer-native Markdown, no HTML. CV header: candidate name and contacts from `MASTER_CV`; never use `###` item headings. CV: summary<=280 chars; experience/education `*Title | Dates*`; projects `*Supported Name*`, no dates; next line organization/institution, no location/dates; experience/project items <=4 bullets, each <=105 chars; if space after 2 experiences, add 3rd project. Skills: `**Category:** ...`. Languages: comma `Language (Level)` copied from `MASTER_CV`.
+
+Letter header must be exactly `# Candidate Name`, then one `email | phone | location` line, then the greeting. Never write a “Motivation Letter” title, profile links, recipient/company/address block, or any other content above the greeting.
 
 Return short JSON matching `agent_run.schema.json`; put document content only in assigned files.
