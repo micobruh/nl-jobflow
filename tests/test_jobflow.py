@@ -36,6 +36,7 @@ def experience_fields(kind="none", minimum=0, count_status="excluded"):
             "relevance": "direct", "count_status": count_status,
             "evidence": ["Built Python systems."], "rationale": "Direct vacancy evidence.",
         }],
+        "project_assessment": [],
     }
 
 
@@ -790,6 +791,28 @@ class JobFlowTest(unittest.TestCase):
             self.assertEqual(compact_layout["pages"], 1)
             self.assertTrue(compact.with_suffix(".docx").exists())
 
+            core = ("# Alex Example\nalex@example.com | +31 6 00000000 | Amsterdam\n\n"
+                    "## Summary\nPython data analyst.\n\n{work}"
+                    "## Education\n*Data Science Certificate | 2023*\nUniversity\n\n"
+                    "## Skills\n**Programming:** Python\n**Analytics:** SQL\n\n"
+                    "## Languages\nEnglish (Fluent)")
+            fixtures = {
+                "experience": "## Experience\n" + "\n".join(
+                    f"*Data Analyst {index} | 202{index} - 202{index + 1}*\nCompany {index}\n- Built analytics report {index}.\n"
+                    for index in range(1, 5)),
+                "projects": "## Projects\n" + "\n".join(
+                    f"*Analytics Project {index}*\n- Built Python model and report {index}.\n" for index in range(1, 5)),
+            }
+            for kind, work in fixtures.items():
+                source = folder / f"{kind}.md"
+                source.write_text(core.format(work=work + "\n"))
+                brief = {"source_item_counts": {"experience": int(kind == "experience") * 4,
+                                                 "projects": int(kind == "projects") * 4},
+                         "generation_constraints": {
+                             "required_cv_sections": ["Summary", "Education", "Skills", "Languages"]}}
+                self.assertFalse(jobflow.document_preflight(source.read_text(), "cv", brief, self.cfg))
+                self.assertEqual(jobflow.render_pdf(source, source.with_suffix(".pdf"))["pages"], 1)
+
             overflow = folder / "overflow.md"
             overflow.write_text("# Alex Example\n\n## EXPERIENCE\n\n" + "\n".join("- Evidence" for _ in range(400)))
             self.assertGreater(jobflow.render_pdf(overflow, overflow.with_suffix(".pdf"))["pages"], 1)
@@ -1116,8 +1139,8 @@ class JobFlowTest(unittest.TestCase):
         self.assertIn("300–450 words", letter)
         self.assertIn("Hiring Team", letter)
         self.assertIn("Word-style DOCX/PDF renderer", letter)
-        self.assertIn("Word-style DOCX/PDF renderer", cv)
-        self.assertIn("Order: Header, Summary, Experience, Projects, Education, Skills, Languages.", cv)
+        self.assertIn("reference-like density", cv)
+        self.assertIn("optional Experience, optional Projects", cv)
         self.assertNotIn("unless Experience stronger", cv)
         preset_cv = (prompts / "presets" / "data_ai_general_cv.md").read_text()
         self.assertIn("AI / Machine Learning Engineer: `AI/ML`, `LLM/RAG`, `Engineering`, `Data`", preset_cv)
@@ -1161,9 +1184,10 @@ class JobFlowTest(unittest.TestCase):
         self.assertIn("Do not decide whether delivery is allowed", telegram_summary)
         self.assertIn("`reject` below 50", match)
         self.assertIn("Classify every `###` role under `Professional Experience` exactly once", match)
+        self.assertIn("project_assessment", match)
         self.assertIn("Python calculates dates and totals", match)
-        self.assertIn("count_status` controls required-year credit, not whether a role may appear", cv)
-        self.assertIn("select only supported, relevant roles", cv)
+        self.assertIn("count_status` controls required-year credit, not visibility", cv)
+        self.assertIn("Omit unrelated items", cv)
         self.assertIn("omit job/work location", cv)
         self.assertIn("no location, relocation, availability, or start date", cv)
         self.assertIn("visible application context", cv)
@@ -1217,7 +1241,9 @@ class JobFlowTest(unittest.TestCase):
             self.assertTrue((artifact / "job.md").exists())
             brief = json.loads((artifact / "brief.json").read_text())
             self.assertEqual(brief["contacts"], [])
-            self.assertEqual(brief["generation_constraints"]["cv_word_budget"], [350, 430])
+            self.assertEqual(brief["generation_constraints"]["cv_word_budget"], [0, 430])
+            self.assertEqual(brief["source_item_counts"], {"experience": 1, "projects": 0})
+            self.assertEqual(brief["project_assessment"], [])
         jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH = old
 
     def test_relevant_experience_uses_elapsed_unique_months_and_caution(self):
@@ -1255,6 +1281,41 @@ City | Aug 2026 – Dec 2026
         self.assertEqual((result["confirmed_months"], result["confirmed_or_possible_months"]), (3, 7))
         self.assertEqual(result["status"], "sufficient_with_caution")
         self.assertEqual(result["roles"][2]["elapsed_months"], 0)
+
+    def test_empty_master_cv_work_sections_are_valid_zero_evidence(self):
+        details = {"experience_requirement": {"kind": "mandatory", "minimum_months": 1,
+                                               "wording": "one month"},
+                   "experience_roles": [], "project_assessment": []}
+        for document in ("# Master CV\n\n## Education\nDegree\n",
+                         "## Professional Experience\n\n## Complete Project Bank\n\n## Education\nDegree\n"):
+            with self.subTest(document=document):
+                self.assertEqual(jobflow.professional_experience_roles(document), [])
+                self.assertEqual(jobflow.master_cv_projects(document), [])
+                assessment = jobflow.relevant_experience_assessment(details, document)
+                self.assertEqual((assessment["confirmed_months"],
+                                  assessment["confirmed_or_possible_months"], assessment["status"]),
+                                 (0, 0, "insufficient"))
+                self.assertEqual(jobflow.relevant_project_assessment(details, document), [])
+
+        with self.assertRaisesRegex(SystemExit, "content but no ### roles"):
+            jobflow.professional_experience_roles("## Professional Experience\nUnstructured work history")
+        with self.assertRaisesRegex(SystemExit, "content but no ### projects"):
+            jobflow.master_cv_projects("## Complete Project Bank\nUnstructured project history")
+
+    def test_project_assessment_requires_exact_complete_project_inventory(self):
+        master = ("## Complete Project Bank\n\n### Forecasting Platform\n\n"
+                  "- Built Python forecasts.\n\n### Delivery Work\n\n- Delivered orders.\n")
+        details = {"project_assessment": [
+            {"project": "Forecasting Platform", "relevance": "direct",
+             "evidence": ["Built Python forecasts."], "rationale": "Matches forecasting duties."},
+            {"project": "Delivery Work", "relevance": "unrelated",
+             "evidence": ["Delivered orders."], "rationale": "No vacancy-relevant evidence."},
+        ]}
+        self.assertEqual([item["relevance"] for item in
+                          jobflow.relevant_project_assessment(details, master)], ["direct", "unrelated"])
+        details["project_assessment"].pop()
+        with self.assertRaisesRegex(SystemExit, "classify every"):
+            jobflow.relevant_project_assessment(details, master)
 
     def test_relevant_experience_rejects_malformed_dates_and_invalid_counting(self):
         malformed = TEST_EXPERIENCE_CV.replace("Jan 2020 – Dec 2020", "during 2020")
@@ -1325,6 +1386,42 @@ City | Aug 2026 – Dec 2026
             ambiguous = json.loads((jobflow.ARTIFACTS / "example_data-analyst_ambiguous" / "brief.json").read_text())
             self.assertTrue(any("Relevant experience shortfall" in item for item in preferred["gaps"]))
             self.assertTrue(any("Relevant experience shortfall" in item for item in ambiguous["verification_needed"]))
+        jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH = old
+
+    def test_record_match_zero_experience_rejects_mandatory_but_generates_nonmandatory_brief(self):
+        old = jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            jobflow.DATA, jobflow.ARTIFACTS = root / "data", root / "artifacts"
+            jobflow.DB_PATH = jobflow.DATA / "jobs.sqlite3"
+            conn = jobflow.db()
+            for jid in ("mandatory", "optional"):
+                conn.execute("INSERT INTO jobs(id,company,title,location,url,description,status,relevance,reasons,discovered_at) "
+                             "VALUES (?,?,?,?,?,?,?,?,?,?)", (jid, "Example", "Data Analyst", "Netherlands",
+                             f"https://example.test/{jid}", "Python role", "screening", 80, "[]", "2026-01-01"))
+            conn.commit(); conn.close()
+            base = {"score": 80, "components": {"required_skills": 25, "responsibilities": 20,
+                    "seniority_experience": 10, "education_domain": 8, "ats_overlap": 12,
+                    "practical_constraints": 5}, "seniority": "entry", "responsibility_list": ["Build models"],
+                    "required_skill_list": ["Python"], "preferred_skill_list": [], "ats_keywords": ["Python"],
+                    "application_questions": [], "evidence_map": [], "missing_requirements": [],
+                    "job_summary": "Summary.", "experience_roles": [], "project_assessment": []}
+            path = root / "match.json"
+            with mock.patch.object(jobflow, "master_cv", return_value="## Education\nDegree\n"):
+                path.write_text(json.dumps({**base, "experience_requirement": {
+                    "kind": "mandatory", "minimum_months": 1, "wording": "one month"}}))
+                jobflow.record_match("mandatory", path)
+                path.write_text(json.dumps({**base, "experience_requirement": {
+                    "kind": "none", "minimum_months": 0, "wording": ""}}))
+                jobflow.record_match("optional", path)
+            check = jobflow.db()
+            self.assertEqual(check.execute("SELECT status FROM jobs WHERE id='mandatory'").fetchone()[0], "rejected")
+            self.assertEqual(check.execute("SELECT status FROM jobs WHERE id='optional'").fetchone()[0], "accepted")
+            check.close()
+            brief = json.loads((jobflow.ARTIFACTS / "example_data-analyst_optional" / "brief.json").read_text())
+            self.assertEqual(brief["source_item_counts"], {"experience": 0, "projects": 0})
+            self.assertEqual(brief["generation_constraints"]["required_cv_sections"],
+                             ["Summary", "Education", "Skills", "Languages"])
         jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH = old
 
     def test_record_match_rejects_non_entry_seniority(self):
@@ -1657,9 +1754,28 @@ City | Aug 2026 – Dec 2026
         self.assertIn("letter must start with '# Candidate Name', one 'email | phone | location' line, then greeting",
                       invalid_letter)
 
+    def test_document_preflight_allows_optional_work_sections_but_not_empty_headings(self):
+        core = ("# Alex Example\n\n## Summary\nPython analyst.\n\n## Education\nCertificate\n\n"
+                "## Skills\n**Programming:** Python\n**Analytics:** SQL\n\n"
+                "## Languages\nEnglish (Fluent)")
+        brief = {"source_item_counts": {"experience": 0, "projects": 0},
+                 "generation_constraints": {
+                     "required_cv_sections": ["Summary", "Education", "Skills", "Languages"]}}
+        self.assertFalse(jobflow.document_preflight(core, "cv", brief, self.cfg))
+
+        empty_experience = core.replace("## Education", "## Experience\n\n## Education")
+        failures = jobflow.document_preflight(empty_experience, "cv", brief, self.cfg)
+        self.assertIn("CV Experience section must contain at least one formatted item or be omitted", failures)
+        self.assertIn("CV Experience section must be omitted because the master CV has no source items", failures)
+
+        mixed = core.replace("## Education", "## Projects\n*Forecasting Platform*\n- Built forecasts.\n\n## Education")
+        available = {**brief, "source_item_counts": {"experience": 0, "projects": 1}}
+        self.assertFalse(jobflow.document_preflight(mixed, "cv", available, self.cfg))
+
     def test_document_preflight_accepts_prior_cv_format(self):
         cv = (
-            "# Alex Example\n\n## Summary\nx\n## Experience\nx\n## Projects\nx\n"
+            "# Alex Example\n\n## Summary\nx\n## Experience\n*Analyst | 2024 - 2025*\nExample\n- Built reports.\n"
+            "## Projects\n*Forecasting Platform*\n- Built forecasts.\n"
             "## Education\n*MSc Data Science and Artificial Intelligence | 2023 - 2025*\n"
             "Eindhoven University of Technology\n"
             "- Thesis: Reward-Free Safe Reinforcement Learning Exploration Using Different Entropy Measures\n"
@@ -1696,6 +1812,13 @@ City | Aug 2026 – Dec 2026
         self.assertTrue(any("CV lacks role-bank coverage" in item for item in failures))
 
     def test_general_cv_check_records_reference_comparison_and_blocks_missing_reference(self):
+        master = (
+            "## Professional Summary Bank\n### Data Scientist\nPredictive modeling.\n"
+            "## Professional Experience\n### Junior AI Specialist — Example Analytics\n"
+            "City | Jun 2026 – Sep 2026\n- Built modeling dashboards.\n"
+            "## Complete Project Bank\n### Fraud Detection MLOps Pipeline - IEEE-CIS\n"
+            "- Built predictive workflows.\n## Skills\nPython\n"
+        )
         passing_cv = (
             "# Alex Example\n\n## Summary\nData Scientist with predictive modeling, NLP, time-series, process mining, "
             "reinforcement learning, imbalanced classification, dashboards, validation, and recommendations.\n"
@@ -1716,12 +1839,13 @@ City | Aug 2026 – Dec 2026
             "Extra: " + ("predictive modeling validation dashboards recommendations workflows " * 29) + "\n"
             "## Languages\nEnglish (Fluent), Dutch (A2)\n"
         )
+        master += passing_cv
         with tempfile.TemporaryDirectory() as folder:
             folder = Path(folder)
             (folder / "cv.md").write_text(passing_cv)
             reference = folder / "reference.pdf"
             reference.write_bytes(b"pdf")
-            with mock.patch.object(jobflow, "master_cv", return_value=(folder / "cv.md").read_text()), \
+            with mock.patch.object(jobflow, "master_cv", return_value=master), \
                  mock.patch.object(jobflow, "render_pdf", return_value={
                      "pages": 1, "one_page": True, "text_words": 360, "renderer": "docx",
                      "docx": str(folder / "cv.docx"), "cached": False, "pdf_text_failures": []}), \
@@ -1737,7 +1861,7 @@ City | Aug 2026 – Dec 2026
             folder = Path(folder)
             (folder / "cv.md").write_text(passing_cv)
             missing = folder / "missing.pdf"
-            with mock.patch.object(jobflow, "master_cv", return_value=passing_cv), \
+            with mock.patch.object(jobflow, "master_cv", return_value=master), \
                  mock.patch.object(jobflow, "render_pdf", return_value={
                      "pages": 1, "one_page": True, "text_words": 360, "renderer": "docx",
                      "docx": str(folder / "cv.docx"), "cached": False, "pdf_text_failures": []}), \
@@ -2090,11 +2214,21 @@ City | Aug 2026 – Dec 2026
             conn.execute("INSERT INTO jobs(id,company,title,location,url,description,status,relevance,reasons,discovered_at) "
                          "VALUES ('manual','Example','Data Scientist','NL','manual://abc','Python','accepted',80,'[]','now')")
             conn.commit(); conn.close()
-            jobflow.collect_contacts("manual")
-            contacts = json.loads((jobflow.job_artifact_folder("manual", "Example", "Data Scientist") /
-                                   "contacts.json").read_text())
+            artifact = jobflow.job_artifact_folder("manual", "Example", "Data Scientist")
+            artifact.mkdir(parents=True)
+            (artifact / "brief.json").write_text(json.dumps({"generation_constraints": {
+                "cv_word_budget": [350, 430], "required_cv_sections": [
+                    "Summary", "Experience", "Projects", "Education", "Skills", "Languages"]}}))
+            with mock.patch.object(jobflow, "master_cv", return_value="## Education\nCertificate\n"):
+                jobflow.collect_contacts("manual")
+            contacts = json.loads((artifact / "contacts.json").read_text())
             self.assertEqual((contacts[0]["type"], contacts[0]["source"], contacts[0]["verified"]),
                              ("placeholder", "unavailable", False))
+            brief = json.loads((artifact / "brief.json").read_text())
+            self.assertEqual(brief["source_item_counts"], {"experience": 0, "projects": 0})
+            self.assertEqual(brief["generation_constraints"]["cv_word_budget"], [0, 430])
+            self.assertEqual(brief["generation_constraints"]["required_cv_sections"],
+                             ["Summary", "Education", "Skills", "Languages"])
         jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH = old
 
     def test_accepts_zero_to_two_years_traineeship_range(self):

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["job_title", "company", "seniority", "applicant_profile", "job_summary", "responsibilities", "required_skills", "preferred_skills", "ats_keywords", "application_questions", "contacts", "evidence_map", "gaps", "screening_warnings", "verification_needed", "experience_assessment", "generation_constraints"],
+  "required": ["job_title", "company", "seniority", "applicant_profile", "job_summary", "responsibilities", "required_skills", "preferred_skills", "ats_keywords", "application_questions", "contacts", "evidence_map", "gaps", "screening_warnings", "verification_needed", "experience_assessment", "project_assessment", "source_item_counts", "generation_constraints"],
   "properties": {
     "job_title": {"type": "string"},
     "company": {"type": "string"},
@@ -57,6 +57,29 @@
             }
           }
         }
+      }
+    },
+    "project_assessment": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["project", "relevance", "evidence", "rationale"],
+        "properties": {
+          "project": {"type": "string"},
+          "relevance": {"enum": ["direct", "supporting", "unrelated"]},
+          "evidence": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "rationale": {"type": "string"}
+        }
+      }
+    },
+    "source_item_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["experience", "projects"],
+      "properties": {
+        "experience": {"type": "integer", "minimum": 0},
+        "projects": {"type": "integer", "minimum": 0}
       }
     },
     "generation_constraints": {

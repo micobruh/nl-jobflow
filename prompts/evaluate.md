@@ -12,7 +12,7 @@ Check support, exact metrics/dates, relevance, natural wording, duplication, rea
 
 Type gates:
 
-- `cv`: Summary, Experience, Projects, Education, Skills, Languages; concise relevant bullets; no Experience/Projects duplication; one page; reference-like typography, spacing, hierarchy, margins, density.
+- `cv`: required core sections plus only nonempty source-backed Experience/Projects; relevant bullets; no duplication; one page; reference-like typography, spacing, hierarchy, margins, density. Do not demand filler when evidence is sparse.
 - `letter`: exactly one page; vacancy questions answered naturally without numbered headings; verified recipient or `Hiring Team`; vacancy-specific opening; 2–3 supported STAR examples; evidence-to-role reasoning; truthful motivation; no CV repetition.
 - `outreach`: verified channels only; placeholders only when neither exists; 2–4-word email subject; email under 140 words; LinkedIn under 500 characters; exact role, one proof point, one CTA; accurate contacts/sources; no fake familiarity or sending claim.
 

@@ -40,7 +40,7 @@ CHALLENGE_RE = re.compile(
     re.I,
 )
 RENDER_CACHE_VERSION = "jobflow-docx-v5"
-SCORING_VERSION = "supported-concepts-v3"
+SCORING_VERSION = "supported-concepts-v4"
 BANNED_CV_PHRASES = (
     "results-driven", "dynamic individual", "highly motivated", "team player",
     "proven track record", "passionate about", "passionate professional",
@@ -1632,11 +1632,17 @@ def _month_number(value: str) -> int:
 def professional_experience_roles(document: str, today: date | None = None) -> list[dict]:
     section = re.search(r"(?ims)^##\s+Professional Experience\s*$\n(.*?)(?=^##\s+|\Z)", document)
     if not section:
-        raise SystemExit("Professional Experience section not found in master CV")
+        return []
+    body = section.group(1).strip()
+    if not body:
+        return []
     current = today or datetime.now(timezone.utc).date()
     current_month = current.year * 12 + current.month - 1
     roles = []
-    for match in re.finditer(r"(?ms)^###\s+(.+?)\s*$\n(.*?)(?=^###\s+|\Z)", section.group(1)):
+    matches = list(re.finditer(r"(?ms)^###\s+(.+?)\s*$\n(.*?)(?=^###\s+|\Z)", body))
+    if not matches:
+        raise SystemExit("Professional Experience section contains content but no ### roles")
+    for match in matches:
         heading, body = match.group(1).strip(), match.group(2).strip()
         dates = None
         for line in body.splitlines():
@@ -1659,9 +1665,55 @@ def professional_experience_roles(document: str, today: date | None = None) -> l
         roles.append({"role": heading, "source": f"{heading}\n{body}", "months": months,
                       "start_month": f"{start // 12:04d}-{start % 12 + 1:02d}",
                       "end_month": f"{max(months) // 12:04d}-{max(months) % 12 + 1:02d}" if months else None})
-    if not roles:
-        raise SystemExit("Professional Experience section contains no dated roles")
     return roles
+
+
+def master_cv_projects(document: str) -> list[dict]:
+    section = re.search(r"(?ims)^##\s+(?:Complete Project Bank|Projects)\s*$\n(.*?)(?=^##\s+|\Z)", document)
+    if not section:
+        return []
+    body = section.group(1).strip()
+    if not body:
+        return []
+    matches = list(re.finditer(r"(?ms)^###\s+(.+?)\s*$\n(.*?)(?=^###\s+|\Z)", body))
+    if not matches:
+        raise SystemExit("Project section contains content but no ### projects")
+    return [{"project": match.group(1).strip(),
+             "source": f"{match.group(1).strip()}\n{match.group(2).strip()}"}
+            for match in matches]
+
+
+def relevant_project_assessment(details: dict, document: str) -> list[dict]:
+    projects = master_cv_projects(document)
+    classifications = details.get("project_assessment")
+    if not isinstance(classifications, list) or len(classifications) != len(projects):
+        raise SystemExit("project assessment must classify every Complete Project Bank item")
+    by_name = {item["project"]: item for item in projects}
+    required = {"project", "relevance", "evidence", "rationale"}
+    result, seen = [], set()
+    for item in classifications:
+        if not isinstance(item, dict) or set(item) != required or item.get("project") not in by_name:
+            raise SystemExit("invalid project assessment")
+        source, evidence = by_name[item["project"]]["source"], item["evidence"]
+        if (item["project"] in seen or item["relevance"] not in EXPERIENCE_RELEVANCE or
+                not isinstance(evidence, list) or not evidence or
+                any(not isinstance(value, str) or not value or value not in source for value in evidence) or
+                not isinstance(item["rationale"], str) or not item["rationale"].strip()):
+            raise SystemExit(f"invalid project assessment: {item.get('project', '')}")
+        seen.add(item["project"])
+        result.append(item)
+    if seen != set(by_name):
+        raise SystemExit("project assessment must classify every Complete Project Bank item")
+    return result
+
+
+def apply_cv_section_policy(brief: dict, document: str) -> dict:
+    brief["source_item_counts"] = {"experience": len(professional_experience_roles(document)),
+                                   "projects": len(master_cv_projects(document))}
+    constraints = brief.setdefault("generation_constraints", {})
+    constraints["cv_word_budget"] = [0, 430]
+    constraints["required_cv_sections"] = ["Summary", "Education", "Skills", "Languages"]
+    return brief
 
 
 def relevant_experience_assessment(details: dict, document: str, today: date | None = None) -> dict:
@@ -1748,11 +1800,14 @@ def record_match(jid: str, result_path: Path) -> None:
         conn.close()
         raise SystemExit("match components must sum to score")
     try:
-        experience = relevant_experience_assessment(details, master_cv())
+        master_document = master_cv()
+        experience = relevant_experience_assessment(details, master_document)
+        projects = relevant_project_assessment(details, master_document)
     except (OSError, SystemExit):
         conn.close()
         raise
     details["experience_assessment"] = experience
+    details["project_assessment"] = projects
     accepted = score_value >= cfg["job_match_threshold"]
     brief_fields = ("seniority", "responsibility_list", "required_skill_list", "preferred_skill_list",
                     "ats_keywords", "application_questions", "evidence_map")
@@ -1798,10 +1853,12 @@ def record_match(jid: str, result_path: Path) -> None:
             "verification_needed": [*json.loads(row["verification_needed"] or "[]"),
                                     *details.get("verification_needed", [])],
             "experience_assessment": experience,
+            "project_assessment": projects,
+            "source_item_counts": {"experience": len(experience["roles"]), "projects": len(projects)},
             "generation_constraints": {
-                "cv_word_budget": [350, 430],
+                "cv_word_budget": [0, 430],
                 "letter_word_budget": [300, 450],
-                "required_cv_sections": ["Summary", "Experience", "Projects", "Education", "Skills", "Languages"],
+                "required_cv_sections": ["Summary", "Education", "Skills", "Languages"],
                 "supported_concepts": details.get("ats_keywords", [])[:15],
                 "natural_writing": [
                     "Use concrete evidence and varied sentence lengths.",
@@ -1810,7 +1867,8 @@ def record_match(jid: str, result_path: Path) -> None:
                 ],
             },
         }
-        (folder / "brief.json").write_text(json.dumps(brief, separators=(",", ":")))
+        (folder / "brief.json").write_text(json.dumps(
+            apply_cv_section_policy(brief, master_document), separators=(",", ":")))
         posted = f"- Posted: {row['posted_at']}\n" if row["posted_at"] else ""
         summary = (f"# {row['title']} — {row['company']}\n\n"
                    f"- Location: {row['location']}\n- URL: {row['url']}\n"
@@ -2199,7 +2257,7 @@ def collect_contacts(jid: str) -> None:
     if brief_path.exists():
         brief = json.loads(brief_path.read_text())
         brief["contacts"] = contacts
-        brief_path.write_text(json.dumps(brief, separators=(",", ":")))
+        brief_path.write_text(json.dumps(apply_cv_section_policy(brief, master_cv()), separators=(",", ":")))
     conn.close()
     print(json.dumps({"job_id": jid, "contacts": len(contacts)}))
 
@@ -2278,14 +2336,29 @@ def document_preflight(document: str, document_type: str, brief: dict, cfg: dict
     failures = []
     words = len(document.split())
     if document_type == "cv":
-        required = ("summary", "experience", "projects", "education", "skills", "languages")
+        canonical = ("summary", "experience", "projects", "education", "skills", "languages")
+        required = tuple(name.lower() for name in
+                         brief.get("generation_constraints", {}).get(
+                             "required_cv_sections", ("Summary", "Education", "Skills", "Languages")))
+        word_budget = brief.get("generation_constraints", {}).get("cv_word_budget", (0, 430))
+        if len(word_budget) == 2 and words > word_budget[1]:
+            failures.append(f"CV word count exceeds {word_budget[1]} ({words})")
         missing = [name for name in required if not re.search(rf"(?im)^#+\s*{name}\b", document)]
         if missing:
             failures.append("missing CV sections: " + ", ".join(missing))
         actual = [match.group(1).lower() for match in re.finditer(r"(?im)^##\s+([A-Za-z][A-Za-z ]*)\b", document)
-                  if match.group(1).lower() in required]
-        if not missing and actual != list(required):
+                  if match.group(1).lower() in canonical]
+        if actual != [name for name in canonical if name in actual]:
             failures.append("CV sections out of order: expected Summary, Experience, Projects, Education, Skills, Languages")
+        source_counts = brief.get("source_item_counts", {})
+        for heading in ("Experience", "Projects"):
+            section = section_markdown(document, heading)
+            if not section:
+                continue
+            if not re.search(r"(?m)^\*[^*\n].*\*$", "\n".join(section.splitlines()[1:])):
+                failures.append(f"CV {heading} section must contain at least one formatted item or be omitted")
+            if source_counts.get(heading.lower()) == 0:
+                failures.append(f"CV {heading} section must be omitted because the master CV has no source items")
         if re.search(r"(?m)^###\s+", document):
             failures.append("CV item headings must use single-asterisk item lines, not ### headings")
         lower = document.lower()
@@ -2535,13 +2608,14 @@ def keyword_score(document: str, description: str, master: str, document_type: s
     concepts = supported_concepts(brief, master)
     covered = [item["label"] for item in concepts if concept_is_covered(item, doc_terms)]
     coverage = len(covered) / max(1, len(concepts))
-    sections = sum(bool(re.search(rf"(?im)^#+\s*{name}", document)) for name in ("summary", "skills", "experience", "education"))
+    sections = sum(bool(re.search(rf"(?im)^#+\s*{name}", document))
+                   for name in ("summary", "education", "skills", "languages"))
     numbers = set(re.findall(r"\b\d[\d.,%+–-]*\b", document))
     unsupported_numbers = sorted(n for n in numbers if n not in master and n not in description)
     generic_phrases = sorted(p for p in ("results-driven", "highly motivated", "team player",
         "proven track record", "passionate about", "perfect fit", "dynamic company", "leverage", "synergy")
         if p in document.lower())
-    length_ok = 350 <= len(document.split()) <= 1300
+    length_ok = 300 <= len(document.split()) <= 450 if document_type == "letter" else len(document.split()) <= 430
     if document_type == "letter":
         score = round(75 + 20 * coverage + (5 if 300 <= len(document.split()) <= 450 else 0)
                       - 15 * bool(unsupported_numbers) - 5 * bool(generic_phrases))
@@ -2584,7 +2658,7 @@ def score(jid: str, documents: str = "all") -> None:
         raise SystemExit("accepted job not found")
     folder = job_artifact_folder(jid, row["company"], row["title"])
     brief_path = folder / "brief.json"
-    brief = json.loads(brief_path.read_text()) if brief_path.exists() else {}
+    brief = apply_cv_section_policy(json.loads(brief_path.read_text()), master_cv()) if brief_path.exists() else {}
     names = ("cv", "letter") if documents == "all" else (documents,)
     results, renders, reused = {}, 0, 0
     for name in names:
@@ -3266,11 +3340,13 @@ def general_cv_check(title: str, folder: Path) -> dict:
         "responsibilities": [], "evidence_map": [],
     })
     cfg = config()
-    failures = document_preflight(document, "cv", {}, cfg)
+    source_counts = {"experience": len(professional_experience_roles(master_document)),
+                     "projects": len(master_cv_projects(master_document))}
+    cv_brief = {"source_item_counts": source_counts, "generation_constraints": {
+        "required_cv_sections": ["Summary", "Education", "Skills", "Languages"]}}
+    failures = document_preflight(document, "cv", cv_brief, cfg)
     failures.extend(role_specific_cv_failures(title, document, master_document, cfg))
     words = len(document.split())
-    if not 350 <= words <= 430:
-        failures.append(f"CV word count outside 350-430 ({words})")
     layout = render_pdf(source, folder / "cv.pdf") if not failures and not details["unsupported_numbers"] else {
         "pages": None, "one_page": False, "text_words": None, "renderer": None, "cached": False,
     }

@@ -8,9 +8,9 @@ Keep truth, tone, ATS, and one-page gates. Use STAR/Google XYZ only with source 
 
 Before writing, obey concepts, headings, budgets, questions, and renderer limits. Before returning, do one silent natural-language audit: use concrete details/simple verbs; vary sentence length; remove hype, vague praise, filler, forced trios, repeated shapes, formulaic transitions, generic conclusions, and chatbot commentary. Preserve tone. No humanization pass.
 
-Use `experience_assessment` only for required-year claims, not as a CV visibility filter. Prefer direct roles and strong projects; supporting or excluded roles may fill evidence gaps when relevant and space permits. Never imply excluded experience satisfies required years.
+`experience_assessment` governs year claims; zero roles means zero months. Rank assessed items as in the CV prompt; if a legacy brief lacks project assessment, classify exact Master CV projects. Omit unrelated/unavailable sections; excluded experience never satisfies required years.
 
-Use renderer-native Markdown, no HTML. CV header: candidate name and contacts from `MASTER_CV`; never use `###` item headings. CV: summary<=280 chars; experience/education `*Title | Dates*`; projects `*Supported Name*`, no dates; next line organization/institution, no location/dates; experience/project items <=4 bullets, each <=105 chars; if space after 2 experiences, add 3rd project. Skills: `**Category:** ...`. Languages: comma `Language (Level)` copied from `MASTER_CV`.
+Use renderer-native Markdown, no HTML. CV header: candidate name/contacts from `MASTER_CV`; no `###` items or empty headings. Summary<=280 chars; experience/education `*Title | Dates*`; projects `*Supported Name*`, no dates; next line organization/institution, no location/dates; items <=4 bullets, each <=105 chars. Add ranked items while one page/reference density holds. Skills: `**Category:** ...`. Languages: comma `Language (Level)` from `MASTER_CV`.
 
 Letter header must be exactly `# Candidate Name`, then one `email | phone | location` line, then the greeting. Never write a “Motivation Letter” title, profile links, recipient/company/address block, or any other content above the greeting.
 
