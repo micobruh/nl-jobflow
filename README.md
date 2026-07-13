@@ -83,6 +83,7 @@ Missing salary, sponsorship intent, security restrictions, education, or workpla
 | `/jd-docs` | Import a pasted job description. |
 | `/general-cv TITLE` | Create a one-page role-focused CV. |
 | `/general-cvs` | Create one general CV for every role in the master CV summary bank. |
+| `/review-master-cv` | Audit the private master CV and save read-only improvement reports. |
 | `/preflight` | Check local dependencies and optional credentials. |
 | `/doctor` | Check configuration, CV, queues, and source health. |
 | `/next` | Show actionable and verification queues. |

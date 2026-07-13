@@ -95,6 +95,20 @@ artifacts whose master CV and prompt digests are current.
 
 Required user input: none.
 
+## `/review-master-cv`
+
+Review the private master CV without editing it:
+
+1. Read `AGENTS.md`; do not run `AUTOMATION.md` or any job workflow.
+2. Run `python jobflow.py master-cv-audit` and save the JSON to `/tmp/master-cv-audit.json`.
+3. Give a fresh review-only agent `prompts/review_master_cv.md`, the untouched master CV, audit JSON, configured target roles, and `master_cv_review.schema.json`. Save its strict JSON output to `/tmp/master-cv-review.json`.
+4. Run `python jobflow.py record-master-cv-review /tmp/master-cv-review.json`.
+5. Report status, score, priority actions, and saved report paths.
+
+Never edit `master_cv.md`, browse, load external skills, contact anyone, deliver files, or change job/database state. This command is explicit only and is never part of `/full-run`.
+
+Required user input: none.
+
 ## `/preflight`
 
 Run:

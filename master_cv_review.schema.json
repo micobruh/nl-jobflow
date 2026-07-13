@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["master_cv_sha256", "status", "score", "summary", "structural_issues", "truth_risks", "role_coverage", "item_reviews", "improvement_suggestions", "priority_actions"],
+  "properties": {
+    "master_cv_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "status": {"enum": ["READY", "NEEDS_IMPROVEMENT", "INVALID"]},
+    "score": {"type": "integer", "minimum": 0, "maximum": 100},
+    "summary": {"type": "string", "minLength": 1},
+    "structural_issues": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "truth_risks": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "role_coverage": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["role", "assessment", "gaps"],
+        "properties": {
+          "role": {"type": "string", "minLength": 1},
+          "assessment": {"enum": ["strong", "partial", "missing"]},
+          "gaps": {"type": "array", "items": {"type": "string", "minLength": 1}}
+        }
+      }
+    },
+    "item_reviews": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["location", "assessment", "issues"],
+        "properties": {
+          "location": {"type": "string", "minLength": 1},
+          "assessment": {"enum": ["keep", "improve", "remove", "verify"]},
+          "issues": {"type": "array", "items": {"type": "string", "minLength": 1}}
+        }
+      }
+    },
+    "improvement_suggestions": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["priority", "location", "source_excerpt", "problem", "pattern", "questions"],
+        "properties": {
+          "priority": {"enum": ["high", "medium", "low"]},
+          "location": {"type": "string", "minLength": 1},
+          "source_excerpt": {"type": "string", "minLength": 1},
+          "problem": {"type": "string", "minLength": 1},
+          "pattern": {"type": "string", "minLength": 1},
+          "questions": {"type": "array", "items": {"type": "string", "minLength": 1}}
+        }
+      }
+    },
+    "priority_actions": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  }
+}

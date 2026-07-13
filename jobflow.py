@@ -3308,6 +3308,209 @@ def summary_bank_role_warnings(cfg: dict, document: str) -> list[str]:
     return warnings
 
 
+def master_cv_audit(document: str | None = None, cfg: dict | None = None) -> dict:
+    path = master_cv_path()
+    if document is None:
+        if not path.is_file():
+            return {"path": str(path), "exists": False, "master_cv_sha256": None,
+                    "sections": [], "summary_bank_titles": [], "role_warnings": [],
+                    "structural_errors": [f"Master CV not found: {path}"], "source_warnings": [],
+                    "template_residue": [], "duplicate_headings": [], "duplicate_items": [],
+                    "weak_phrases": [], "affected_workflows": ["all"]}
+        document = path.read_text()
+    digest = hashlib.sha256(document.encode()).hexdigest()
+    headings = re.findall(r"(?m)^##\s+(.+?)\s*$", document)
+    folded_headings = [heading.casefold() for heading in headings]
+    heading_counts = {heading: folded_headings.count(heading) for heading in folded_headings}
+    duplicate_headings = sorted(heading for heading, count in heading_counts.items() if count > 1)
+    structural_errors, warnings, affected = [], [], []
+
+    try:
+        titles = professional_summary_bank_titles(document)
+    except SystemExit as exc:
+        titles = []
+        structural_errors.append(str(exc))
+        affected.append("general-cvs")
+    try:
+        experiences = professional_experience_roles(document)
+    except SystemExit as exc:
+        experiences = []
+        structural_errors.append(str(exc))
+        affected.extend(("job-evaluation", "document-generation"))
+    try:
+        projects = master_cv_projects(document)
+    except SystemExit as exc:
+        projects = []
+        structural_errors.append(str(exc))
+        affected.extend(("job-evaluation", "document-generation"))
+
+    sections = []
+    aliases = (("Professional Summary Bank", "Professional Summary Bank"),
+               ("Skills", "(?:Technical )?Skills"),
+               ("Professional Experience", "Professional Experience"),
+               ("Complete Project Bank", "Complete Project Bank|Projects"),
+               ("Education", "Education"), ("Languages", "Languages"),
+               ("Application Profile", "Application Profile"))
+    for name, pattern in aliases:
+        match = re.search(rf"(?ims)^##\s+(?:{pattern})\s*$\n(.*?)(?=^##\s+|\Z)", document)
+        sections.append({"name": name, "present": bool(match),
+                         "nonempty": bool(match and match.group(1).strip()),
+                         "items": len(re.findall(r"(?m)^###\s+", match.group(1))) if match else 0})
+    by_section = {item["name"]: item for item in sections}
+    for required in ("Skills", "Education", "Languages"):
+        if not by_section[required]["present"]:
+            structural_errors.append(f"Master CV missing core section: {required}")
+            affected.append("document-generation")
+        elif not by_section[required]["nonempty"]:
+            structural_errors.append(f"Master CV core section is empty: {required}")
+            affected.append("document-generation")
+    if not by_section["Application Profile"]["present"]:
+        warnings.append("Application Profile missing; motivation and work-style evidence may be sparse")
+    if not experiences:
+        warnings.append("Professional Experience has zero items; relevant experience is treated as zero months")
+    if not projects:
+        warnings.append("Complete Project Bank has zero items")
+
+    item_duplicates = []
+    for name, pattern in (("Professional Summary Bank", "Professional Summary Bank"),
+                          ("Professional Experience", "Professional Experience"),
+                          ("Complete Project Bank", "Complete Project Bank|Projects"),
+                          ("Education", "Education")):
+        match = re.search(rf"(?ims)^##\s+(?:{pattern})\s*$\n(.*?)(?=^##\s+|\Z)", document)
+        if not match:
+            continue
+        items = [value.strip().casefold() for value in re.findall(r"(?m)^###\s+(.+?)\s*$", match.group(1))]
+        item_duplicates.extend(f"{name}: {item}" for item in sorted(set(items)) if items.count(item) > 1)
+    if duplicate_headings or item_duplicates:
+        structural_errors.append("Master CV contains duplicate section or item headings")
+        affected.append("all")
+
+    markers = ("your name", "email@example.com", "linkedin.com/in/your-name",
+               "replace every placeholder", "supported project name", "mon yyyy")
+    template_residue = [marker for marker in markers if marker in document.casefold()]
+    weak_phrases = [phrase for phrase in (*BANNED_CV_PHRASES, *WEAK_CV_PHRASES)
+                    if phrase in document.casefold()]
+    settings = cfg or config()
+    return {"path": str(path), "exists": True, "master_cv_sha256": digest,
+            "sections": sections, "summary_bank_titles": titles,
+            "role_warnings": summary_bank_role_warnings(settings, document),
+            "structural_errors": list(dict.fromkeys(structural_errors)),
+            "source_warnings": warnings, "template_residue": template_residue,
+            "duplicate_headings": duplicate_headings, "duplicate_items": item_duplicates,
+            "weak_phrases": weak_phrases, "affected_workflows": list(dict.fromkeys(affected))}
+
+
+def validate_master_cv_review(payload: dict, audit: dict) -> None:
+    fields = {"master_cv_sha256", "status", "score", "summary", "structural_issues",
+              "truth_risks", "role_coverage", "item_reviews", "improvement_suggestions",
+              "priority_actions"}
+    if not isinstance(payload, dict) or set(payload) != fields:
+        raise SystemExit("master CV review must be an object with only schema-defined fields")
+    if payload["master_cv_sha256"] != audit["master_cv_sha256"]:
+        raise SystemExit("master CV review is stale; source digest changed")
+    if payload["status"] not in {"READY", "NEEDS_IMPROVEMENT", "INVALID"} or \
+            type(payload["score"]) is not int or not 0 <= payload["score"] <= 100 or \
+            not isinstance(payload["summary"], str) or not payload["summary"].strip():
+        raise SystemExit("invalid master CV review status, score, or summary")
+    for field in ("structural_issues", "truth_risks", "priority_actions"):
+        if not isinstance(payload[field], list) or any(not isinstance(value, str) or not value.strip()
+                                                   for value in payload[field]):
+            raise SystemExit(f"invalid master CV review {field}")
+
+    def validate_objects(field: str, required: set[str], enums: dict[str, set[str]] | None = None) -> None:
+        values, enums = payload[field], enums or {}
+        if not isinstance(values, list):
+            raise SystemExit(f"invalid master CV review {field}")
+        for item in values:
+            if not isinstance(item, dict) or set(item) != required:
+                raise SystemExit(f"invalid master CV review {field}")
+            for key, value in item.items():
+                if key in {"gaps", "issues", "questions"}:
+                    if not isinstance(value, list) or any(not isinstance(text, str) or not text.strip()
+                                                         for text in value):
+                        raise SystemExit(f"invalid master CV review {field}")
+                elif not isinstance(value, str) or not value.strip() or key in enums and value not in enums[key]:
+                    raise SystemExit(f"invalid master CV review {field}")
+
+    validate_objects("role_coverage", {"role", "assessment", "gaps"},
+                     {"assessment": {"strong", "partial", "missing"}})
+    validate_objects("item_reviews", {"location", "assessment", "issues"},
+                     {"assessment": {"keep", "improve", "remove", "verify"}})
+    validate_objects("improvement_suggestions",
+                     {"priority", "location", "source_excerpt", "problem", "pattern", "questions"},
+                     {"priority": {"high", "medium", "low"}})
+    if any(error not in payload["structural_issues"] for error in audit["structural_errors"]):
+        raise SystemExit("master CV review must include every deterministic structural error")
+    has_high = any(item["priority"] == "high" for item in payload["improvement_suggestions"])
+    expected = "INVALID" if audit["structural_errors"] else \
+        "READY" if payload["score"] >= 90 and not has_high else "NEEDS_IMPROVEMENT"
+    if payload["status"] != expected:
+        raise SystemExit(f"master CV review status must be {expected}")
+
+
+def master_cv_review_markdown(payload: dict) -> str:
+    lines = ["# Master CV Review", "", f"**Status:** {payload['status']}",
+             f"**Score:** {payload['score']}/100",
+             f"**Source:** `{payload['master_cv_sha256']}`", "", payload["summary"]]
+    sections = (("Priority actions", payload["priority_actions"]),
+                ("Structural issues", payload["structural_issues"]),
+                ("Truth risks", payload["truth_risks"]))
+    for heading, values in sections:
+        lines.extend(("", f"## {heading}", ""))
+        if values:
+            lines.extend(f"- {value}" for value in values)
+        else:
+            lines.append("- None")
+    lines.extend(("", "## Role coverage", ""))
+    if payload["role_coverage"]:
+        for item in payload["role_coverage"]:
+            gaps = "; ".join(item["gaps"]) or "no material gaps"
+            lines.append(f"- **{item['role']} — {item['assessment']}**: {gaps}")
+    else:
+        lines.append("- None")
+    lines.extend(("", "## Item reviews", ""))
+    if payload["item_reviews"]:
+        for item in payload["item_reviews"]:
+            issues = "; ".join(item["issues"]) or "no material issues"
+            lines.append(f"- **{item['location']} — {item['assessment']}**: {issues}")
+    else:
+        lines.append("- None")
+    lines.extend(("", "## Improvement suggestions", ""))
+    if not payload["improvement_suggestions"]:
+        lines.append("- None")
+    for item in payload["improvement_suggestions"]:
+        lines.extend((f"### {item['priority'].upper()}: {item['location']}", "",
+                      f"- Source: {item['source_excerpt']}", f"- Problem: {item['problem']}",
+                      f"- Pattern: {item['pattern']}",
+                      "- Questions: " + ("; ".join(item["questions"]) or "None"), ""))
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def record_master_cv_review(path: Path) -> dict:
+    try:
+        payload = json.loads(path.read_text())
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"invalid master CV review JSON: {exc}") from exc
+    audit = master_cv_audit()
+    if not audit["exists"]:
+        raise SystemExit("Master CV not found")
+    validate_master_cv_review(payload, audit)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    root = ARTIFACTS / "master-cv-review"
+    destination = root / stamp
+    destination.mkdir(parents=True)
+    markdown = master_cv_review_markdown(payload)
+    (destination / "audit.json").write_text(json.dumps(audit, indent=2))
+    (destination / "review.json").write_text(json.dumps(payload, indent=2))
+    (destination / "review.md").write_text(markdown)
+    (root / "latest.json").write_text(json.dumps(payload, indent=2))
+    (root / "latest.md").write_text(markdown)
+    result = {"status": payload["status"], "score": payload["score"],
+              "history": str(destination), "latest": str(root / "latest.md")}
+    print(json.dumps(result, indent=2))
+    return result
+
+
 def role_specific_cv_failures(title: str, document: str, master_document: str,
                               cfg: dict | None = None) -> list[str]:
     failures = []
@@ -4089,6 +4292,9 @@ def main() -> None:
     sub.add_parser("preflight")
     sub.add_parser("doctor")
     sub.add_parser("next")
+    sub.add_parser("master-cv-audit")
+    master_review = sub.add_parser("record-master-cv-review")
+    master_review.add_argument("json_path", type=Path)
     general = sub.add_parser("general-cv")
     general.add_argument("--title", required=True)
     general_cvs = sub.add_parser("general-cvs")
@@ -4154,6 +4360,10 @@ def main() -> None:
         doctor()
     elif args.command == "next":
         print_next_actions()
+    elif args.command == "master-cv-audit":
+        print(json.dumps(master_cv_audit(), indent=2))
+    elif args.command == "record-master-cv-review":
+        record_master_cv_review(args.json_path)
     elif args.command == "general-cv":
         generate_general_cv(args.title)
     elif args.command == "general-cvs":

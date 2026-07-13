@@ -40,6 +40,27 @@ def experience_fields(kind="none", minimum=0, count_status="excluded"):
     }
 
 
+def master_cv_review_fixture(experience="", projects=""):
+    return ("# Alex Example — Master CV Source\n\n"
+            "## Professional Summary Bank\n\n### Data Scientist\nPython analytics evidence.\n\n"
+            "## Technical Skills\n\n**Programming:** Python, SQL\n\n"
+            f"## Professional Experience\n\n{experience}\n\n"
+            f"## Complete Project Bank\n\n{projects}\n\n"
+            "## Education\n\n### MSc Data Science — University\nCity | 2023 – 2025\n\n"
+            "## Languages\n\nEnglish — Fluent\n\n"
+            "## Application Profile\n\n### Professional Motivation\n- Build useful systems.\n")
+
+
+def master_cv_review_payload(digest, **updates):
+    value = {"master_cv_sha256": digest, "status": "READY", "score": 92,
+             "summary": "Strong factual evidence bank.", "structural_issues": [], "truth_risks": [],
+             "role_coverage": [{"role": "Data Scientist", "assessment": "strong", "gaps": []}],
+             "item_reviews": [{"location": "Education", "assessment": "keep", "issues": []}],
+             "improvement_suggestions": [], "priority_actions": []}
+    value.update(updates)
+    return value
+
+
 class JobFlowTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -875,6 +896,85 @@ class JobFlowTest(unittest.TestCase):
     def test_master_cv_uses_repo_file(self):
         self.assertEqual(jobflow.master_cv_path(), Path(jobflow.ROOT / "master_cv.md"))
 
+    def test_master_cv_audit_accepts_empty_work_banks_and_reuses_role_checks(self):
+        document = master_cv_review_fixture()
+        audit = jobflow.master_cv_audit(document, self.cfg)
+        self.assertFalse(audit["structural_errors"])
+        counts = {item["name"]: item["items"] for item in audit["sections"]}
+        self.assertEqual((counts["Professional Experience"], counts["Complete Project Bank"]), (0, 0))
+        self.assertEqual(audit["summary_bank_titles"], ["Data Scientist"])
+        self.assertTrue(any("zero months" in warning for warning in audit["source_warnings"]))
+        self.assertEqual(audit["role_warnings"], jobflow.summary_bank_role_warnings(self.cfg, document))
+        missing = jobflow.master_cv_audit(document.replace("## Technical Skills", "## Other Skills"), self.cfg)
+        self.assertIn("Master CV missing core section: Skills", missing["structural_errors"])
+        empty = jobflow.master_cv_audit(document.replace("## Languages\n\nEnglish — Fluent",
+                                                          "## Languages\n"), self.cfg)
+        self.assertIn("Master CV core section is empty: Languages", empty["structural_errors"])
+
+    def test_master_cv_audit_reports_malformed_duplicates_and_template_residue(self):
+        malformed = master_cv_review_fixture("Unstructured work", "Unstructured project")
+        malformed += "\n## Languages\nYour Name | email@example.com | Mon YYYY\n"
+        audit = jobflow.master_cv_audit(malformed, self.cfg)
+        self.assertTrue(any("no ### roles" in error for error in audit["structural_errors"]))
+        self.assertTrue(any("no ### projects" in error for error in audit["structural_errors"]))
+        self.assertIn("languages", audit["duplicate_headings"])
+        self.assertEqual(set(audit["template_residue"]), {"your name", "email@example.com", "mon yyyy"})
+        self.assertIn("all", audit["affected_workflows"])
+        duplicate_items = jobflow.master_cv_audit(master_cv_review_fixture(
+            projects="### Same Project\n- First.\n\n### Same Project\n- Second."), self.cfg)
+        self.assertIn("Complete Project Bank: same project", duplicate_items["duplicate_items"])
+        incomplete = master_cv_review_payload(audit["master_cv_sha256"], status="INVALID", score=20)
+        with self.assertRaisesRegex(SystemExit, "every deterministic structural error"):
+            jobflow.validate_master_cv_review(incomplete, audit)
+        complete = {**incomplete, "structural_issues": audit["structural_errors"]}
+        jobflow.validate_master_cv_review(complete, audit)
+
+    def test_record_master_cv_review_validates_digest_status_and_writes_only_reports(self):
+        old = jobflow.ARTIFACTS, jobflow.DB_PATH
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            master = root / "master_cv.md"
+            master.write_text(master_cv_review_fixture())
+            jobflow.ARTIFACTS, jobflow.DB_PATH = root / "artifacts", root / "data" / "jobs.sqlite3"
+            audit = jobflow.master_cv_audit(master.read_text(), self.cfg)
+            payload = master_cv_review_payload(audit["master_cv_sha256"])
+            review = root / "review.json"
+            review.write_text(json.dumps(payload))
+            original = master.read_bytes()
+            output = io.StringIO()
+            with mock.patch.object(jobflow, "master_cv_path", return_value=master), \
+                 mock.patch.object(jobflow, "config", return_value=self.cfg), redirect_stdout(output):
+                result = jobflow.record_master_cv_review(review)
+            history = Path(result["history"])
+            self.assertTrue(all((history / name).is_file() for name in ("audit.json", "review.json", "review.md")))
+            self.assertTrue((jobflow.ARTIFACTS / "master-cv-review" / "latest.json").is_file())
+            self.assertTrue((jobflow.ARTIFACTS / "master-cv-review" / "latest.md").is_file())
+            latest = (jobflow.ARTIFACTS / "master-cv-review" / "latest.md").read_text()
+            self.assertIn("## Role coverage", latest)
+            self.assertIn("## Item reviews", latest)
+            self.assertEqual(master.read_bytes(), original)
+            self.assertFalse(jobflow.DB_PATH.exists())
+
+            review.write_text(json.dumps({**payload, "master_cv_sha256": "0" * 64}))
+            with mock.patch.object(jobflow, "master_cv_path", return_value=master), \
+                 mock.patch.object(jobflow, "config", return_value=self.cfg), \
+                 self.assertRaisesRegex(SystemExit, "stale"):
+                jobflow.record_master_cv_review(review)
+            review.write_text(json.dumps({"status": "READY"}))
+            with mock.patch.object(jobflow, "master_cv_path", return_value=master), \
+                 mock.patch.object(jobflow, "config", return_value=self.cfg), \
+                 self.assertRaisesRegex(SystemExit, "schema-defined"):
+                jobflow.record_master_cv_review(review)
+            high = {"priority": "high", "location": "Experience", "source_excerpt": "Built reports",
+                    "problem": "Outcome is unclear", "pattern": "Action + scope + outcome",
+                    "questions": ["What changed?"]}
+            review.write_text(json.dumps({**payload, "improvement_suggestions": [high]}))
+            with mock.patch.object(jobflow, "master_cv_path", return_value=master), \
+                 mock.patch.object(jobflow, "config", return_value=self.cfg), \
+                 self.assertRaisesRegex(SystemExit, "NEEDS_IMPROVEMENT"):
+                jobflow.record_master_cv_review(review)
+        jobflow.ARTIFACTS, jobflow.DB_PATH = old
+
     def test_human_readable_artifact_and_public_document_names(self):
         old = jobflow.ARTIFACTS
         with tempfile.TemporaryDirectory() as folder:
@@ -1162,6 +1262,7 @@ class JobFlowTest(unittest.TestCase):
         self.assertIn("ai_tone_issues", evaluate)
         writer = (prompts / "write_documents.md").read_text()
         reviewer = (prompts / "review_documents.md").read_text()
+        master_reviewer = (prompts / "review_master_cv.md").read_text()
         self.assertIn("writing-only", writer.lower())
         self.assertIn("Never score", writer)
         self.assertIn("review-only", reviewer)
@@ -1169,6 +1270,9 @@ class JobFlowTest(unittest.TestCase):
         self.assertIn("writer reasoning", reviewer.lower())
         self.assertIn("score ≥90", reviewer)
         self.assertIn("Do not require 91", reviewer)
+        self.assertIn("Review-only and local", master_reviewer)
+        self.assertIn("rewrite pattern with placeholders", master_reviewer)
+        self.assertIn("Do not load external skills", master_reviewer)
         for prompt_text in (cv, letter, outreach, evaluate, match, writer, reviewer, pasted, telegram_summary):
             self.assertNotRegex(prompt_text, r"(?m)^Skills:")
         self.assertIn("do not load external skills", writer.lower())
@@ -1203,14 +1307,19 @@ class JobFlowTest(unittest.TestCase):
         for command in re.findall(r"^## `(/[^`]+)`", commands, re.M):
             self.assertIn(command, agents)
             self.assertIn(command, readme)
+        self.assertNotIn("/review-master-cv", automation)
         marketplace_prompt = prompts / "discover_marketplaces_with_plugins.md"
+        master_review_prompt = prompts / "review_master_cv.md"
+        standalone_prompts = {marketplace_prompt, master_review_prompt}
         runtime_prompts = [Path(__file__).parents[1] / "AUTOMATION.md",
-                           *(path for path in prompts.glob("*.md") if path != marketplace_prompt)]
+                           *(path for path in prompts.glob("*.md") if path not in standalone_prompts)]
         self.assertLessEqual(sum(path.stat().st_size for path in runtime_prompts), 24_000)
         self.assertLessEqual(marketplace_prompt.stat().st_size, 1_500)
+        self.assertLessEqual(master_review_prompt.stat().st_size, 1_800)
         json.loads((Path(__file__).parents[1] / "agent_brief.schema.json").read_text())
         json.loads((Path(__file__).parents[1] / "agent_run.schema.json").read_text())
         json.loads((Path(__file__).parents[1] / "general_cv_result.schema.json").read_text())
+        json.loads((Path(__file__).parents[1] / "master_cv_review.schema.json").read_text())
 
     def test_match_threshold_and_artifacts(self):
         old = jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH

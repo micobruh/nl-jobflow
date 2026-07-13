@@ -10,7 +10,7 @@ For scheduled or manual automation, read and follow `AUTOMATION.md`.
 
 If the user starts with a short command such as `/full-run`, `/find-jobs`,
 `/write-docs`, `/url-docs`, `/jd-docs`, `/general-cv`, `/general-cvs`,
-`/preflight`, `/doctor`, `/next`, or `/reports`, read `COMMANDS.md`, expand
+`/review-master-cv`, `/preflight`, `/doctor`, `/next`, or `/reports`, read `COMMANDS.md`, expand
 the matching command, and follow the referenced prompt or deterministic command
 flow.
 
