@@ -81,9 +81,30 @@ def master_cv_review_payload(digest, **updates):
 class JobFlowTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.original_profile = jobflow.PROFILE_ROOT
+        cls.original_profile_env = os.environ.get("JOBFLOW_PROFILE")
+        cls.profile_directory = tempfile.TemporaryDirectory()
+        cls.test_profile = Path(cls.profile_directory.name)
+        (cls.test_profile / "config.yaml").write_text(
+            yaml.safe_dump(valid_user_config(), sort_keys=False), encoding="utf-8")
+        (cls.test_profile / "master_cv.md").write_text(
+            (jobflow.ROOT / "master_cv.example.md").read_text(encoding="utf-8"), encoding="utf-8")
+        jobflow.set_profile_root(cls.test_profile)
         cls.cfg = jobflow.resolved_config(valid_user_config())
         cls.cv = "Python SQL machine learning data analytics NLP Amsterdam experience skills education summary"
         cls.sponsors = {"example tech"}
+
+    @classmethod
+    def tearDownClass(cls):
+        jobflow.set_profile_root(cls.original_profile)
+        if cls.original_profile_env is None:
+            os.environ.pop("JOBFLOW_PROFILE", None)
+        else:
+            os.environ["JOBFLOW_PROFILE"] = cls.original_profile_env
+        cls.profile_directory.cleanup()
+
+    def setUp(self):
+        jobflow.set_profile_root(self.test_profile)
 
     def job(self, **updates):
         value = {
@@ -100,6 +121,12 @@ class JobFlowTest(unittest.TestCase):
         accepted, reasons, relevance = jobflow.filter_job(self.job(), self.sponsors, self.cfg, self.cv)
         self.assertTrue(accepted, reasons)
         self.assertGreaterEqual(relevance, 75)
+
+    def test_suite_uses_isolated_fictional_profile(self):
+        self.assertEqual(jobflow.PROFILE_ROOT, self.test_profile)
+        self.assertNotEqual(jobflow.PROFILE_ROOT, jobflow.ROOT)
+        self.assertEqual(jobflow.config()["selected_roles"], valid_user_config()["search_criteria"]["roles"])
+        self.assertEqual(jobflow.master_cv_path(), self.test_profile / "master_cv.md")
 
     def test_profile_roots_isolate_private_state_and_references(self):
         original = jobflow.PROFILE_ROOT
@@ -1755,8 +1782,8 @@ class JobFlowTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "contains no role headings"):
             jobflow.professional_summary_bank_titles("## Professional Summary Bank\n\nbody\n\n## Skills\n")
 
-    def test_master_cv_uses_repo_file(self):
-        self.assertEqual(jobflow.master_cv_path(), Path(jobflow.ROOT / "master_cv.md"))
+    def test_master_cv_uses_active_profile_file(self):
+        self.assertEqual(jobflow.master_cv_path(), self.test_profile / "master_cv.md")
 
     def test_master_cv_audit_accepts_empty_work_banks_and_reuses_role_checks(self):
         document = master_cv_review_fixture()
