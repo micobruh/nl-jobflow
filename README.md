@@ -47,6 +47,8 @@ promise identical output quality from different models and agent environments.
 4. Use isolated AI writers and reviewers where the host supports them.
 5. Validate, render, compare, and optionally deliver reviewable drafts to the applicant.
 
+![nl-jobflow workflow](docs/jobflow-workflow.png)
+
 ## Quick start
 
 The public beta is tested in CI on Ubuntu Linux. macOS and Windows through WSL2 are best-effort.
