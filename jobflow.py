@@ -3889,13 +3889,19 @@ def refresh_programme_catalog(source: Path, as_of: date, check: bool = False,
         for path, temporary in staged.items():
             os.replace(temporary, path)
     except Exception:
-        for path, content in originals.items():
-            if content is None:
-                path.unlink(missing_ok=True)
-            else:
-                temporary = path.with_name(path.name + ".rollback")
-                temporary.write_bytes(content)
-                os.replace(temporary, path)
+        try:
+            for path, content in originals.items():
+                if content is None:
+                    path.unlink(missing_ok=True)
+                else:
+                    temporary = path.with_name(path.name + ".rollback")
+                    temporary.write_bytes(content)
+                    os.replace(temporary, path)
+        finally:
+            for temporary in staged.values():
+                temporary.unlink(missing_ok=True)
+            for path in outputs:
+                path.with_name(path.name + ".rollback").unlink(missing_ok=True)
         raise
     return {"programmes": len(catalog["programmes"]), "changed": changed, "check": True}
 

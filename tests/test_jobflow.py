@@ -157,6 +157,43 @@ class JobFlowTest(unittest.TestCase):
         finally:
             jobflow.set_profile_root(original)
 
+    def test_new_profile_setup_succeeds_with_explicit_nontechnical_choices(self):
+        original = jobflow.PROFILE_ROOT
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                profile = Path(folder) / "profile"
+                jobflow.init_profile(profile)
+                jobflow.set_profile_root(profile)
+                (profile / "master_cv.md").write_text(
+                    "# Rowan Example — Master CV Source\n\n"
+                    "## Professional Summary Bank\n\n### Researcher\nQualitative research evidence.\n\n"
+                    "## Education\n\n### MA Linguistics — Fictional University\n")
+
+                def answer(prompt):
+                    explicit = {
+                        "Study profiles": "language_culture",
+                        "Job families": "research_development",
+                        "Job roles": "researcher",
+                    }
+                    return next((value for label, value in explicit.items() if prompt.startswith(label)), "")
+
+                saved = jobflow.setup_config(input_fn=answer)
+                loaded = jobflow.config()
+                self.assertEqual(saved["search_criteria"]["study_profiles"], ["language_culture"])
+                self.assertEqual(saved["search_criteria"]["job_families"], ["research_development"])
+                self.assertEqual(saved["search_criteria"]["roles"], ["researcher"])
+                self.assertNotIn("data_science_ai", json.dumps(saved))
+                self.assertEqual(loaded["selected_roles"], ["researcher"])
+                self.assertEqual((profile / "config.yaml").stat().st_mode & 0o077, 0)
+                self.assertTrue(jobflow.setup_status()["complete"])
+                with mock.patch.object(jobflow, "preflight_status", return_value={"pdfinfo": True}), \
+                     mock.patch.object(jobflow.shutil, "which", return_value="/bin/codex"):
+                    doctor = jobflow.doctor_report()
+                self.assertTrue(doctor["setup"]["complete"])
+                self.assertEqual(doctor["database"]["quick_check"], "ok")
+        finally:
+            jobflow.set_profile_root(original)
+
     def test_conditional_seniority_experience_and_dutch_filters(self):
         cfg = copy.deepcopy(self.cfg)
         cfg["search_criteria"]["max_required_experience_years"] = None
@@ -709,6 +746,30 @@ class JobFlowTest(unittest.TestCase):
             self.assertEqual(check["changed"], [])
             generated = json.loads(catalog.read_text())
             self.assertTrue(generated["programmes"][0]["professional_requirements"])
+            paths = [catalog, fixtures / "tue_programmes.json",
+                     fixtures / "university_programmes.json",
+                     fixtures / "other_research_universities.json"]
+            originals = {path: path.read_bytes() for path in paths}
+            real_replace = jobflow.os.replace
+            for failure_at in range(1, len(paths) + 1):
+                calls = 0
+
+                def fail_one_replacement(source_path, destination_path):
+                    nonlocal calls
+                    if str(source_path).endswith(".tmp"):
+                        calls += 1
+                        if calls == failure_at:
+                            raise OSError("injected replacement failure")
+                    return real_replace(source_path, destination_path)
+
+                with self.subTest(failure_at=failure_at), \
+                     mock.patch.object(jobflow.os, "replace", side_effect=fail_one_replacement), \
+                     self.assertRaisesRegex(OSError, "injected replacement failure"):
+                    jobflow.refresh_programme_catalog(
+                        source, jobflow.date(2026, 7, 13), catalog_path=catalog, fixture_root=fixtures)
+                self.assertEqual({path: path.read_bytes() for path in paths}, originals)
+                self.assertEqual([path for path in root.rglob("*")
+                                  if path.name.endswith((".tmp", ".rollback"))], [])
             before = catalog.read_bytes()
             source.write_text(original +
                               "Technische Universiteit Eindhoven,OPLEIDING,WO-MA,,99999,TECHNIEK,"
@@ -857,6 +918,61 @@ class JobFlowTest(unittest.TestCase):
         self.assertFalse(jobflow.source_selected_for_profile(jobflow.normalize_company("AkzoNobel"), cfg))
         self.assertTrue(jobflow.source_selected_for_profile(jobflow.normalize_company("Fictional Custom Lab"), cfg))
 
+    def test_scan_queries_only_matching_maintained_and_custom_sources(self):
+        original = jobflow.PROFILE_ROOT
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                jobflow.set_profile_root(folder)
+                jobflow.master_cv_path().write_text("# Rowan Example\n\nPython SQL machine learning analytics.\n")
+                cfg = copy.deepcopy(self.cfg)
+                cfg["job_families"] = ["technology_data_digital"]
+                cfg["priority_companies"] = [
+                    {"name": "Fictional Tech", "career_url": "https://tech.example/jobs",
+                     "families": ["technology_data_digital"]},
+                    {"name": "Fictional Policy", "career_url": "https://policy.example/jobs",
+                     "families": ["legal_compliance_policy"]},
+                ]
+                now = jobflow.datetime.now(jobflow.timezone.utc).isoformat()
+                with jobflow.db() as conn:
+                    for name in ("Fictional Tech", "Fictional Policy", "Fictional Custom Lab"):
+                        conn.execute("INSERT INTO sponsors VALUES (?,?,?,?)",
+                                     (jobflow.normalize_company(name), name, None, now))
+                    conn.execute(
+                        "INSERT INTO companies(normalized_name,display_name,career_url,tier,sponsor) VALUES (?,?,?,?,?)",
+                        (jobflow.normalize_company("Fictional Custom Lab"), "Fictional Custom Lab",
+                         "https://custom.example/jobs", 2, 1))
+
+                scraped = []
+
+                def scrape(company, _url):
+                    scraped.append(company)
+                    jobs = [self.job(company=company, url=f"https://{jobflow.safe_slug(company)}.example/1")]
+                    return jobs, True
+
+                marketplace = {"found": 1, "screening": 1, "screening_job_ids": ["market-job"]}
+                output = io.StringIO()
+                with mock.patch.object(jobflow, "config", return_value=cfg), \
+                     mock.patch.object(jobflow, "ensure_sponsor_snapshot", return_value={"status": "fresh"}), \
+                     mock.patch.object(jobflow, "scrape_source", side_effect=scrape), \
+                     mock.patch.object(jobflow, "discover_marketplaces", return_value=marketplace) as discover, \
+                     redirect_stdout(output):
+                    jobflow._scan()
+                summary = json.loads([line for line in output.getvalue().splitlines()
+                                      if line.startswith("{")][-1])
+                self.assertEqual(set(scraped), {"Fictional Tech", "Fictional Custom Lab"})
+                discover.assert_called_once()
+                self.assertEqual(summary["sources_selected"], 2)
+                self.assertEqual(summary["sources_skipped_family"], 1)
+                self.assertIn("market-job", summary["screening_job_ids"])
+                with jobflow.db() as conn:
+                    states = {row["display_name"]: row["last_scanned_at"] for row in conn.execute(
+                        "SELECT display_name,last_scanned_at FROM companies WHERE display_name LIKE 'Fictional %'")}
+                self.assertIsNotNone(states["Fictional Tech"])
+                self.assertIsNotNone(states["Fictional Custom Lab"])
+                self.assertIsNone(states["Fictional Policy"])
+        finally:
+            jobflow.set_profile_root(original)
+
     def test_role_gap_report_requires_three_jobs_and_two_employers(self):
         original = jobflow.PROFILE_ROOT
         try:
@@ -870,6 +986,9 @@ class JobFlowTest(unittest.TestCase):
                     ("c", "Imaginary Research", "Insights Specialist"),
                     ("d", "Solo Employer", "Evidence Coordinator"),
                     ("e", "Solo Employer", "Evidence Coordinator"),
+                    ("f", "Solo Employer", "Evidence Coordinator"),
+                    ("g", "First Employer", "Below Threshold Analyst"),
+                    ("h", "Second Employer", "Below Threshold Analyst"),
                 ]
                 with conn:
                     for jid, company, title in rows:
@@ -878,7 +997,28 @@ class JobFlowTest(unittest.TestCase):
                             "VALUES (?,?,?,?,?,?,?,?,?,?)",
                             (jid, company, title, "Netherlands", f"https://example.test/{jid}",
                              "Machine learning and predictive modelling.", "rejected", 70, "[]", now))
+                    blocked = [
+                        ("senior", "Senior Evidence Architect", ["seniority title excluded: senior"]),
+                        ("regulated", "Clinical Surgeon", ["regulated profession is not supported"]),
+                        ("deselected", "Novel Software Specialist", ["role intentionally deselected"]),
+                    ]
+                    for jid, title, reasons in blocked:
+                        conn.execute(
+                            "INSERT INTO jobs(id,company,title,location,url,description,status,relevance,reasons,discovered_at) "
+                            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                            (jid, "Blocked Employer", title, "Netherlands", f"https://example.test/{jid}",
+                             "Machine learning and predictive modelling.", "rejected", 70,
+                             json.dumps(reasons), now))
+                    conn.execute(
+                        "INSERT INTO jobs(id,company,title,location,url,description,status,relevance,reasons,discovered_at) "
+                        "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                        ("unrelated", "Archive Employer", "Archive Curator", "Netherlands",
+                         "https://example.test/unrelated", "Arrange physical boxes and visitor tickets.",
+                         "rejected", 10, "[]", now))
                 conn.close()
+                config_before = json.dumps(self.cfg, sort_keys=True)
+                catalog_path = jobflow.ROOT / "role_catalog.yaml"
+                catalog_before = jobflow.source_digest(catalog_path)
                 with mock.patch.object(jobflow, "config", return_value=self.cfg):
                     report = jobflow.role_gap_report()
                 self.assertTrue(report["advisory_only"])
@@ -886,6 +1026,8 @@ class JobFlowTest(unittest.TestCase):
                                  ["insights specialist"])
                 self.assertEqual(report["gaps"][0]["jobs"], 3)
                 self.assertEqual(report["gaps"][0]["employers"], 2)
+                self.assertEqual(json.dumps(self.cfg, sort_keys=True), config_before)
+                self.assertEqual(jobflow.source_digest(catalog_path), catalog_before)
         finally:
             jobflow.set_profile_root(original)
 
@@ -911,6 +1053,7 @@ class JobFlowTest(unittest.TestCase):
                 jobflow.set_profile_root(folder)
                 conn = jobflow.db()
                 self.assertEqual(conn.execute("PRAGMA user_version").fetchone()[0], jobflow.SCHEMA_VERSION)
+                conn.execute("INSERT INTO telegram_state VALUES ('sentinel','preserved')")
                 conn.execute("PRAGMA user_version=0")
                 conn.commit()
                 conn.close()
@@ -920,10 +1063,63 @@ class JobFlowTest(unittest.TestCase):
                 self.assertEqual(len(backups), 1)
                 backup = jobflow.sqlite3.connect(backups[0])
                 self.assertEqual(jobflow.sqlite_quick_check(backup), "ok")
+                self.assertEqual(backup.execute(
+                    "SELECT value FROM telegram_state WHERE key='sentinel'").fetchone()[0], "preserved")
                 backup.close()
                 status = jobflow.database_status()
                 self.assertEqual(status["schema_version"], jobflow.SCHEMA_VERSION)
                 self.assertEqual(status["quick_check"], "ok")
+        finally:
+            jobflow.set_profile_root(original)
+
+    def test_sqlite_failures_preserve_data_and_doctor_fails_closed(self):
+        original = jobflow.PROFILE_ROOT
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                jobflow.set_profile_root(folder)
+                jobflow.DATA.mkdir(parents=True)
+                corrupt = b"not a sqlite database"
+                jobflow.DB_PATH.write_bytes(corrupt)
+                status = jobflow.database_status()
+                self.assertTrue(status["quick_check"].startswith("error:"))
+                with mock.patch.object(jobflow, "next_actions") as queues, \
+                     mock.patch.object(jobflow, "preflight_status", return_value={}):
+                    doctor = jobflow.doctor_report()
+                queues.assert_not_called()
+                self.assertTrue(doctor["database"]["quick_check"].startswith("error:"))
+                with mock.patch.object(jobflow, "config", return_value=self.cfg), \
+                     self.assertRaises(jobflow.sqlite3.DatabaseError):
+                    jobflow._scan()
+                self.assertEqual(jobflow.DB_PATH.read_bytes(), corrupt)
+
+            with tempfile.TemporaryDirectory() as folder:
+                jobflow.set_profile_root(folder)
+                jobflow.DATA.mkdir(parents=True)
+                conn = jobflow.sqlite3.connect(jobflow.DB_PATH)
+                conn.execute(f"PRAGMA user_version={jobflow.SCHEMA_VERSION + 1}")
+                conn.close()
+                with self.assertRaisesRegex(RuntimeError, "newer than supported"):
+                    jobflow.db()
+                self.assertFalse((jobflow.DATA / "backups").exists())
+
+            with tempfile.TemporaryDirectory() as folder:
+                jobflow.set_profile_root(folder)
+                conn = jobflow.db()
+                conn.execute("INSERT INTO telegram_state VALUES ('sentinel','original')")
+                conn.execute("PRAGMA user_version=0")
+                conn.commit()
+                conn.close()
+                checks = iter(("ok", "ok", "failed"))
+                with mock.patch.object(jobflow, "sqlite_quick_check", side_effect=lambda _conn: next(checks)), \
+                     self.assertRaisesRegex(RuntimeError, "after migration"):
+                    jobflow.db()
+                original_db = jobflow.sqlite3.connect(jobflow.DB_PATH)
+                self.assertEqual(original_db.execute("PRAGMA user_version").fetchone()[0], 0)
+                self.assertEqual(original_db.execute(
+                    "SELECT value FROM telegram_state WHERE key='sentinel'").fetchone()[0], "original")
+                original_db.close()
+                backups = list((jobflow.DATA / "backups").glob("jobs-*.sqlite3"))
+                self.assertEqual(len(backups), 1)
         finally:
             jobflow.set_profile_root(original)
 
@@ -1393,6 +1589,74 @@ class JobFlowTest(unittest.TestCase):
             overflow = folder / "overflow.md"
             overflow.write_text("# Alex Example\n\n## EXPERIENCE\n\n" + "\n".join("- Evidence" for _ in range(400)))
             self.assertGreater(jobflow.render_pdf(overflow, overflow.with_suffix(".pdf"))["pages"], 1)
+
+    def test_cross_discipline_documents_render_against_neutral_references(self):
+        cases = {
+            "engineering": ("Portfolio", "systems design and verification"),
+            "science": ("Laboratory Work", "controlled experiments and reproducible observations"),
+            "business": ("Portfolio", "operational analysis and stakeholder decisions"),
+            "policy": ("Policy Work", "policy evidence and public-interest recommendations"),
+            "humanities": ("Publications", "close reading and audience-focused communication"),
+            "education": ("Research", "learning evaluation and research-informed teaching"),
+        }
+        original = jobflow.PROFILE_ROOT
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                jobflow.set_profile_root(root)
+                jobflow.master_cv_path().write_text("# Rowan Example — Master CV Source\n")
+                brief = {"source_item_counts": {"experience": 0, "projects": 0},
+                         "generation_constraints": {
+                             "required_cv_sections": ["Summary", "Education", "Skills", "Languages"],
+                             "cv_word_budget": [0, 430]}}
+                letter_words = ("I bring careful evidence review, clear communication, dependable planning, "
+                                "and practical collaboration. My work starts from the stated need, tests "
+                                "assumptions against available facts, records decisions, and presents useful "
+                                "results without overstating what the evidence supports. ").split()
+                with mock.patch.object(jobflow, "config", return_value=self.cfg):
+                    for discipline, (optional_section, evidence) in cases.items():
+                        case = root / discipline
+                        case.mkdir()
+                        cv = case / "cv.md"
+                        cv.write_text(
+                            "# Rowan Example\n"
+                            "rowan@example.test | +31 6 00000000 | Utrecht\n\n"
+                            "## Summary\n"
+                            f"Early-career professional using {evidence} to produce clear, supported work.\n\n"
+                            f"## {optional_section}\n"
+                            f"- Documented {evidence} for a fictional university assignment.\n\n"
+                            "## Education\n"
+                            "*WO Master | 2025*\nFictional University\n\n"
+                            "## Skills\n"
+                            f"**Methods:** {evidence}\n"
+                            "**Communication:** Reporting, collaboration, documentation\n\n"
+                            "## Languages\nEnglish (Fluent), Dutch (Unknown)\n")
+                        words = (letter_words * 9)[:315]
+                        paragraphs = [" ".join(words[index:index + 63])
+                                      for index in range(0, len(words), 63)]
+                        letter = case / "letter.md"
+                        letter.write_text(
+                            "# Rowan Example\n"
+                            "rowan@example.test | +31 6 00000000 | Utrecht\n\n"
+                            "Dear Hiring Team,\n\n" + "\n\n".join(paragraphs) +
+                            "\n\nKind regards,\n\nRowan Example\n")
+
+                        with self.subTest(discipline=discipline):
+                            self.assertEqual(jobflow.document_preflight(cv.read_text(), "cv", brief, self.cfg), [])
+                            self.assertEqual(jobflow.document_preflight(
+                                letter.read_text(), "letter", brief, self.cfg), [])
+                            for document, source in (("cv", cv), ("letter", letter)):
+                                pdf = source.with_suffix(".pdf")
+                                layout = jobflow.render_pdf(source, pdf)
+                                self.assertEqual(layout["pages"], 1)
+                                comparison = case / f"{document}-comparison.png"
+                                reference = jobflow.document_reference(document, cfg=self.cfg)
+                                self.assertEqual(reference.name,
+                                                 "cv-reference.pdf" if document == "cv" else "motivation-letter.pdf")
+                                jobflow.make_pdf_comparison(pdf, reference, comparison, document)
+                                self.assertGreater(comparison.stat().st_size, 0)
+        finally:
+            jobflow.set_profile_root(original)
 
     def test_docx_renderer_uses_word_style_structure(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -3402,6 +3666,52 @@ City | Aug 2026 – Dec 2026
             self.assertEqual(conn.execute("SELECT empty_streak FROM companies").fetchone()[0], 0)
             conn.close()
         jobflow.DATA, jobflow.DB_PATH = old
+
+    def test_source_health_reports_family_selection_and_retry_state(self):
+        old = jobflow.DATA, jobflow.DB_PATH
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                jobflow.DATA = Path(folder)
+                jobflow.DB_PATH = jobflow.DATA / "jobs.sqlite3"
+                cfg = copy.deepcopy(self.cfg)
+                cfg["job_families"] = ["technology_data_digital"]
+                cfg["priority_companies"] = [
+                    {"name": "Fictional Tech", "career_url": "https://tech.example/jobs",
+                     "families": ["technology_data_digital"]},
+                    {"name": "Fictional Policy", "career_url": "https://policy.example/jobs",
+                     "families": ["legal_compliance_policy"]},
+                ]
+                with jobflow.db() as conn:
+                    conn.execute(
+                        "INSERT INTO companies(normalized_name,display_name,career_url,tier,sponsor,empty_streak) "
+                        "VALUES (?,?,?,?,?,?)",
+                        (jobflow.normalize_company("Fictional Tech"), "Fictional Tech",
+                         "https://tech.example/jobs", 1, 1, 1))
+                    conn.execute(
+                        "INSERT INTO companies(normalized_name,display_name,career_url,tier,sponsor,"
+                        "consecutive_failures,last_error,next_retry_at) VALUES (?,?,?,?,?,?,?,?)",
+                        (jobflow.normalize_company("Fictional Policy"), "Fictional Policy",
+                         "https://policy.example/jobs", 1, 1, 2, "timeout", "2099-01-01T00:00:00+00:00"))
+                    conn.execute(
+                        "INSERT INTO companies(normalized_name,display_name,career_url,tier,sponsor) VALUES (?,?,?,?,?)",
+                        (jobflow.normalize_company("Fictional Custom"), "Fictional Custom",
+                         "https://custom.example/jobs", 2, 1))
+                output = io.StringIO()
+                with mock.patch.object(jobflow, "config", return_value=cfg), redirect_stdout(output):
+                    jobflow.source_health()
+                rows = {row["display_name"]: row for row in json.loads(output.getvalue())}
+                self.assertEqual(rows["Fictional Tech"]["families"], ["technology_data_digital"])
+                self.assertTrue(rows["Fictional Tech"]["selected_for_profile"])
+                self.assertEqual(rows["Fictional Tech"]["health"], "warning")
+                self.assertEqual(rows["Fictional Policy"]["families"], ["legal_compliance_policy"])
+                self.assertFalse(rows["Fictional Policy"]["selected_for_profile"])
+                self.assertEqual(rows["Fictional Policy"]["health"], "failing")
+                self.assertEqual(rows["Fictional Policy"]["next_retry_at"], "2099-01-01T00:00:00+00:00")
+                self.assertEqual(rows["Fictional Custom"]["families"], [])
+                self.assertTrue(rows["Fictional Custom"]["selected_for_profile"])
+                self.assertEqual(rows["Fictional Custom"]["health"], "healthy")
+        finally:
+            jobflow.DATA, jobflow.DB_PATH = old
 
     def test_cleanup_removes_only_rejected_foreign_jobs(self):
         old = jobflow.DATA, jobflow.DB_PATH
