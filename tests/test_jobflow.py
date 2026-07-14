@@ -8,6 +8,7 @@ import re
 import copy
 import csv
 import subprocess
+import sys
 from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
 from pathlib import Path
@@ -368,6 +369,44 @@ class JobFlowTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "invalid values"):
             jobflow.validate_preset(unsafe, Path("broken.yaml"))
 
+    def test_role_catalog_rejects_incomplete_invalid_and_unsafe_roles(self):
+        original = yaml.safe_load((jobflow.ROOT / "role_catalog.yaml").read_text())
+        cases = []
+        missing = copy.deepcopy(original)
+        missing["roles"]["data_scientist"].pop("queries")
+        cases.append((missing, "invalid role: data_scientist"))
+        bad_family = copy.deepcopy(original)
+        bad_family["roles"]["data_scientist"]["family"] = "missing_family"
+        cases.append((bad_family, "invalid role: data_scientist"))
+        bad_regex = copy.deepcopy(original)
+        bad_regex["roles"]["data_scientist"]["title_pattern"] = "["
+        cases.append((bad_regex, "invalid title pattern"))
+        unsafe = copy.deepcopy(original)
+        unsafe["roles"]["data_scientist"]["prompt"] = "../outside.md"
+        cases.append((unsafe, "invalid prompt path"))
+        missing_prompt = copy.deepcopy(original)
+        missing_prompt["roles"]["data_scientist"]["prompt"] = "prompts/missing.md"
+        cases.append((missing_prompt, "invalid prompt path"))
+        for value, message in cases:
+            with self.subTest(message=message), mock.patch.object(jobflow, "read_yaml", return_value=value), \
+                 self.assertRaisesRegex(SystemExit, message):
+                jobflow.role_catalog()
+
+    def test_priority_sources_reject_equivalent_urls_but_allow_distinct_queries(self):
+        families = jobflow.role_catalog()[0]
+        base = {"families": ["technology_data_digital"]}
+        duplicate = [
+            {**base, "name": "Fictional One", "career_url": "https://EXAMPLE.test/jobs/"},
+            {**base, "name": "Fictional Two", "career_url": "https://example.test/jobs"},
+        ]
+        with self.assertRaisesRegex(SystemExit, "duplicate priority company career URL"):
+            jobflow.validate_priority_companies(duplicate, families)
+        distinct = [
+            {**base, "name": "Fictional One", "career_url": "https://example.test/jobs?team=one"},
+            {**base, "name": "Fictional Two", "career_url": "https://example.test/jobs?team=two"},
+        ]
+        jobflow.validate_priority_companies(distinct, families)
+
     def test_software_preset_uses_shared_screening_without_data_ai_leaks(self):
         user = valid_user_config()
         user["search_criteria"]["preset"] = "software_engineering"
@@ -687,7 +726,7 @@ class JobFlowTest(unittest.TestCase):
         self.assertTrue(medicine)
         self.assertTrue(all(item["professional_requirements"] for item in medicine))
 
-    def test_programme_catalog_builder_deduplicates_current_wo_programmes(self):
+    def test_programme_catalog_reducer_deduplicates_current_wo_programmes(self):
         fields = ["ONDERWIJSBESTUUR_NAAM", "OPLEIDINGSEENHEID_SOORT", "NIVEAU",
                   "INSTROOM_EINDDATUM", "ERKENDEOPLEIDINGSCODE", "ONDERDEEL",
                   "OPLEIDINGSEENHEID_NAAM", "OPLEIDINGSEENHEID_INTERNATIONALE_NAAM",
@@ -703,12 +742,10 @@ class JobFlowTest(unittest.TestCase):
              "Toegepaste Techniek", "Applied Engineering", "GEEN_BEROEPSEISEN"],
         ]
         with tempfile.TemporaryDirectory() as folder:
-            source, destination = Path(folder) / "rio.csv", Path(folder) / "catalog.json"
+            source = Path(folder) / "rio.csv"
             source.write_text("\n".join([",".join(fields), *[",".join(row) for row in rows]]) + "\n")
-            first = jobflow.build_wo_programme_catalog(source, destination, jobflow.date(2026, 7, 13))
-            rendered = destination.read_text()
-            second = jobflow.build_wo_programme_catalog(source, destination, jobflow.date(2026, 7, 13))
-            self.assertEqual(rendered, destination.read_text())
+            first, _ = jobflow.reduce_wo_programmes(source.read_bytes(), jobflow.date(2026, 7, 13))
+            second, _ = jobflow.reduce_wo_programmes(source.read_bytes(), jobflow.date(2026, 7, 13))
             self.assertEqual(first, second)
             self.assertEqual([(item["code"], item["level"]) for item in first["programmes"]],
                              [("90001", "WO-MA")])
@@ -1053,6 +1090,8 @@ class JobFlowTest(unittest.TestCase):
                 jobflow.set_profile_root(folder)
                 conn = jobflow.db()
                 self.assertEqual(conn.execute("PRAGMA user_version").fetchone()[0], jobflow.SCHEMA_VERSION)
+                self.assertIsNone(conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='slm_shadow'").fetchone())
                 conn.execute("INSERT INTO telegram_state VALUES ('sentinel','preserved')")
                 conn.execute("PRAGMA user_version=0")
                 conn.commit()
@@ -2132,6 +2171,10 @@ class JobFlowTest(unittest.TestCase):
             self.assertIn(command, readme)
         self.assertNotIn("/review-master-cv", automation)
         marketplace_prompt = prompts / "discover_marketplaces_with_plugins.md"
+        marketplace_text = marketplace_prompt.read_text()
+        self.assertNotRegex((automation + marketplace_text).lower(), r"\b(codex|claude)\b")
+        self.assertIn("tools callable in the current agent environment", automation)
+        self.assertIn("read-only job-search tool", marketplace_text)
         master_review_prompt = prompts / "review_master_cv.md"
         standalone_prompts = {marketplace_prompt, master_review_prompt}
         runtime_prompts = [Path(__file__).parents[1] / "AUTOMATION.md",
@@ -2141,8 +2184,15 @@ class JobFlowTest(unittest.TestCase):
         self.assertLessEqual(master_review_prompt.stat().st_size, 1_800)
         json.loads((Path(__file__).parents[1] / "agent_brief.schema.json").read_text())
         json.loads((Path(__file__).parents[1] / "agent_run.schema.json").read_text())
-        json.loads((Path(__file__).parents[1] / "general_cv_result.schema.json").read_text())
         json.loads((Path(__file__).parents[1] / "master_cv_review.schema.json").read_text())
+
+    def test_cli_no_longer_exposes_shadow_commands(self):
+        environment = {**os.environ, "JOBFLOW_NO_VENV_REEXEC": "1"}
+        help_text = subprocess.run(
+            [sys.executable, str(jobflow.ROOT / "jobflow.py"), "--help"],
+            check=True, capture_output=True, text=True, env=environment).stdout
+        self.assertNotIn("shadow-extract", help_text)
+        self.assertNotIn("shadow-report", help_text)
 
     def test_match_threshold_and_artifacts(self):
         old = jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH
@@ -3298,31 +3348,6 @@ City | Aug 2026 – Dec 2026
             with mock.patch.object(jobflow.subprocess, "run"), \
                  self.assertRaisesRegex(RuntimeError, "LibreOffice did not create"):
                 jobflow.convert_docx_with_libreoffice(root / "cv.docx", root / "cv.pdf")
-
-    def test_slm_shadow_is_recorded_without_affecting_job(self):
-        old = jobflow.DATA, jobflow.DB_PATH
-        with tempfile.TemporaryDirectory() as folder:
-            jobflow.DATA = Path(folder)
-            jobflow.DB_PATH = jobflow.DATA / "jobs.sqlite3"
-            conn = jobflow.db()
-            conn.execute("INSERT INTO jobs(id,company,title,location,url,description,status,relevance,reasons,discovered_at) "
-                         "VALUES ('shadow','Example','Data Scientist','NL','https://example.test/shadow',"
-                         "'Python role. No visa sponsorship.','screening',80,'[]','2026-01-01')")
-            conn.commit(); conn.close()
-            payload = {"responsibilities": ["Build models"], "required_skills": ["Python"],
-                       "preferred_skills": [], "application_questions": [],
-                       "eligibility_flags": [{"category": "visa", "quote": "No visa sponsorship"}]}
-            response = mock.Mock()
-            response.json.return_value = {"message": {"content": json.dumps(payload)}}
-            with mock.patch.object(jobflow.requests, "post", return_value=response):
-                jobflow.shadow_extract("shadow")
-            check = jobflow.db()
-            row = check.execute("SELECT status,result FROM slm_shadow").fetchone()
-            self.assertEqual(row["status"], "shadow")
-            self.assertTrue(json.loads(row["result"])["eligibility_flags"][0]["quote_valid"])
-            self.assertEqual(check.execute("SELECT status FROM jobs").fetchone()[0], "screening")
-            check.close()
-        jobflow.DATA, jobflow.DB_PATH = old
 
     def test_match_rejects_below_threshold_and_bad_components(self):
         old = jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH

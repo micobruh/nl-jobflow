@@ -266,9 +266,9 @@ def role_catalog() -> tuple[dict, dict]:
     families, roles = value.get("families"), value.get("roles")
     if (not isinstance(families, dict) or not families or not isinstance(roles, dict) or not roles or
             any(not isinstance(item, dict) or not isinstance(item.get("label"), str) or
-                not isinstance(item.get("programme_patterns", []), list)
-                for item in families.values()) or
-            any(not isinstance(item, dict) or item.get("family") not in families for item in roles.values())):
+                not isinstance(item.get("programme_patterns", []), list) or
+                any(not isinstance(pattern, str) for pattern in item.get("programme_patterns", []))
+                for item in families.values())):
         raise SystemExit("role_catalog.yaml contains invalid families or roles")
     try:
         for family in families.values():
@@ -276,6 +276,21 @@ def role_catalog() -> tuple[dict, dict]:
                 re.compile(pattern)
     except re.error as exc:
         raise SystemExit("role_catalog.yaml contains an invalid programme pattern") from exc
+    for role_id, role in roles.items():
+        lists = ("queries", "strong", "weak")
+        if (not isinstance(role, dict) or role.get("family") not in families or
+                any(not isinstance(role.get(key), str) or not role[key].strip()
+                    for key in ("label", "title_pattern", "cv_role", "prompt")) or
+                any(not isinstance(role.get(key), list) or not role[key] or
+                    any(not isinstance(item, str) or not item for item in role[key]) for key in lists)):
+            raise SystemExit(f"role_catalog.yaml contains invalid role: {role_id}")
+        try:
+            re.compile(role["title_pattern"])
+        except re.error as exc:
+            raise SystemExit(f"role_catalog.yaml role {role_id} has an invalid title pattern") from exc
+        prompt = (ROOT / role["prompt"]).resolve()
+        if ROOT.resolve() not in prompt.parents or not prompt.is_file():
+            raise SystemExit(f"role_catalog.yaml role {role_id} has an invalid prompt path")
     return families, roles
 
 
@@ -439,7 +454,7 @@ def validate_priority_companies(companies: object, families: dict,
                                 require_coverage: bool = False) -> None:
     if not isinstance(companies, list) or not companies:
         raise SystemExit("priority_companies must contain source definitions")
-    seen = set()
+    seen, urls = set(), set()
     coverage = {family: 0 for family in families}
     for item in companies:
         if (not isinstance(item, dict) or not isinstance(item.get("name"), str) or
@@ -450,6 +465,11 @@ def validate_priority_companies(companies: object, families: dict,
         if key in seen:
             raise SystemExit(f"duplicate priority company: {item['name']}")
         seen.add(key)
+        parsed = urlparse(item["career_url"])
+        source_url = (parsed.scheme.lower(), parsed.netloc.lower(), parsed.path.rstrip("/"), parsed.query)
+        if source_url in urls:
+            raise SystemExit(f"duplicate priority company career URL: {item['career_url']}")
+        urls.add(source_url)
         tagged = item.get("families")
         if tagged is not None and (not isinstance(tagged, list) or not tagged or
                                    any(not isinstance(value, str) for value in tagged) or
@@ -753,10 +773,6 @@ def db() -> sqlite3.Connection:
         );
         CREATE TABLE IF NOT EXISTS job_matches (
             job_id TEXT PRIMARY KEY, score INTEGER NOT NULL, details TEXT NOT NULL, created_at TEXT NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS slm_shadow (
-            job_id TEXT PRIMARY KEY, model TEXT NOT NULL, duration_seconds REAL NOT NULL,
-            status TEXT NOT NULL, result TEXT, error TEXT, created_at TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS lead_imports (
             id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT NOT NULL, url TEXT NOT NULL,
@@ -1649,10 +1665,6 @@ def role_selection_status(job: dict, cfg: dict) -> str:
     return "unclassified"
 
 
-def has_role_fit(job: dict, cfg: dict) -> bool:
-    return role_selection_status(job, cfg) not in {"deselected", "excluded"}
-
-
 def configured_seniority_level(text: str) -> str | None:
     for level in reversed(SENIORITY_LEVELS):
         for term in sorted(SENIORITY_TERMS[level], key=len, reverse=True):
@@ -2214,7 +2226,7 @@ def cleanup_out_of_scope_jobs(conn: sqlite3.Connection) -> int:
     ids = [row["id"] for row in rows if not job_in_netherlands(row)]
     with conn:
         for job_id in ids:
-            for table in ("evaluations", "job_matches", "slm_shadow"):
+            for table in ("evaluations", "job_matches"):
                 conn.execute(f"DELETE FROM {table} WHERE job_id=?", (job_id,))
             conn.execute("DELETE FROM jobs WHERE id=?", (job_id,))
     return len(ids)
@@ -2614,76 +2626,6 @@ def collect_contacts(jid: str) -> None:
         brief_path.write_text(json.dumps(apply_cv_section_policy(brief, master_cv()), separators=(",", ":")))
     conn.close()
     print(json.dumps({"job_id": jid, "contacts": len(contacts)}))
-
-
-SLM_EXTRACTION_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "responsibilities": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
-        "required_skills": {"type": "array", "items": {"type": "string"}, "maxItems": 15},
-        "preferred_skills": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
-        "application_questions": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
-        "eligibility_flags": {"type": "array", "items": {"type": "object", "properties": {
-            "category": {"type": "string", "enum": ["visa", "internship", "part_time", "enrollment"]},
-            "quote": {"type": "string"}}, "required": ["category", "quote"]}},
-    },
-    "required": ["responsibilities", "required_skills", "preferred_skills", "application_questions",
-                 "eligibility_flags"],
-}
-
-
-def shadow_extract(jid: str) -> None:
-    cfg, conn = config(), db()
-    row = conn.execute("SELECT title,description FROM jobs WHERE id=?", (jid,)).fetchone()
-    if not row:
-        raise SystemExit("job not found")
-    model = cfg.get("slm_model", "qwen3:4b-instruct")
-    started = time.monotonic()
-    status, result, error = "error", None, None
-    try:
-        response = requests.post(
-            cfg.get("ollama_url", "http://127.0.0.1:11434") + "/api/chat",
-            json={"model": model, "stream": False, "format": SLM_EXTRACTION_SCHEMA,
-                  "options": {"temperature": 0, "num_ctx": 4096}, "messages": [
-                      {"role": "system", "content": "Extract only explicit vacancy facts. Copy exact text for eligibility quotes. Return schema JSON."},
-                      {"role": "user", "content": f"TITLE: {row['title']}\nDESCRIPTION:\n{row['description']}"}]},
-            timeout=90,
-        )
-        response.raise_for_status()
-        result = json.loads(response.json()["message"]["content"])
-        missing = set(SLM_EXTRACTION_SCHEMA["required"]) - set(result)
-        if missing:
-            raise ValueError("missing schema fields: " + ", ".join(sorted(missing)))
-        for flag in result["eligibility_flags"]:
-            flag["quote_valid"] = flag["quote"].lower() in row["description"].lower()
-        status = "shadow"
-    except Exception as exc:
-        error = str(exc)[:500]
-    duration = round(time.monotonic() - started, 3)
-    with conn:
-        conn.execute("INSERT OR REPLACE INTO slm_shadow VALUES (?,?,?,?,?,?,?)",
-                     (jid, model, duration, status, json.dumps(result) if result else None, error,
-                      datetime.now(timezone.utc).isoformat()))
-    conn.close()
-    print(json.dumps({"job_id": jid, "status": status, "duration_seconds": duration, "error": error}))
-
-
-def shadow_report() -> None:
-    conn = db()
-    rows = conn.execute("SELECT status,duration_seconds,result FROM slm_shadow").fetchall()
-    durations = sorted(row["duration_seconds"] for row in rows if row["status"] == "shadow")
-    valid_quotes = total_quotes = 0
-    for row in rows:
-        if not row["result"]:
-            continue
-        for flag in json.loads(row["result"])["eligibility_flags"]:
-            total_quotes += 1
-            valid_quotes += int(flag.get("quote_valid", False))
-    median = durations[len(durations) // 2] if durations else None
-    p95 = durations[min(len(durations) - 1, round(.95 * len(durations)))] if durations else None
-    print(json.dumps({"jobs": len(rows), "schema_valid": len(durations), "median_seconds": median,
-                      "p95_seconds": p95, "quote_valid": valid_quotes, "quotes": total_quotes}, indent=2))
-    conn.close()
 
 
 def document_preflight(document: str, document_type: str, brief: dict, cfg: dict | None = None) -> list[str]:
@@ -3789,15 +3731,6 @@ def reduce_wo_programmes(raw: bytes, snapshot_date: date) -> tuple[dict, dict[st
         for institution, items in registrations.items()
     }
     return catalog, rendered_registrations
-
-
-def build_wo_programme_catalog(source: Path, destination: Path = WO_CATALOG_PATH,
-                               as_of: date | None = None) -> dict:
-    """Reduce DUO's recognition CSV to an offline, institution-neutral WO catalogue."""
-    result, _ = reduce_wo_programmes(source.read_bytes(), as_of or date.today())
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
-    return result
 
 
 def programme_fixture_outputs(catalog: dict, registrations: dict[str, list[dict]],
@@ -5133,9 +5066,6 @@ def main() -> None:
     sub.add_parser("marketplace-report")
     contacts = sub.add_parser("contacts")
     contacts.add_argument("job_id")
-    shadow = sub.add_parser("shadow-extract")
-    shadow.add_argument("job_id")
-    sub.add_parser("shadow-report")
     sub.add_parser("source-health")
     sub.add_parser("role-gap-report")
     sub.add_parser("preflight")
@@ -5213,10 +5143,6 @@ def main() -> None:
         marketplace_report()
     elif args.command == "contacts":
         collect_contacts(args.job_id)
-    elif args.command == "shadow-extract":
-        shadow_extract(args.job_id)
-    elif args.command == "shadow-report":
-        shadow_report()
     elif args.command == "source-health":
         source_health()
     elif args.command == "role-gap-report":

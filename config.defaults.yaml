@@ -17,8 +17,6 @@ ats_threshold: 90
 max_revision_attempts: 8
 tier2_batch_size: 40
 retention_days: 30
-ollama_url: http://127.0.0.1:11434
-slm_model: qwen3:4b-instruct
 visual_references:
   cv: cv-reference.pdf
   letter: motivation-letter.pdf

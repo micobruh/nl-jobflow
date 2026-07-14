@@ -1,1 +1,0 @@
-Create standalone project automation using AUTOMATION.md. Schedule weekdays at 11:30 Europe/Amsterdam. Run in local project.

@@ -1,6 +1,6 @@
 # Optional agent-side marketplace discovery
 
-Use this only when running inside Codex or Claude Code. It supplements deterministic discovery; it never changes screening rules.
+Use only when this agent has a read-only job-search tool with full job details. This supplements deterministic discovery; screening rules do not change.
 
 1. Inspect the tools actually callable in this session. A visible brand name is not enough.
 2. Use a LinkedIn or Indeed app/MCP tool only when it supports read-only job search plus full job details. The current official LinkedIn ChatGPT app is profile lookup only, so it does not qualify unless its capabilities change.

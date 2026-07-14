@@ -8,12 +8,11 @@ python jobflow.py import-jd --company "COMPANY NAME" --title "JOB TITLE" --locat
 
 If screening:
 
-1. python jobflow.py shadow-extract <job-id>
-2. Evaluate with prompts/evaluate_job.md, applicant profile, untouched master CV, job data, warnings, and verification items.
-3. Save strict JSON to data/matches/<job-id>.json.
-4. python jobflow.py record-match <job-id> data/matches/<job-id>.json
-5. If accepted: contacts, writer for cv.md/letter.md/outreach.md, score, reviewer loops, quality.json.
-6. If quality passes: deliver <job-id>
+1. Evaluate with prompts/evaluate_job.md, applicant profile, untouched master CV, job data, warnings, and verification items.
+2. Save strict JSON to data/matches/<job-id>.json.
+3. python jobflow.py record-match <job-id> data/matches/<job-id>.json
+4. If accepted: contacts, writer for cv.md/letter.md/outreach.md, score, reviewer loops, quality.json.
+5. If quality passes: deliver <job-id>
 
 Report:
 - scan skipped
