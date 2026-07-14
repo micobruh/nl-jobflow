@@ -5017,7 +5017,8 @@ def init_profile(path: Path) -> dict:
 
 def privacy_audit(markers_path: Path) -> dict:
     try:
-        markers = [line.strip() for line in markers_path.read_text().splitlines() if line.strip()]
+        markers = [line.strip() for line in markers_path.read_text().splitlines()
+                   if line.strip() and not line.lstrip().startswith("#")]
     except OSError as exc:
         raise SystemExit(f"cannot read privacy markers: {exc}") from exc
     if not markers or len(markers) > 100:

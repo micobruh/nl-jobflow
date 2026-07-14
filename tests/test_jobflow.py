@@ -3989,9 +3989,15 @@ City | Aug 2026 – Dec 2026
         self.assertIn("config.example.yaml", tracked)
 
     def test_privacy_audit_uses_fictional_external_markers(self):
+        example = jobflow.ROOT / ".privacy-markers.example"
+        self.assertTrue(example.is_file())
+        self.assertIn("Alex Example", example.read_text())
+        self.assertIn(".privacy-markers.example", subprocess.check_output(
+            ["git", "ls-files"], cwd=jobflow.ROOT, text=True).splitlines())
         with tempfile.TemporaryDirectory() as folder:
             markers = Path(folder) / "markers.txt"
-            markers.write_text(f"untracked-candidate-{Path(folder).name}\nuntracked-employer-{Path(folder).name}\n")
+            markers.write_text(f"# comments are ignored\nuntracked-candidate-{Path(folder).name}\n"
+                               f"untracked-employer-{Path(folder).name}\n")
             result = jobflow.privacy_audit(markers)
         self.assertTrue(result["passed"])
         self.assertEqual(result["markers_checked"], 2)

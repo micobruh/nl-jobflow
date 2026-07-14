@@ -202,5 +202,7 @@ unclassified relevant titles seen in at least three jobs from two employers and 
 adds roles or edits configuration. `/doctor` also reports setup completion, SQLite schema
 version, integrity status, and the latest automatic pre-migration backup.
 
-Before publishing, keep real markers in an ignored file and run
+Before publishing, copy `.privacy-markers.example` to the ignored
+`.privacy-markers`, replace its fictional lines with exact private markers, set
+mode `0600`, and run
 `python jobflow.py privacy-audit --markers-file .privacy-markers`.
