@@ -120,8 +120,8 @@ Run:
 python jobflow.py preflight
 ```
 
-Purpose: diagnose renderer, converter, temp, Telegram, manual contacts, and
-browser dependencies.
+Purpose: diagnose renderer, converter, temp, Telegram, manual contacts, browser
+dependencies, and the selected document-agent provider.
 
 ## `/doctor`
 
@@ -132,7 +132,7 @@ python jobflow.py doctor
 ```
 
 Purpose: run non-mutating environment diagnostics plus setup, private-file modes,
-database integrity, queue counts, Codex CLI availability, master CV presence, and
+database integrity, queue counts, selected agent CLI availability, master CV presence, and
 recent source issues. Unsafe permissions are reported, never changed.
 
 ## `/next`

@@ -1,5 +1,7 @@
 schedule: "30 11 * * 1-5"
 timezone: Europe/Amsterdam
+agent:
+  provider: null
 applicant:
   residence_route: other
   study_status: graduated

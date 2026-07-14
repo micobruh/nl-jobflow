@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["agent_role", "run_id", "attempt", "document", "markdown"],
+  "properties": {
+    "agent_role": {"type": "string", "enum": ["writer"]},
+    "run_id": {"type": "string", "minLength": 1},
+    "attempt": {"type": "integer", "minimum": 1},
+    "document": {"type": "string", "enum": ["cv", "letter", "outreach"]},
+    "markdown": {"type": "string", "minLength": 1}
+  }
+}

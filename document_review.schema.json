@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["document_type", "score", "passed", "unsupported_claims", "unanswered_questions", "contact_issues", "missing_supported_keywords", "duplication_issues", "ai_tone_issues", "readability_issues", "format_issues", "layout_risks", "channel_issues", "fixes"],
+  "properties": {
+    "document_type": {"type": "string", "enum": ["cv", "letter", "outreach"]},
+    "score": {"type": "integer", "minimum": 0, "maximum": 100},
+    "passed": {"type": "boolean"},
+    "unsupported_claims": {"type": "array", "items": {"type": "string"}},
+    "unanswered_questions": {"type": "array", "items": {"type": "string"}},
+    "contact_issues": {"type": "array", "items": {"type": "string"}},
+    "missing_supported_keywords": {"type": "array", "items": {"type": "string"}},
+    "duplication_issues": {"type": "array", "items": {"type": "string"}},
+    "ai_tone_issues": {"type": "array", "items": {"type": "string"}},
+    "readability_issues": {"type": "array", "items": {"type": "string"}},
+    "format_issues": {"type": "array", "items": {"type": "string"}},
+    "layout_risks": {"type": "array", "items": {"type": "string"}},
+    "channel_issues": {"type": "array", "items": {"type": "string"}},
+    "fixes": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -6,21 +6,114 @@ The workflow finds vacancies, checks configurable eligibility and CV fit, and dr
 
 > This is an advisory research tool, not legal or immigration advice. Verify permit, salary, sponsor, internship, security-screening, and contract requirements with the employer and current official sources.
 
+## Why this project exists
+
+Job searches involve repetitive discovery, eligibility checks, and document tailoring, but the
+important decisions are personal. Generic automation can miss Netherlands-specific requirements,
+hide why a vacancy was filtered, or produce claims that are difficult to verify. Fully automated
+application tools can also submit low-quality applications before the user reviews them.
+
+`nl-jobflow` automates the repeatable work while keeping the applicant in control. Its goal is not
+maximum application volume; it is fewer, better-supported, reviewable applications based on the
+user's actual evidence and eligibility preferences.
+
+## Key advantages
+
+- **Multiple AI providers:** select Codex, Claude Code, or Cursor per profile instead of depending
+  on one vendor. The interactive host and document provider may be different supported tools.
+- **Deterministic gates around AI:** Python validates structured results, evidence, scores, one-page
+  rendering, visual comparisons, and delivery eligibility rather than trusting a model response alone.
+- **Evidence-first documents:** tailored claims come from the active Master CV and vacancy evidence;
+  unsupported experience, skills, dates, or metrics fail review.
+- **Netherlands-focused filtering:** configure recognized-sponsor requirements, Dutch level,
+  immigration context, education, internships, schedules, workplace, and regulated-role exclusions.
+- **Cross-discipline support:** Dutch WO programmes connect to study profiles, job families, and
+  shared roles without assuming every applicant targets a technical career.
+- **Local profile isolation:** CVs, configuration, credentials, SQLite data, reports, and generated
+  artifacts remain in user-controlled profile directories.
+- **Current-scan isolation:** a full run processes only newly admitted jobs from that scan; historical
+  accepted jobs remain available through explicit backlog commands.
+- **Human control:** the project never applies, submits forms, or contacts employers. Optional
+  Telegram delivery sends reviewable drafts only to the applicant.
+
+Provider selection is explicit. The workflow does not automatically fail over between providers or
+promise identical output quality from different models and agent environments.
+
+## How it works
+
+1. Create an isolated profile and provide a truthful Master CV.
+2. Select study profiles, job families, roles, and eligibility rules.
+3. Discover and deterministically screen current vacancies.
+4. Use isolated AI writers and reviewers where the host supports them.
+5. Validate, render, compare, and optionally deliver reviewable drafts to the applicant.
+
 ## Quick start
 
-The public beta is tested on Ubuntu Linux. Install its local dependencies and create a private profile outside the checkout:
+The public beta is tested in CI on Ubuntu Linux. macOS and Windows through WSL2 are best-effort.
+
+### Ubuntu Linux
 
 ```bash
 sudo apt update
 sudo apt install python3-venv python-is-python3 poppler-utils libreoffice
+```
+
+### macOS
+
+Install [Homebrew](https://docs.brew.sh/Installation), then install the required tools:
+
+```bash
+brew install python@3.12 poppler
+brew install --cask libreoffice
+```
+
+Use `python3.12 -m venv .venv` instead of `python -m venv .venv` in the shared setup below.
+
+### Windows through WSL2
+
+Native PowerShell execution is unsupported because the runtime uses POSIX file locks and permissions.
+From an Administrator PowerShell, install Ubuntu using the official
+[Microsoft WSL instructions](https://learn.microsoft.com/windows/wsl/install), then restart if requested:
+
+```powershell
+wsl --install -d Ubuntu
+```
+
+Open Ubuntu and install the same dependencies used on Ubuntu Linux:
+
+```bash
+sudo apt update
+sudo apt install python3-venv python-is-python3 poppler-utils libreoffice
+```
+
+Keep the repository and private profile under your WSL home directory, such as `~/nl-jobflow`
+and `~/jobflow-profiles/default`, rather than under `/mnt/c`; this preserves Linux locking,
+permissions, and filesystem performance.
+
+### Shared setup
+
+Run these commands in a Linux, WSL, or macOS shell. On macOS, use the `python3.12` substitution
+noted above for the virtual-environment command.
+
+```bash
 git clone https://github.com/micobruh/nl-jobflow.git
 cd nl-jobflow
 python -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements.txt
-python -m playwright install --with-deps chromium
 python jobflow.py init-profile ~/jobflow-profiles/default
 export JOBFLOW_PROFILE=~/jobflow-profiles/default
+```
+
+Install the Chromium binary required for visual comparisons. Playwright documents its browser
+installation options in the [official Python guide](https://playwright.dev/python/docs/browsers).
+
+```bash
+# Ubuntu and WSL2
+python -m playwright install --with-deps chromium
+
+# macOS
+python -m playwright install chromium
 ```
 
 Replace every placeholder in `~/jobflow-profiles/default/master_cv.md`, then run the setup form and check the installation:
@@ -52,16 +145,59 @@ In a capable coding agent, run:
 
 Runtime state, generated documents, credentials, the user configuration, and the real master CV are ignored by Git.
 
-## Support matrix
+## AI-agent compatibility
 
-| Capability | Support |
-| --- | --- |
-| Deterministic scanning, filtering, reporting, rendering, and profile management | Agent-independent Python CLI |
-| Slash commands and scheduled workflows | Any agent able to follow `AGENTS.md`, `COMMANDS.md`, and `AUTOMATION.md` with isolated writers/reviewers |
-| General-CV generation and automated Telegram feedback revisions | Codex CLI currently required |
-| Ubuntu Linux | Tested in CI and supported for the public beta |
-| macOS | Best-effort; install equivalent Python, LibreOffice, Poppler, and Playwright dependencies manually |
-| Windows | Unsupported until its renderer, permissions, and service flow are tested |
+The **host agent** follows `COMMANDS.md` and `AUTOMATION.md`. The profile-selected **document
+provider** is a CLI launched by Python for general CVs and Telegram feedback. They can be different.
+
+Legend: ✅ directly supported, ◐ requires surface-specific tools or uses the existing
+`NEEDS REVIEW` fallback, — not implemented as a provider.
+
+### Host and orchestrator support
+
+| Capability | Codex Desktop | Codex CLI | Claude Code | Cursor CLI | Other agents |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| Deterministic Python commands | ✅ | ✅ | ✅ | ✅ | ◐ |
+| Follow repository workflow instructions | ✅ | ✅ | ✅ | ✅ | ◐ |
+| `/find-jobs` and reports | ✅ | ✅ | ✅ | ✅ | ◐ |
+| Full document workflows | ✅ | ◐ | ✅ | ◐ | ◐ |
+| Master-CV semantic review | ✅ | ◐ | ✅ | ◐ | ◐ |
+| Marketplace discovery | ◐ | ◐ | ◐ | ◐ | ◐ |
+
+Codex Desktop provides the isolated subagents required by full document workflows. Claude Code's
+documented [`Agent` subagents](https://code.claude.com/docs/en/sub-agents) also run with fresh,
+isolated context. Codex CLI remains conditional because the repository does not assume the same
+subagent tools are available in every installation. Cursor CLI supports automation and structured
+output, but does not document equivalent isolated writer/reviewer subagents; see its official
+[CLI guide](https://docs.cursor.com/en/cli/using) and
+[output-format reference](https://docs.cursor.com/en/cli/reference/output-format).
+
+Marketplace discovery remains conditional because it needs read-only search, full job-detail
+retrieval, network access, and sometimes connector authentication. Deterministic employer discovery
+still works without those capabilities.
+
+### Document-provider support
+
+| Capability | Codex CLI | Claude Code CLI | Cursor Agent CLI | Other providers |
+| --- | :---: | :---: | :---: | :---: |
+| General CV generation | ✅ | ✅ | ✅ | — |
+| Telegram feedback revision | ✅ | ✅ | ✅ | — |
+| Structured JSON result | ✅ | ✅ | ✅ | — |
+| Fresh writer/reviewer processes | ✅ | ✅ | ✅ | — |
+| Unattended feedback worker | ✅ | ✅ | ✅ | — |
+
+Python owns schema validation, deterministic scoring, rendering, artifact promotion, and Telegram
+delivery. Other host agents can invoke the workflow, but these provider-driven features require an
+installed and authenticated Codex, Claude Code, or Cursor Agent CLI.
+
+### Platform support
+
+| Platform | Status | Scheduling |
+| --- | --- | --- |
+| Ubuntu Linux | CI-tested public-beta platform | Supplied `systemd` units |
+| macOS | Best-effort | Manual runs; no supplied `launchd` service |
+| Windows with WSL2 | Best-effort | Manual runs; WSL service configuration is not supplied |
+| Native Windows/PowerShell | Unsupported | Unsupported |
 
 | Symptom | Check |
 | --- | --- |
@@ -71,12 +207,25 @@ Runtime state, generated documents, credentials, the user configuration, and the
 | Setup or permissions are unsafe | Run `python jobflow.py doctor`; it reports incomplete setup and private file modes without changing them. |
 | Telegram is unavailable | Leave it disabled or set both variables in the profile `.env`; generation still works locally. |
 | Scan cannot reach sources | Grant network access for `scan`/`preflight` and inspect `source-health`; maintained sources can change without notice. |
+| Document agent is unavailable | Install and authenticate the selected CLI, or set `JOBFLOW_AGENT_BIN`; `/doctor` reports the resolved provider and binary. |
 
 ## Configuration
 
 `config.example.yaml` is intentionally neutral and incomplete. Discovery and document commands fail closed until `python jobflow.py setup` records explicit study-profile, job-family, and role selections. Setup prints the exact RIO evidence, confidence, rationale, and regulated-programme warnings behind its suggestions; suggestions are never selected automatically.
 
 Maintained policy lives in `config.defaults.yaml`. The offline DUO RIO catalogue identifies Dutch WO programmes, `study_profiles.yaml` maps education to suggestions, and `role_catalog.yaml` groups reusable roles into job families. Each of the 14 study profiles has one standalone YAML under `presets/`; shared role-writing guidance remains under `prompts/presets/`. Advanced users may create ignored `config.override.yaml`.
+
+### Document agent
+
+`agent.provider` selects `codex`, `claude`, or `cursor`. New profiles choose one during setup;
+older profiles without this field continue to use Codex. The workflow launches a fresh read-only
+writer process and, for Telegram revisions, a separate fresh reviewer process. Python validates
+their JSON and is the only process that writes or promotes documents.
+
+Install and authenticate the selected CLI yourself. Binary resolution uses `JOBFLOW_AGENT_BIN`
+first, then `CODEX_BIN`, `CLAUDE_BIN`, or `CURSOR_AGENT_BIN`, and finally `codex`, `claude`, or
+`cursor-agent` on `PATH`. Credentials and API keys do not belong in YAML. Provider model selection
+remains the CLI's local default.
 
 ### Applicant
 
@@ -145,6 +294,10 @@ Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `.env` to deliver approved dr
 
 `systemd/jobflow-feedback.service` assumes the repository is at `~/nl-jobflow`.
 Set `JOBFLOW_PROFILE=/absolute/profile/path` in `~/.config/nl-jobflow.env` for an isolated profile.
+The worker uses that profile's `agent.provider`; the selected CLI must be installed and authenticated
+for the service account, with its binary available on the service `PATH` or via `JOBFLOW_AGENT_BIN`.
+The supplied service files are Linux-only. Run commands manually on macOS and Windows/WSL2 unless
+you configure and maintain your own scheduler.
 
 ## Privacy and safety
 
