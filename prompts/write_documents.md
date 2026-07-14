@@ -10,9 +10,9 @@ Keep truth, tone, ATS, and one-page gates. Use STAR/Google XYZ only with source 
 
 Before writing, obey concepts, headings, budgets, questions, and renderer limits. Before returning, do one silent natural-language audit: use concrete details/simple verbs; vary sentence length; remove hype, vague praise, filler, forced trios, repeated shapes, formulaic transitions, generic conclusions, and chatbot commentary. Preserve tone. No humanization pass.
 
-`experience_assessment` governs year claims; zero roles means zero months. Rank assessed items as in the CV prompt; if a legacy brief lacks project assessment, classify exact Master CV projects. Omit unrelated/unavailable sections; excluded experience never satisfies required years.
+`experience_assessment` governs year claims, not visibility; zero roles means zero months. Rank assessed items as in the CV prompt; if a legacy brief lacks project assessment, classify exact Master CV projects. Include Experience whenever the Master CV has a role; excluded experience never satisfies required years.
 
-Use renderer-native Markdown, no HTML. CV header: candidate name/contacts from `MASTER_CV`; no `###` items or empty headings. Summary<=280 chars; experience/education `*Title | Dates*`; projects `*Supported Name*`, no dates; next line organization/institution, no location/dates; items <=4 bullets, each <=105 chars. Add ranked items while one page/reference density holds. Skills: `**Category:** ...`. Languages: comma `Language (Level)` from `MASTER_CV`.
+Use renderer-native Markdown, no HTML. CV header: candidate name/contacts from `MASTER_CV`; no `###` items or empty headings. Summary<=280 chars. Experience/education: `*Title | Dates*`, then organization/institution without location. Projects: `*Supported Name*`, then bullets only; no dates or organization/source row. Items <=4 bullets, each <=105 chars. Add ranked items while one page/reference density holds. Skills: `**Category:** ...`. Languages: comma `Language (Level)` from `MASTER_CV`.
 
 Letter header must be exactly `# Candidate Name`, then one `email | phone | location` line, then the greeting. Never write a “Motivation Letter” title, profile links, recipient/company/address block, or any other content above the greeting.
 

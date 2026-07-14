@@ -128,6 +128,25 @@ python jobflow.py preflight
 
 `init-profile` creates the profile directory with mode `0700` and private source files with mode `0600`. The selected profile owns its configuration, CV, credentials, database, artifacts, reports, and optional references; shared code and maintained packs remain in this repository.
 
+### Writing `master_cv.md`
+
+Treat `master_cv.md` as a private, factual evidence bank, not a CV tailored to one vacancy. Keep
+`Skills`, `Education`, and `Languages` present and non-empty, and include only claims you can
+support. When populated, every experience role and project must start with a `###` heading;
+experience dates must use `Mon YYYY – Mon YYYY` or `Mon YYYY – Present`.
+
+If you have no experience or projects, keep the canonical headings empty:
+
+```markdown
+## Professional Experience
+
+## Complete Project Bank
+```
+
+Do not add `None`, explanatory prose, or template placeholders below an empty heading; that is
+malformed item content. The parser also treats a missing work-bank heading as zero evidence, but
+keeping both headings makes the file easier to validate and extend later.
+
 The root-profile layout remains available for compatibility, but it is not the recommended setup:
 
 ```bash

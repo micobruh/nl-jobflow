@@ -2227,7 +2227,7 @@ class JobFlowTest(unittest.TestCase):
         self.assertIn("Hiring Team", letter)
         self.assertIn("Word-style DOCX/PDF renderer", letter)
         self.assertIn("reference-like density", cv)
-        self.assertIn("optional Experience, optional Projects", cv)
+        self.assertIn("Experience when the master has any experience role, optional Projects", cv)
         self.assertNotIn("unless Experience stronger", cv)
         preset_cv = (prompts / "presets" / "data_ai_general_cv.md").read_text()
         self.assertIn("AI / Machine Learning Engineer: `AI/ML`, `LLM/RAG`, `Engineering`, `Data`", preset_cv)
@@ -2288,6 +2288,9 @@ class JobFlowTest(unittest.TestCase):
         self.assertIn("project_assessment", match)
         self.assertIn("Python calculates dates and totals", match)
         self.assertIn("count_status` controls required-year credit, not visibility", cv)
+        self.assertIn("Omit Experience only when the master section is empty", cv)
+        self.assertIn("then bullets only", cv)
+        self.assertIn("governs year claims, not visibility", writer)
         self.assertIn("Omit unrelated items", cv)
         self.assertIn("omit job/work location", cv)
         self.assertIn("no location, relocation, availability, or start date", cv)
@@ -2366,6 +2369,8 @@ class JobFlowTest(unittest.TestCase):
             self.assertEqual(brief["contacts"], [])
             self.assertEqual(brief["generation_constraints"]["cv_word_budget"], [0, 430])
             self.assertEqual(brief["source_item_counts"], {"experience": 1, "projects": 0})
+            self.assertEqual(brief["generation_constraints"]["required_cv_sections"],
+                             ["Summary", "Experience", "Education", "Skills", "Languages"])
             self.assertEqual(brief["project_assessment"], [])
         jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH = old
 
@@ -2897,6 +2902,34 @@ City | Aug 2026 – Dec 2026
         mixed = core.replace("## Education", "## Projects\n*Forecasting Platform*\n- Built forecasts.\n\n## Education")
         available = {**brief, "source_item_counts": {"experience": 0, "projects": 1}}
         self.assertFalse(jobflow.document_preflight(mixed, "cv", available, self.cfg))
+
+    def test_document_preflight_requires_experience_when_master_has_roles(self):
+        brief = jobflow.apply_cv_section_policy({"experience_assessment": {"roles": [{
+            "relevance": "supporting", "count_status": "excluded"}]}}, TEST_EXPERIENCE_CV)
+        cv = ("# Alex Example\n\n## Summary\nPython analyst.\n\n## Education\nDegree\n\n"
+              "## Skills\n**Programming:** Python\n**Analytics:** SQL\n\n"
+              "## Languages\nEnglish (Fluent)")
+        failures = jobflow.document_preflight(cv, "cv", brief, self.cfg)
+        self.assertIn("missing CV sections: experience", failures)
+
+        with_experience = cv.replace(
+            "## Education", "## Experience\n*Data Analyst | 2020*\nExample B.V.\n- Built systems.\n\n## Education")
+        self.assertFalse(jobflow.document_preflight(with_experience, "cv", brief, self.cfg))
+
+    def test_document_preflight_rejects_project_organization_source_rows(self):
+        brief = {"source_item_counts": {"experience": 0, "projects": 1},
+                 "generation_constraints": {
+                     "required_cv_sections": ["Summary", "Education", "Skills", "Languages"]}}
+        core = ("# Alex Example\n\n## Summary\nPython analyst.\n\n## Projects\n"
+                "*Forecasting Platform*\n{project_body}\n- Built forecasts.\n\n"
+                "## Education\n*MSc | 2025*\nExample University\n- Thesis: Forecasting.\n\n"
+                "## Skills\n**Programming:** Python\n**Analytics:** SQL\n\n"
+                "## Languages\nEnglish (Fluent)")
+        self.assertFalse(jobflow.document_preflight(core.format(project_body=""), "cv", brief, self.cfg))
+        failures = jobflow.document_preflight(
+            core.format(project_body="Example University"), "cv", brief, self.cfg)
+        self.assertIn(
+            "CV project items must not include organization/source lines: Example University", failures)
 
     def test_document_preflight_accepts_prior_cv_format(self):
         cv = (
@@ -4191,6 +4224,15 @@ City | Aug 2026 – Dec 2026
         self.assertIn("https://docs.brew.sh/Installation", readme)
         self.assertIn("https://learn.microsoft.com/windows/wsl/install", readme)
         self.assertIn("https://playwright.dev/python/docs/browsers", readme)
+        for value in ("### Writing `master_cv.md`", "private, factual evidence bank",
+                      "every experience role and project must start with a `###` heading",
+                      "`Mon YYYY – Mon YYYY` or `Mon YYYY – Present`",
+                      "## Professional Experience\n\n## Complete Project Bank",
+                      "missing work-bank heading as zero evidence"):
+            self.assertIn(value, readme)
+        template = (jobflow.ROOT / "master_cv.example.md").read_text()
+        self.assertIn("Keep Professional Experience and Complete Project Bank empty", template)
+        self.assertIn("delete only optional source sections", template)
         for agent in ("Codex Desktop", "Codex CLI", "Claude Code", "Cursor CLI", "Other agents",
                       "Claude Code CLI", "Cursor Agent CLI", "Other providers"):
             self.assertIn(agent, readme)

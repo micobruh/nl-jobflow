@@ -5,7 +5,7 @@ City, Country | email@example.com | +00 000000000
 
 **Target roles:** Role One | Role Two
 
-*Replace every placeholder with verified information. Delete sections that do not apply.*
+*Replace every placeholder with verified information. Keep Professional Experience and Complete Project Bank empty when they do not apply; delete only optional source sections that do not apply.*
 
 *Optional source sections include Publications, Research, Fieldwork, Laboratory Work, Policy Work, Portfolio, Certifications, and Licences. Add only sections supported by real evidence.*
 

@@ -2116,11 +2116,13 @@ def relevant_project_assessment(details: dict, document: str) -> list[dict]:
 
 
 def apply_cv_section_policy(brief: dict, document: str) -> dict:
-    brief["source_item_counts"] = {"experience": len(professional_experience_roles(document)),
+    experience_count = len(professional_experience_roles(document))
+    brief["source_item_counts"] = {"experience": experience_count,
                                    "projects": len(master_cv_projects(document))}
     constraints = brief.setdefault("generation_constraints", {})
     constraints["cv_word_budget"] = [0, 430]
-    constraints["required_cv_sections"] = ["Summary", "Education", "Skills", "Languages"]
+    constraints["required_cv_sections"] = [
+        "Summary", *(["Experience"] if experience_count else []), "Education", "Skills", "Languages"]
     return brief
 
 
@@ -2810,6 +2812,10 @@ def document_preflight(document: str, document_type: str, brief: dict, cfg: dict
         dated_projects = cv_project_items_with_dates(document)
         if dated_projects:
             failures.append("CV project items must not show years/dates: " + ", ".join(dated_projects[:3]))
+        project_details = cv_project_detail_lines(document)
+        if project_details:
+            failures.append("CV project items must not include organization/source lines: " +
+                            ", ".join(project_details[:3]))
         education = section_markdown(document, "Education")
         for rule in settings.get("education_detail_rules", []):
             if re.search(rule["degree_pattern"], education) and not re.search(rule["detail_pattern"], education):
@@ -2893,6 +2899,16 @@ def cv_project_items_with_dates(document: str) -> list[str]:
         if main and re.search(r"\|\s*(?:19|20)\d{2}\b|(?:19|20)\d{2}\s*[-–]\s*(?:19|20)\d{2}", line):
             dated.append(clean_markdown_text(re.sub(r"^###\s+", "", line)))
     return dated
+
+
+def cv_project_detail_lines(document: str) -> list[str]:
+    details = []
+    for raw in section_markdown(document, "Projects").splitlines()[1:]:
+        line = raw.strip()
+        if (line and not re.match(r"^(?:###\s+|\*[^*].*\*$)", line) and
+                not re.match(r"^[-*]\s+", line)):
+            details.append(clean_markdown_text(line))
+    return details
 
 
 def text_tokens(value: str) -> set[str]:
@@ -4408,10 +4424,7 @@ def general_cv_check(title: str, folder: Path) -> dict:
         "responsibilities": [], "evidence_map": [],
     })
     cfg = config()
-    source_counts = {"experience": len(professional_experience_roles(master_document)),
-                     "projects": len(master_cv_projects(master_document))}
-    cv_brief = {"source_item_counts": source_counts, "generation_constraints": {
-        "required_cv_sections": ["Summary", "Education", "Skills", "Languages"]}}
+    cv_brief = apply_cv_section_policy({"generation_constraints": {}}, master_document)
     failures = document_preflight(document, "cv", cv_brief, cfg)
     failures.extend(role_specific_cv_failures(title, document, master_document, cfg))
     words = len(document.split())
