@@ -1,6 +1,6 @@
 # nl-jobflow
 
-Local, Codex-first job discovery, screening, and application-draft generation for applicants in the Netherlands, with maintained Dutch WO study profiles.
+Local job discovery, screening, and application-draft generation for applicants in the Netherlands, with maintained Dutch WO study profiles.
 
 The workflow finds vacancies, checks configurable eligibility and CV fit, and drafts reviewable CVs and motivation letters. It never applies, submits forms, contacts employers, or invents candidate facts.
 
@@ -8,49 +8,69 @@ The workflow finds vacancies, checks configurable eligibility and CV fit, and dr
 
 ## Quick start
 
-Install Python 3.12, LibreOffice, Poppler, and Chromium support:
+The public beta is tested on Ubuntu Linux. Install its local dependencies and create a private profile outside the checkout:
 
 ```bash
 sudo apt update
 sudo apt install python3-venv python-is-python3 poppler-utils libreoffice
-git clone https://github.com/YOUR-USER/nl-jobflow.git
+git clone https://github.com/micobruh/nl-jobflow.git
 cd nl-jobflow
 python -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements.txt
 python -m playwright install --with-deps chromium
-cp config.example.yaml config.yaml
-cp master_cv.example.md master_cv.md
-cp .env.example .env
+python jobflow.py init-profile ~/jobflow-profiles/default
+export JOBFLOW_PROFILE=~/jobflow-profiles/default
 ```
 
-Replace every placeholder in `master_cv.md`, then run the setup form and check the installation:
+Replace every placeholder in `~/jobflow-profiles/default/master_cv.md`, then run the setup form and check the installation:
 
 ```bash
 python jobflow.py setup
+python jobflow.py doctor
 python jobflow.py preflight
-python -m unittest discover -s tests -q
 ```
 
-For an isolated user outside the checkout:
+`init-profile` creates the profile directory with mode `0700` and private source files with mode `0600`. The selected profile owns its configuration, CV, credentials, database, artifacts, reports, and optional references; shared code and maintained packs remain in this repository.
+
+The root-profile layout remains available for compatibility, but it is not the recommended setup:
 
 ```bash
-python jobflow.py init-profile ~/jobflow-profiles/example
-python jobflow.py --profile ~/jobflow-profiles/example setup
-export JOBFLOW_PROFILE=~/jobflow-profiles/example
+cp config.example.yaml config.yaml
+cp master_cv.example.md master_cv.md
+cp .env.example .env
+chmod 600 config.yaml master_cv.md .env
 ```
 
-The selected profile owns its private configuration, CV, credentials, database,
-artifacts, reports, and optional `references/`. Shared code and maintained packs
-remain in this repository. Omitting `--profile` preserves the legacy root profile.
+Omitting `--profile` and `JOBFLOW_PROFILE` selects this legacy root profile.
 
-In Codex, run:
+In a capable coding agent, run:
 
 ```text
 /find-jobs
 ```
 
 Runtime state, generated documents, credentials, the user configuration, and the real master CV are ignored by Git.
+
+## Support matrix
+
+| Capability | Support |
+| --- | --- |
+| Deterministic scanning, filtering, reporting, rendering, and profile management | Agent-independent Python CLI |
+| Slash commands and scheduled workflows | Any agent able to follow `AGENTS.md`, `COMMANDS.md`, and `AUTOMATION.md` with isolated writers/reviewers |
+| General-CV generation and automated Telegram feedback revisions | Codex CLI currently required |
+| Ubuntu Linux | Tested in CI and supported for the public beta |
+| macOS | Best-effort; install equivalent Python, LibreOffice, Poppler, and Playwright dependencies manually |
+| Windows | Unsupported until its renderer, permissions, and service flow are tested |
+
+| Symptom | Check |
+| --- | --- |
+| Python command or imports fail | Use Python 3.12, activate `.venv`, and reinstall `requirements.txt`. |
+| Chromium executable is missing | Run `python -m playwright install --with-deps chromium`. |
+| PDF conversion fails | Install LibreOffice and Poppler, then run `python jobflow.py preflight`. |
+| Setup or permissions are unsafe | Run `python jobflow.py doctor`; it reports incomplete setup and private file modes without changing them. |
+| Telegram is unavailable | Leave it disabled or set both variables in the profile `.env`; generation still works locally. |
+| Scan cannot reach sources | Grant network access for `scan`/`preflight` and inspect `source-health`; maintained sources can change without notice. |
 
 ## Configuration
 
@@ -133,6 +153,8 @@ Set `JOBFLOW_PROFILE=/absolute/profile/path` in `~/.config/nl-jobflow.env` for a
 - Review every generated claim against your master CV.
 - Record applications and outcomes only after acting manually.
 - Before publishing a fork, run `git ls-files` and search tracked files for names, email addresses, phone numbers, private paths, tokens, and generated documents.
+- Treat vacancy and company text as untrusted. Runtime prompts forbid it from changing paths, tools, schemas, evidence, privacy, or safety rules.
+- Report vulnerabilities privately as described in `SECURITY.md`; never attach a real CV, configuration, database, token, or generated application to an issue.
 
 ## Dutch immigration references
 
@@ -150,6 +172,8 @@ Rules and amounts change. Consult current official guidance:
 python -m unittest discover -s tests -q
 git diff --check
 ```
+
+See `CONTRIBUTING.md` before opening a change or sanitized bug report.
 
 Study profiles recommend shared role IDs; overlapping studies reuse the same role definition. Later disciplines normally add a profile and reuse catalogue roles, adding new role policy only when necessary.
 

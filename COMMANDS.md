@@ -131,8 +131,9 @@ Run:
 python jobflow.py doctor
 ```
 
-Purpose: run safe environment diagnostics plus queue counts, Codex CLI
-availability, master CV presence, and recent source issues.
+Purpose: run non-mutating environment diagnostics plus setup, private-file modes,
+database integrity, queue counts, Codex CLI availability, master CV presence, and
+recent source issues. Unsafe permissions are reported, never changed.
 
 ## `/next`
 

@@ -3556,14 +3556,30 @@ def setup_status() -> dict:
 
 def doctor_report() -> dict:
     database = database_status()
-    actions = next_actions() if database["quick_check"] in {"ok", "missing"} else {
-        "counts": {}, "source_attention": []}
-    if database["quick_check"] in {"ok", "missing"}:
+    queue_names = ("screening_needs_match", "accepted_needs_documents", "needs_review",
+                   "feedback_queue", "source_attention")
+    actions = next_actions() if database["quick_check"] == "ok" else {
+        "counts": {name: 0 for name in queue_names}, "source_attention": []}
+    if database["quick_check"] == "ok":
         database = database_status()
+    private_paths = {}
+    for name in (".env", "config.yaml", "config.override.yaml", "master_cv.md"):
+        path = PROFILE_ROOT / name
+        mode = path.stat().st_mode & 0o777 if path.exists() else None
+        private_paths[name] = {"path": str(path), "exists": path.exists(),
+                               "mode": f"{mode:04o}" if mode is not None else None,
+                               "private": mode is not None and not bool(mode & 0o077)}
+    profile_mode = PROFILE_ROOT.stat().st_mode & 0o777 if PROFILE_ROOT.exists() else None
+    warnings = [f"unsafe permissions on {name}: {item['mode']} (expected 0600)"
+                for name, item in private_paths.items() if item["exists"] and not item["private"]]
+    if profile_mode is not None and profile_mode & 0o077:
+        warnings.insert(0, f"unsafe profile directory permissions: {profile_mode:04o} (expected 0700)")
     return {
         "profile": {"path": str(PROFILE_ROOT),
-                    "private_permissions": not bool(PROFILE_ROOT.stat().st_mode & 0o077)
-                    if PROFILE_ROOT.exists() else False},
+                    "mode": f"{profile_mode:04o}" if profile_mode is not None else None,
+                    "private_permissions": profile_mode is not None and not bool(profile_mode & 0o077),
+                    "private_files": private_paths,
+                    "privacy_warnings": warnings},
         "preflight": preflight_status(),
         "setup": setup_status(),
         "database": database,
