@@ -2,7 +2,7 @@
 
 Run weekdays at `30 11 * * 1-5` in Europe/Amsterdam.
 
-Keep orchestration/JSON terse; documents use natural professional English. Routine runs load no external skills.
+Keep orchestration/JSON terse; documents use natural professional English. Routine runs load no external skills. Resolve one `JOBFLOW_PROFILE` or global `--profile PATH` for the entire run.
 
 Main agent only orchestrates deterministic commands/artifacts/routing. Never draft/review. Use isolated subagents:
 

@@ -1,0 +1,101 @@
+label: Data Science and AI
+marketplace_discovery:
+  queries:
+  - Data Scientist
+  - Data Analyst
+  - Data Engineer
+  - Machine Learning Engineer
+  - AI Engineer
+title_keywords:
+- data
+- ai
+- artificial intelligence
+- machine learning
+- ml
+- analytics
+- nlp
+- computer vision
+relevance_keywords:
+  strong:
+  - data
+  - analytics
+  - artificial intelligence
+  - machine learning
+  - econometrics
+  - process mining
+  - knowledge engineering
+  - reinforcement learning
+  - computer vision
+  - natural language processing
+  - nlp
+  - deep learning
+  - data science
+  weak:
+  - analysis
+  - modelling
+  - model
+  - reporting
+  - forecasting
+  - automation
+  - algorithm
+  - statistical
+  - quantitative
+  - python
+  - sql
+role_fit:
+  clear_title: \b(?:data|analytics?|ai|artificial intelligence|machine learning|ml|nlp|data
+    science|data scientist|research science analyst|fintech process analyst)\b
+  excluded_title: \b(?:product owner|product manager|financial accounting|accounting
+    expert|hr partner|recruit(?:er|ment)|talent acquisition|sales consultant|account
+    executive|procurement|buyer|lab technician|process engineer|manufacturing support
+    engineer|campaign specialist|campagne specialist|digital advertising|marketing
+    specialist|network engineer|architectural assistant|bim model(?:er|ler))\b
+seniority_role_pattern: (?:data|ai|ml|machine learning|analytics?|research|quantitative)?\s*(?:engineer|scientist|analyst|model(?:er|ler)|specialist|consultant|architect|manager|lead)
+keyword_patterns:
+  analysis: \banalys(?:e[ds]?|ing|is|t|ts)\b
+  analytics: \banalytic(?:s|al)?\b
+  model: \bmodels?\b|\bmodell?ing\b
+  modelling: \bmodell?ing\b
+  statistical: \bstatistical(?:ly)?\b|\bstatistics?\b
+  algorithm: \balgorithms?\b|\balgorithmic\b
+  forecasting: \bforecasts?\b|\bforecast(?:ed|ing)\b
+cv_skill_categories:
+  ai-ml-engineer:
+  - AI/ML
+  - LLM/RAG
+  - Engineering
+  - Data
+  data-analyst:
+  - Programming
+  - Analytics
+  - Data tools
+  - Visualization and delivery
+  data-engineer:
+  - Programming
+  - Data engineering
+  - Databases and formats
+  - Analytics and delivery
+  data-scientist:
+  - Programming
+  - Machine Learning
+  - Methods
+  - Data and MLOps
+  - Analytics
+cv_role_patterns:
+  ai-ml-engineer: (?=.*\b(?:ai|ml|machine learning)\b)(?=.*\bengineer\b)
+  data-analyst: \banalyst\b
+  data-engineer: \bengineer\b
+cv_default_role: data-scientist
+cv_references: {}
+cv_phrase_replacements:
+  imbalanced-classification: imbalanced classification
+pdf_text_defects:
+- imbalancedclassification
+education_detail_rules:
+- degree_pattern: (?im)^\*?MSc Data Science
+  detail_pattern: '(?im)^-\s*Thesis:'
+  message: MSc thesis must be a bullet directly below education item
+- degree_pattern: (?im)^\*?BSc Data Science
+  detail_pattern: '(?im)^-\s*(?:Bachelor\s+)?End Project:'
+  message: BSc end project must be a bullet directly below education item
+general_cv_prompt: prompts/presets/data_ai_general_cv.md

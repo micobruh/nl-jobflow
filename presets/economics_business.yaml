@@ -1,0 +1,54 @@
+label: Economics and Business
+marketplace_discovery:
+  queries:
+  - Junior Business Analyst
+  - Junior Financial Analyst
+  - Graduate Consultant
+title_keywords:
+- business analysis
+- finance
+- economics
+- consulting
+- operations
+- marketing
+- human resources
+relevance_keywords:
+  strong:
+  - business analysis
+  - financial analysis
+  - economics
+  - consulting
+  - operations analysis
+  - market research
+  - people analytics
+  weak:
+  - reporting
+  - forecasting
+  - stakeholder
+  - planning
+  - research
+role_fit:
+  clear_title: \b(?:business|financial|finance|risk|operations|marketing|hr) (?:analyst|advisor|coordinator|specialist)\b|\bgraduate
+    consultant\b
+  excluded_title: \b(?:clinical|laboratory|software developer|mechanical engineer)\b
+seniority_role_pattern: (?:researcher|assistant|analyst|officer|coordinator|consultant|advisor|adviser|specialist)
+keyword_patterns: {}
+cv_skill_categories:
+  knowledge-work:
+  - Domain knowledge
+  - Research and analysis
+  - Delivery
+  - Communication
+cv_role_patterns:
+  knowledge-work: .*
+cv_default_role: knowledge-work
+cv_references: {}
+cv_phrase_replacements: {}
+pdf_text_defects: []
+education_detail_rules: []
+regulated_role_patterns:
+- \b(?:physician|medical doctor|basisarts|huisarts|bedrijfsarts|verzekeringsarts|surgeon|nurse|verpleegkundige)\b
+- \b(?:clinical psychologist|gezondheidszorgpsycholoog|gz-psycholoog|psychotherapist)\b
+- \b(?:advocaat|notaris|civil-law notary)\b
+- \b(?:licensed teacher|bevoegd docent|qualified teacher)\b
+general_cv_prompt: prompts/presets/economics_business.md

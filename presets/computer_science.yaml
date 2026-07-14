@@ -1,0 +1,67 @@
+label: Computer Science
+marketplace_discovery:
+  queries:
+  - Junior Software Engineer
+  - Junior Backend Developer
+  - Junior Frontend Developer
+  - Graduate Software Engineer
+title_keywords:
+- computer science
+- software
+- systems
+- algorithms
+- cybersecurity
+- data engineering
+relevance_keywords:
+  strong:
+  - computer science
+  - software engineering
+  - systems engineering
+  - algorithms
+  - cybersecurity
+  - data engineering
+  weak:
+  - programming
+  - testing
+  - databases
+  - networks
+  - cloud
+  - research
+role_fit:
+  clear_title: \b(?:software|backend|front[- ]?end|full[- ]?stack|application|web)\s+(?:engineer|developer)\b
+  excluded_title: \b(?:data scientist|data analyst|machine learning|product manager|project
+    manager|sales|recruit(?:er|ment)|marketing|network engineer|hardware engineer|civil
+    engineer|mechanical engineer)\b
+seniority_role_pattern: (?:software|backend|front[- ]?end|full[- ]?stack|application|web)?\s*(?:engineer|developer|programmer|architect|manager|lead)
+keyword_patterns: {}
+cv_skill_categories:
+  backend-engineer:
+  - Programming
+  - Backend engineering
+  - Databases and APIs
+  - Testing and delivery
+  frontend-engineer:
+  - Programming
+  - Frontend engineering
+  - Web platform
+  - Testing and delivery
+  full-stack-engineer:
+  - Programming
+  - Frontend and backend
+  - Databases and APIs
+  - Testing and delivery
+  software-engineer:
+  - Programming
+  - Software engineering
+  - Testing
+  - Delivery
+cv_role_patterns:
+  backend-engineer: \bback[- ]?end\b
+  frontend-engineer: \bfront[- ]?end\b
+  full-stack-engineer: \bfull[- ]?stack\b
+cv_default_role: software-engineer
+cv_references: {}
+cv_phrase_replacements: {}
+pdf_text_defects: []
+education_detail_rules: []
+general_cv_prompt: prompts/presets/computer_science.md

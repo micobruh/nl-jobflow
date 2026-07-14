@@ -6,6 +6,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=%h/nl-jobflow
+EnvironmentFile=-%h/.config/nl-jobflow.env
 ExecStart=%h/nl-jobflow/.venv/bin/python jobflow.py feedback-worker
 Restart=on-failure
 RestartSec=15

@@ -1,0 +1,53 @@
+label: Agriculture and Environment
+marketplace_discovery:
+  queries:
+  - Junior Sustainability Analyst
+  - Environmental Analyst
+  - Food Quality Specialist
+title_keywords:
+- sustainability
+- environment
+- agriculture
+- ecology
+- food science
+- climate
+relevance_keywords:
+  strong:
+  - sustainability
+  - environmental analysis
+  - agriculture
+  - ecology
+  - food science
+  - climate
+  - natural resources
+  weak:
+  - research
+  - policy
+  - quality
+  - reporting
+  - stakeholder
+role_fit:
+  clear_title: \b(?:sustainability|environmental|ecology|food quality|agricultural)
+    (?:analyst|researcher|specialist|advisor|consultant)\b
+  excluded_title: \b(?:sales|recruitment|hospitality|retail)\b
+seniority_role_pattern: (?:researcher|assistant|analyst|officer|coordinator|consultant|advisor|adviser|specialist)
+keyword_patterns: {}
+cv_skill_categories:
+  knowledge-work:
+  - Domain knowledge
+  - Research and analysis
+  - Delivery
+  - Communication
+cv_role_patterns:
+  knowledge-work: .*
+cv_default_role: knowledge-work
+cv_references: {}
+cv_phrase_replacements: {}
+pdf_text_defects: []
+education_detail_rules: []
+regulated_role_patterns:
+- \b(?:physician|medical doctor|basisarts|huisarts|bedrijfsarts|verzekeringsarts|surgeon|nurse|verpleegkundige)\b
+- \b(?:clinical psychologist|gezondheidszorgpsycholoog|gz-psycholoog|psychotherapist)\b
+- \b(?:advocaat|notaris|civil-law notary)\b
+- \b(?:licensed teacher|bevoegd docent|qualified teacher)\b
+general_cv_prompt: prompts/presets/agriculture_environment.md

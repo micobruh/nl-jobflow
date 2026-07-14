@@ -6,6 +6,9 @@ with one of these commands, expand it to the matching workflow. Keep all
 
 Initial or updated user configuration is collected with `python jobflow.py setup`, including multiple studies and the recommended roles the user wants to keep.
 
+Use one active `JOBFLOW_PROFILE`, or pass `--profile PATH` before each subcommand.
+Never mix profile roots within one workflow.
+
 ## `/full-run`
 
 Run `prompts/start_all_now.md`.
@@ -152,8 +155,9 @@ python jobflow.py jobs --status active
 python jobflow.py lead-report
 python jobflow.py marketplace-report
 python jobflow.py source-health
+python jobflow.py role-gap-report
 python jobflow.py outcome-report
 ```
 
 Purpose: show current active jobs, manual/marketplace import summaries, source
-health, and recorded application outcome statistics.
+health, repeated unclassified role gaps, and recorded application outcome statistics.

@@ -1,0 +1,51 @@
+label: Social and Behavioural Sciences
+marketplace_discovery:
+  queries:
+  - Social Researcher
+  - Junior Policy Analyst
+  - UX Researcher
+title_keywords:
+- social research
+- behavioural research
+- policy
+- user research
+- communications
+- people
+relevance_keywords:
+  strong:
+  - social research
+  - behavioural research
+  - policy analysis
+  - user research
+  - communication research
+  - organisational research
+  weak:
+  - interviews
+  - surveys
+  - evaluation
+  - stakeholder
+  - reporting
+role_fit:
+  clear_title: \b(?:social|behavioural|behavioral|user|policy|communications?) (?:researcher|analyst|advisor|officer)\b
+  excluded_title: \b(?:clinical psychologist|sales|hospitality|retail)\b
+seniority_role_pattern: (?:researcher|assistant|analyst|officer|coordinator|consultant|advisor|adviser|specialist)
+keyword_patterns: {}
+cv_skill_categories:
+  knowledge-work:
+  - Domain knowledge
+  - Research and analysis
+  - Delivery
+  - Communication
+cv_role_patterns:
+  knowledge-work: .*
+cv_default_role: knowledge-work
+cv_references: {}
+cv_phrase_replacements: {}
+pdf_text_defects: []
+education_detail_rules: []
+regulated_role_patterns:
+- \b(?:physician|medical doctor|basisarts|huisarts|bedrijfsarts|verzekeringsarts|surgeon|nurse|verpleegkundige)\b
+- \b(?:clinical psychologist|gezondheidszorgpsycholoog|gz-psycholoog|psychotherapist)\b
+- \b(?:advocaat|notaris|civil-law notary)\b
+- \b(?:licensed teacher|bevoegd docent|qualified teacher)\b
+general_cv_prompt: prompts/presets/social_behavioural_sciences.md

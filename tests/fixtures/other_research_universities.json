@@ -1,0 +1,6440 @@
+{
+  "source_date": "2026-07-13",
+  "source_sha256": "03870871d61c8c6047f17469dbc0078907d6cb9c2a1a8c2a2c3a4cb69bd0cb78",
+  "universities": [
+    {
+      "institution": "Rijksuniversiteit Groningen",
+      "label": "University of Groningen",
+      "programmes": [
+        {
+          "code": "50019",
+          "level": "WO-BA",
+          "names": [
+            "International Business"
+          ]
+        },
+        {
+          "code": "50205",
+          "level": "WO-BA",
+          "names": [
+            "Sterrenkunde",
+            "Astronomy"
+          ]
+        },
+        {
+          "code": "50206",
+          "level": "WO-BA",
+          "names": [
+            "Natuurkunde",
+            "Physics"
+          ]
+        },
+        {
+          "code": "50290",
+          "level": "WO-BA",
+          "names": [
+            "English Language and Culture"
+          ]
+        },
+        {
+          "code": "50393",
+          "level": "WO-BA",
+          "names": [
+            "Liberal Arts and Sciences"
+          ]
+        },
+        {
+          "code": "50479",
+          "level": "WO-BA",
+          "names": [
+            "Nederlandse Talen en Culturen",
+            "Dutch Languages and Cultures"
+          ]
+        },
+        {
+          "code": "50623",
+          "level": "WO-BA",
+          "names": [
+            "American Studies"
+          ]
+        },
+        {
+          "code": "50627",
+          "level": "WO-BA",
+          "names": [
+            "Internationale Betrekkingen en Internationale Organisatie",
+            "International Relations and International Organization"
+          ]
+        },
+        {
+          "code": "50629",
+          "level": "WO-BA",
+          "names": [
+            "Kunsten, Cultuur en Media",
+            "Arts, Culture and Media"
+          ]
+        },
+        {
+          "code": "50645",
+          "level": "WO-BA",
+          "names": [
+            "Bedrijfskunde",
+            "Business Administration"
+          ]
+        },
+        {
+          "code": "50700",
+          "level": "WO-BA",
+          "names": [
+            "Rechtsgeleerdheid",
+            "Dutch Law"
+          ]
+        },
+        {
+          "code": "50902",
+          "level": "WO-BA",
+          "names": [
+            "Religiewetenschappen",
+            "Religious Studies"
+          ]
+        },
+        {
+          "code": "50906",
+          "level": "WO-BA",
+          "names": [
+            "Media en Cultuur",
+            "Media Studies"
+          ]
+        },
+        {
+          "code": "50950",
+          "level": "WO-BA",
+          "names": [
+            "Economie en Bedrijfseconomie",
+            "Economics and Business Economics"
+          ]
+        },
+        {
+          "code": "50974",
+          "level": "WO-BA",
+          "names": [
+            "Human Geography and Planning"
+          ]
+        },
+        {
+          "code": "50982",
+          "level": "WO-BA",
+          "names": [
+            "Data Science and Society"
+          ]
+        },
+        {
+          "code": "56003",
+          "level": "WO-BA",
+          "names": [
+            "Griekse en Latijnse Taal en Cultuur",
+            "Classics"
+          ]
+        },
+        {
+          "code": "56012",
+          "level": "WO-BA",
+          "names": [
+            "Minorities & Multilingualism"
+          ]
+        },
+        {
+          "code": "56034",
+          "level": "WO-BA",
+          "names": [
+            "Geschiedenis",
+            "History"
+          ]
+        },
+        {
+          "code": "56081",
+          "level": "WO-BA",
+          "names": [
+            "Filosofie",
+            "Philosophy"
+          ]
+        },
+        {
+          "code": "56098",
+          "level": "WO-BA",
+          "names": [
+            "Midden-Oostenstudies",
+            "Middle Eastern Studies"
+          ]
+        },
+        {
+          "code": "56109",
+          "level": "WO-BA",
+          "names": [
+            "Theologie",
+            "Theology"
+          ]
+        },
+        {
+          "code": "56124",
+          "level": "WO-BA",
+          "names": [
+            "Europese Talen en Culturen",
+            "European Languages and Cultures"
+          ]
+        },
+        {
+          "code": "56157",
+          "level": "WO-BA",
+          "names": [
+            "Farmacie",
+            "Pharmacy"
+          ]
+        },
+        {
+          "code": "56194",
+          "level": "WO-BA",
+          "names": [
+            "Spatial Planning and Design"
+          ]
+        },
+        {
+          "code": "56226",
+          "level": "WO-BA",
+          "names": [
+            "Biomedische Technologie",
+            "Biomedical Engineering"
+          ]
+        },
+        {
+          "code": "56286",
+          "level": "WO-BA",
+          "names": [
+            "Life Science and Technology"
+          ]
+        },
+        {
+          "code": "56551",
+          "level": "WO-BA",
+          "names": [
+            "Geneeskunde",
+            "Medicine"
+          ]
+        },
+        {
+          "code": "56560",
+          "level": "WO-BA",
+          "names": [
+            "Tandheelkunde",
+            "Dentistry"
+          ]
+        },
+        {
+          "code": "56601",
+          "level": "WO-BA",
+          "names": [
+            "Sociologie",
+            "Sociology"
+          ]
+        },
+        {
+          "code": "56604",
+          "level": "WO-BA",
+          "names": [
+            "Psychologie",
+            "Psychology"
+          ]
+        },
+        {
+          "code": "56607",
+          "level": "WO-BA",
+          "names": [
+            "Pedagogische Wetenschappen",
+            "Pedagogical Sciences"
+          ]
+        },
+        {
+          "code": "56703",
+          "level": "WO-BA",
+          "names": [
+            "Archeologie",
+            "Archaeology"
+          ]
+        },
+        {
+          "code": "56803",
+          "level": "WO-BA",
+          "names": [
+            "Taalwetenschap",
+            "Linguistics"
+          ]
+        },
+        {
+          "code": "56804",
+          "level": "WO-BA",
+          "names": [
+            "Nederlandse Taal en Cultuur",
+            "Dutch Language and Culture"
+          ]
+        },
+        {
+          "code": "56824",
+          "level": "WO-BA",
+          "names": [
+            "Kunstgeschiedenis",
+            "Art History"
+          ]
+        },
+        {
+          "code": "56826",
+          "level": "WO-BA",
+          "names": [
+            "Communicatie- en Informatiewetenschappen",
+            "Communication and Information Studies"
+          ]
+        },
+        {
+          "code": "56829",
+          "level": "WO-BA",
+          "names": [
+            "International and European Law"
+          ]
+        },
+        {
+          "code": "56833",
+          "level": "WO-BA",
+          "names": [
+            "Econometrie en Operationele Research",
+            "Econometrics and Operations Research"
+          ]
+        },
+        {
+          "code": "56842",
+          "level": "WO-BA",
+          "names": [
+            "Informatiekunde",
+            "Information Science"
+          ]
+        },
+        {
+          "code": "56857",
+          "level": "WO-BA",
+          "names": [
+            "Scheikunde",
+            "Chemistry"
+          ]
+        },
+        {
+          "code": "56860",
+          "level": "WO-BA",
+          "names": [
+            "Biologie",
+            "Biology"
+          ]
+        },
+        {
+          "code": "56950",
+          "level": "WO-BA",
+          "names": [
+            "Bewegingswetenschappen",
+            "Human Movement Sciences"
+          ]
+        },
+        {
+          "code": "56960",
+          "level": "WO-BA",
+          "names": [
+            "Scheikundige Technologie",
+            "Chemical Engineering"
+          ]
+        },
+        {
+          "code": "56962",
+          "level": "WO-BA",
+          "names": [
+            "Technische Natuurkunde",
+            "Applied Physics"
+          ]
+        },
+        {
+          "code": "56965",
+          "level": "WO-BA",
+          "names": [
+            "Technische Wiskunde",
+            "Applied Mathematics"
+          ]
+        },
+        {
+          "code": "56978",
+          "level": "WO-BA",
+          "names": [
+            "Informatica",
+            "Computing Science"
+          ]
+        },
+        {
+          "code": "56980",
+          "level": "WO-BA",
+          "names": [
+            "Wiskunde",
+            "Mathematics"
+          ]
+        },
+        {
+          "code": "56981",
+          "level": "WO-BA",
+          "names": [
+            "Kunstmatige Intelligentie",
+            "Artificial Intelligence"
+          ]
+        },
+        {
+          "code": "56994",
+          "level": "WO-BA",
+          "names": [
+            "Technische Bedrijfskunde",
+            "Industrial Engineering & Management"
+          ]
+        },
+        {
+          "code": "57084",
+          "level": "WO-BA",
+          "names": [
+            "Filosofie van een Bepaald Wetenschapsgebied",
+            "Philosophy of a Specific Discipline"
+          ]
+        },
+        {
+          "code": "59327",
+          "level": "WO-BA",
+          "names": [
+            "Global Responsibility and Leadership"
+          ]
+        },
+        {
+          "code": "60029",
+          "level": "WO-MA",
+          "names": [
+            "Industrial Engineering and Management"
+          ]
+        },
+        {
+          "code": "60046",
+          "level": "WO-MA",
+          "names": [
+            "Finance"
+          ]
+        },
+        {
+          "code": "60048",
+          "level": "WO-MA",
+          "names": [
+            "Marketing"
+          ]
+        },
+        {
+          "code": "60061",
+          "level": "WO-MA",
+          "names": [
+            "Financial Management"
+          ]
+        },
+        {
+          "code": "60087",
+          "level": "WO-MA",
+          "names": [
+            "Kunst- & cultuurwetenschappen",
+            "Arts & Culture"
+          ]
+        },
+        {
+          "code": "60093",
+          "level": "WO-MA",
+          "names": [
+            "Supply Chain Management"
+          ]
+        },
+        {
+          "code": "60099",
+          "level": "WO-MA",
+          "names": [
+            "Onderwijswetenschappen",
+            "Educational Sciences"
+          ]
+        },
+        {
+          "code": "60128",
+          "level": "WO-MA",
+          "names": [
+            "Filosofie ( research )",
+            "Philosophy (research)"
+          ]
+        },
+        {
+          "code": "60133",
+          "level": "WO-MA",
+          "names": [
+            "Archeologie (research)",
+            "Archaeology (research)"
+          ]
+        },
+        {
+          "code": "60139",
+          "level": "WO-MA",
+          "names": [
+            "Geschiedenis (research)",
+            "History (research)"
+          ]
+        },
+        {
+          "code": "60200",
+          "level": "WO-MA",
+          "names": [
+            "Astronomy"
+          ]
+        },
+        {
+          "code": "60202",
+          "level": "WO-MA",
+          "names": [
+            "Physics"
+          ]
+        },
+        {
+          "code": "60260",
+          "level": "WO-MA",
+          "names": [
+            "Psychologie",
+            "Psychology"
+          ]
+        },
+        {
+          "code": "60315",
+          "level": "WO-MA",
+          "names": [
+            "Research Master in Economics and Business (research)"
+          ]
+        },
+        {
+          "code": "60348",
+          "level": "WO-MA",
+          "names": [
+            "Applied Mathematics"
+          ]
+        },
+        {
+          "code": "60359",
+          "level": "WO-MA",
+          "names": [
+            "Systems and Control"
+          ]
+        },
+        {
+          "code": "60364",
+          "level": "WO-MA",
+          "names": [
+            "Computing Science"
+          ]
+        },
+        {
+          "code": "60365",
+          "level": "WO-MA",
+          "names": [
+            "Ecology and Evolution"
+          ]
+        },
+        {
+          "code": "60399",
+          "level": "WO-MA",
+          "names": [
+            "Clinical and Psychosocial Epidemiology (research)"
+          ]
+        },
+        {
+          "code": "60436",
+          "level": "WO-MA",
+          "names": [
+            "Applied Physics"
+          ]
+        },
+        {
+          "code": "60437",
+          "level": "WO-MA",
+          "names": [
+            "Chemical Engineering"
+          ]
+        },
+        {
+          "code": "60439",
+          "level": "WO-MA",
+          "names": [
+            "Mechanical Engineering"
+          ]
+        },
+        {
+          "code": "60472",
+          "level": "WO-MA",
+          "names": [
+            "Speech Technology"
+          ]
+        },
+        {
+          "code": "60603",
+          "level": "WO-MA",
+          "names": [
+            "International Commercial Law"
+          ]
+        },
+        {
+          "code": "60606",
+          "level": "WO-MA",
+          "names": [
+            "Rechtswetenschappelijk Onderzoek (research)",
+            "Legal Research (research)"
+          ]
+        },
+        {
+          "code": "60608",
+          "level": "WO-MA",
+          "names": [
+            "Energy and Environmental Sciences"
+          ]
+        },
+        {
+          "code": "60609",
+          "level": "WO-MA",
+          "names": [
+            "Marine Biology"
+          ]
+        },
+        {
+          "code": "60611",
+          "level": "WO-MA",
+          "names": [
+            "Medical Pharmaceutical Sciences"
+          ]
+        },
+        {
+          "code": "60615",
+          "level": "WO-MA",
+          "names": [
+            "Behavioural and Cognitive Neurosciences (research)"
+          ]
+        },
+        {
+          "code": "60616",
+          "level": "WO-MA",
+          "names": [
+            "Biomolecular Sciences"
+          ]
+        },
+        {
+          "code": "60617",
+          "level": "WO-MA",
+          "names": [
+            "Molecular Medicine and Innovative Treatment"
+          ]
+        },
+        {
+          "code": "60618",
+          "level": "WO-MA",
+          "names": [
+            "Nanoscience"
+          ]
+        },
+        {
+          "code": "60620",
+          "level": "WO-MA",
+          "names": [
+            "IT-recht",
+            "Law and IT"
+          ]
+        },
+        {
+          "code": "60643",
+          "level": "WO-MA",
+          "names": [
+            "Accountancy and Controlling"
+          ]
+        },
+        {
+          "code": "60644",
+          "level": "WO-MA",
+          "names": [
+            "Business Administration"
+          ]
+        },
+        {
+          "code": "60645",
+          "level": "WO-MA",
+          "names": [
+            "Human Resource Management"
+          ]
+        },
+        {
+          "code": "60646",
+          "level": "WO-MA",
+          "names": [
+            "Econometrics, Operations Research and Actuarial Studies"
+          ]
+        },
+        {
+          "code": "60649",
+          "level": "WO-MA",
+          "names": [
+            "International Business and Management"
+          ]
+        },
+        {
+          "code": "60653",
+          "level": "WO-MA",
+          "names": [
+            "Computational Cognitive Science"
+          ]
+        },
+        {
+          "code": "60654",
+          "level": "WO-MA",
+          "names": [
+            "Behavioural and Social Sciences (research)"
+          ]
+        },
+        {
+          "code": "60656",
+          "level": "WO-MA",
+          "names": [
+            "Cultural Geography"
+          ]
+        },
+        {
+          "code": "60657",
+          "level": "WO-MA",
+          "names": [
+            "Economic Geography"
+          ]
+        },
+        {
+          "code": "60658",
+          "level": "WO-MA",
+          "names": [
+            "Population Studies"
+          ]
+        },
+        {
+          "code": "60659",
+          "level": "WO-MA",
+          "names": [
+            "Real Estate Studies"
+          ]
+        },
+        {
+          "code": "60660",
+          "level": "WO-MA",
+          "names": [
+            "Spatial Sciences (research)"
+          ]
+        },
+        {
+          "code": "60669",
+          "level": "WO-MA",
+          "names": [
+            "Global Criminal Law"
+          ]
+        },
+        {
+          "code": "60682",
+          "level": "WO-MA",
+          "names": [
+            "Sport Sciences"
+          ]
+        },
+        {
+          "code": "60683",
+          "level": "WO-MA",
+          "names": [
+            "International Financial Management"
+          ]
+        },
+        {
+          "code": "60684",
+          "level": "WO-MA",
+          "names": [
+            "Human Movement Sciences"
+          ]
+        },
+        {
+          "code": "60688",
+          "level": "WO-MA",
+          "names": [
+            "European Law in a Global Context"
+          ]
+        },
+        {
+          "code": "60708",
+          "level": "WO-MA",
+          "names": [
+            "Educatie en Communicatie in de Bètawetenschappen",
+            "Science Education and Communication"
+          ]
+        },
+        {
+          "code": "60734",
+          "level": "WO-MA",
+          "names": [
+            "Internationale betrekkingen",
+            "International Relations"
+          ]
+        },
+        {
+          "code": "60805",
+          "level": "WO-MA",
+          "names": [
+            "Archeologie",
+            "Archaeology"
+          ]
+        },
+        {
+          "code": "60813",
+          "level": "WO-MA",
+          "names": [
+            "Letterkunde",
+            "Literary Studies"
+          ]
+        },
+        {
+          "code": "60815",
+          "level": "WO-MA",
+          "names": [
+            "Taalwetenschappen",
+            "Linguistics"
+          ]
+        },
+        {
+          "code": "60817",
+          "level": "WO-MA",
+          "names": [
+            "Taalwetenschappen (research)",
+            "Linguistics (research)"
+          ]
+        },
+        {
+          "code": "60819",
+          "level": "WO-MA",
+          "names": [
+            "Internationale Betrekkingen",
+            "International Relations"
+          ]
+        },
+        {
+          "code": "60820",
+          "level": "WO-MA",
+          "names": [
+            "Internationale Betrekkingen (research)",
+            "International Relations (research)"
+          ]
+        },
+        {
+          "code": "60821",
+          "level": "WO-MA",
+          "names": [
+            "Oudheidstudies",
+            "Classics & Ancient Civilizations"
+          ]
+        },
+        {
+          "code": "60822",
+          "level": "WO-MA",
+          "names": [
+            "Filosofie",
+            "Philosophy"
+          ]
+        },
+        {
+          "code": "60823",
+          "level": "WO-MA",
+          "names": [
+            "Filosofie",
+            "Philosophy"
+          ]
+        },
+        {
+          "code": "60824",
+          "level": "WO-MA",
+          "names": [
+            "Theologie & Religiewetenschappen",
+            "Theology & Religious Studies"
+          ]
+        },
+        {
+          "code": "60827",
+          "level": "WO-MA",
+          "names": [
+            "Theologie & Religiewetenschappen (research)",
+            "Theology & Religious Studies (research)"
+          ]
+        },
+        {
+          "code": "60829",
+          "level": "WO-MA",
+          "names": [
+            "Kunst- & cultuurwetenschappen (research)",
+            "Arts & Culture (research)"
+          ]
+        },
+        {
+          "code": "60831",
+          "level": "WO-MA",
+          "names": [
+            "Mediastudies",
+            "Media Studies"
+          ]
+        },
+        {
+          "code": "60842",
+          "level": "WO-MA",
+          "names": [
+            "Midden-Oosten Studies",
+            "Middle Eastern Studies"
+          ]
+        },
+        {
+          "code": "60845",
+          "level": "WO-MA",
+          "names": [
+            "Noord-Amerika Studies",
+            "North American Studies"
+          ]
+        },
+        {
+          "code": "60847",
+          "level": "WO-MA",
+          "names": [
+            "Europese Studies",
+            "European Studies"
+          ]
+        },
+        {
+          "code": "60849",
+          "level": "WO-MA",
+          "names": [
+            "Neerlandistiek",
+            "Dutch Studies"
+          ]
+        },
+        {
+          "code": "60856",
+          "level": "WO-MA",
+          "names": [
+            "Public International Law"
+          ]
+        },
+        {
+          "code": "60963",
+          "level": "WO-MA",
+          "names": [
+            "International Economics and Sustainable Development"
+          ]
+        },
+        {
+          "code": "65005",
+          "level": "WO-MA",
+          "names": [
+            "Water Technology (joint degree)"
+          ]
+        },
+        {
+          "code": "66034",
+          "level": "WO-MA",
+          "names": [
+            "Geschiedenis",
+            "History"
+          ]
+        },
+        {
+          "code": "66157",
+          "level": "WO-MA",
+          "names": [
+            "Farmacie",
+            "Pharmacy"
+          ]
+        },
+        {
+          "code": "66194",
+          "level": "WO-MA",
+          "names": [
+            "Environmental and Infrastructure Planning"
+          ]
+        },
+        {
+          "code": "66226",
+          "level": "WO-MA",
+          "names": [
+            "Biomedical Engineering"
+          ]
+        },
+        {
+          "code": "66277",
+          "level": "WO-MA",
+          "names": [
+            "Technology and Operations Management"
+          ]
+        },
+        {
+          "code": "66401",
+          "level": "WO-MA",
+          "names": [
+            "Economics"
+          ]
+        },
+        {
+          "code": "66451",
+          "level": "WO-MA",
+          "names": [
+            "Nederlands Recht",
+            "Dutch Law"
+          ]
+        },
+        {
+          "code": "66461",
+          "level": "WO-MA",
+          "names": [
+            "Recht en Bestuur",
+            "Law and Public Administration"
+          ]
+        },
+        {
+          "code": "66551",
+          "level": "WO-MA",
+          "names": [
+            "Geneeskunde",
+            "Medicine"
+          ]
+        },
+        {
+          "code": "66588",
+          "level": "WO-MA",
+          "names": [
+            "Tandheelkunde",
+            "Dentistry"
+          ]
+        },
+        {
+          "code": "66601",
+          "level": "WO-MA",
+          "names": [
+            "Sociologie",
+            "Sociology"
+          ]
+        },
+        {
+          "code": "66607",
+          "level": "WO-MA",
+          "names": [
+            "Pedagogische Wetenschappen",
+            "Pedagogical Sciences"
+          ]
+        },
+        {
+          "code": "66653",
+          "level": "WO-MA",
+          "names": [
+            "Society, Sustainability and Planning"
+          ]
+        },
+        {
+          "code": "66826",
+          "level": "WO-MA",
+          "names": [
+            "Communicatie- & Informatiewetenschappen",
+            "Communication & Information Studies"
+          ]
+        },
+        {
+          "code": "66827",
+          "level": "WO-MA",
+          "names": [
+            "Fiscaal Recht",
+            "Tax Law"
+          ]
+        },
+        {
+          "code": "66828",
+          "level": "WO-MA",
+          "names": [
+            "Notarieel Recht",
+            "Notarial Law"
+          ]
+        },
+        {
+          "code": "66829",
+          "level": "WO-MA",
+          "names": [
+            "Energy and Climate Law"
+          ]
+        },
+        {
+          "code": "66857",
+          "level": "WO-MA",
+          "names": [
+            "Chemistry"
+          ]
+        },
+        {
+          "code": "66860",
+          "level": "WO-MA",
+          "names": [
+            "Biology"
+          ]
+        },
+        {
+          "code": "66980",
+          "level": "WO-MA",
+          "names": [
+            "Mathematics"
+          ]
+        },
+        {
+          "code": "66981",
+          "level": "WO-MA",
+          "names": [
+            "Artificial Intelligence"
+          ]
+        },
+        {
+          "code": "66990",
+          "level": "WO-MA",
+          "names": [
+            "Biomedical Sciences"
+          ]
+        },
+        {
+          "code": "67085",
+          "level": "WO-MA",
+          "names": [
+            "Sustainable Entrepreneurship"
+          ]
+        },
+        {
+          "code": "68532",
+          "level": "WO-MA",
+          "names": [
+            "Educatie in de Mens- en Maatschappijwetenschappen",
+            "Social Sciences and Humanities Education"
+          ]
+        },
+        {
+          "code": "68533",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Bètawetenschappen",
+            "Science Teaching in Secondary Education"
+          ]
+        },
+        {
+          "code": "68534",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen",
+            "Language Teaching in Secondary Education"
+          ]
+        },
+        {
+          "code": "68535",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Mens- en Maatschappijwetenschappen",
+            "Teaching Social Sciences and Humanities in Secondary Education"
+          ]
+        },
+        {
+          "code": "68536",
+          "level": "WO-MA",
+          "names": [
+            "Educatie in de Taal- en cultuurwetenschappen",
+            "Language and culture Education"
+          ]
+        },
+        {
+          "code": "69321",
+          "level": "WO-MA",
+          "names": [
+            "Philosophy, Politics and Economics"
+          ]
+        }
+      ]
+    },
+    {
+      "institution": "Vrije Universiteit Amsterdam",
+      "label": "Vrije Universiteit Amsterdam",
+      "programmes": [
+        {
+          "code": "50007",
+          "level": "WO-BA",
+          "names": [
+            "Bestuurs- en Organisatiewetenschap",
+            "Public Administration and Organization Science"
+          ]
+        },
+        {
+          "code": "50035",
+          "level": "WO-BA",
+          "names": [
+            "Culturele Antropologie en Ontwikkelingssociologie",
+            "Cultural Anthropology and Development Sociology"
+          ]
+        },
+        {
+          "code": "50426",
+          "level": "WO-BA",
+          "names": [
+            "Computer Science"
+          ]
+        },
+        {
+          "code": "50509",
+          "level": "WO-BA",
+          "names": [
+            "Gezondheid en Leven",
+            "Health and Life Sciences"
+          ]
+        },
+        {
+          "code": "50645",
+          "level": "WO-BA",
+          "names": [
+            "Bedrijfskunde",
+            "Business Administration"
+          ]
+        },
+        {
+          "code": "50668",
+          "level": "WO-BA",
+          "names": [
+            "Aarde, Economie en Duurzaamheid",
+            "Earth Sciences, Economics and Sustainability"
+          ]
+        },
+        {
+          "code": "50670",
+          "level": "WO-BA",
+          "names": [
+            "Science, Business & Innovation"
+          ]
+        },
+        {
+          "code": "50700",
+          "level": "WO-BA",
+          "names": [
+            "Rechtsgeleerdheid",
+            "Law"
+          ]
+        },
+        {
+          "code": "50800",
+          "level": "WO-BA",
+          "names": [
+            "Medische Natuurwetenschappen",
+            "Medical Natural Sciences"
+          ]
+        },
+        {
+          "code": "50910",
+          "level": "WO-BA",
+          "names": [
+            "Theologie en Religiewetenschappen"
+          ]
+        },
+        {
+          "code": "50950",
+          "level": "WO-BA",
+          "names": [
+            "Economie en Bedrijfseconomie",
+            "Economics and Business Economics"
+          ]
+        },
+        {
+          "code": "50952",
+          "level": "WO-BA",
+          "names": [
+            "International Business Administration"
+          ]
+        },
+        {
+          "code": "54999",
+          "level": "WO-BA",
+          "names": [
+            "Philosophy, Politics and Economics"
+          ]
+        },
+        {
+          "code": "55002",
+          "level": "WO-BA",
+          "names": [
+            "Liberal Arts and Sciences (joint degree)"
+          ]
+        },
+        {
+          "code": "55012",
+          "level": "WO-BA",
+          "names": [
+            "Scheikunde (joint degree)",
+            "Chemistry (joint degree)"
+          ]
+        },
+        {
+          "code": "55013",
+          "level": "WO-BA",
+          "names": [
+            "Natuur- en Sterrenkunde (joint degree)",
+            "Physics and Astronomy (joint degree)"
+          ]
+        },
+        {
+          "code": "55822",
+          "level": "WO-BA",
+          "names": [
+            "Media, Kunst, Design en Architectuur",
+            "Media, Art, Design and Architecture"
+          ]
+        },
+        {
+          "code": "55823",
+          "level": "WO-BA",
+          "names": [
+            "Literatuur en Samenleving",
+            "Literature and Society"
+          ]
+        },
+        {
+          "code": "56003",
+          "level": "WO-BA",
+          "names": [
+            "Griekse en Latijnse Taal en Cultuur",
+            "Greek and Latin Languages and Cultures"
+          ]
+        },
+        {
+          "code": "56034",
+          "level": "WO-BA",
+          "names": [
+            "Geschiedenis",
+            "History"
+          ]
+        },
+        {
+          "code": "56081",
+          "level": "WO-BA",
+          "names": [
+            "Filosofie",
+            "Philosophy"
+          ]
+        },
+        {
+          "code": "56469",
+          "level": "WO-BA",
+          "names": [
+            "Criminologie",
+            "Criminology"
+          ]
+        },
+        {
+          "code": "56551",
+          "level": "WO-BA",
+          "names": [
+            "Geneeskunde",
+            "Medicine"
+          ]
+        },
+        {
+          "code": "56553",
+          "level": "WO-BA",
+          "names": [
+            "Gezondheidswetenschappen",
+            "Health Sciences"
+          ]
+        },
+        {
+          "code": "56560",
+          "level": "WO-BA",
+          "names": [
+            "Tandheelkunde",
+            "Dentistry"
+          ]
+        },
+        {
+          "code": "56601",
+          "level": "WO-BA",
+          "names": [
+            "Sociologie",
+            "Sociology"
+          ]
+        },
+        {
+          "code": "56604",
+          "level": "WO-BA",
+          "names": [
+            "Psychologie",
+            "Psychology"
+          ]
+        },
+        {
+          "code": "56606",
+          "level": "WO-BA",
+          "names": [
+            "Politicologie",
+            "Political Science"
+          ]
+        },
+        {
+          "code": "56607",
+          "level": "WO-BA",
+          "names": [
+            "Pedagogische Wetenschappen",
+            "Pedagogical Sciences"
+          ]
+        },
+        {
+          "code": "56615",
+          "level": "WO-BA",
+          "names": [
+            "Communicatiewetenschap",
+            "Communication Science"
+          ]
+        },
+        {
+          "code": "56703",
+          "level": "WO-BA",
+          "names": [
+            "Archeologie",
+            "Archaeology"
+          ]
+        },
+        {
+          "code": "56704",
+          "level": "WO-BA",
+          "names": [
+            "Oudheidwetenschappen",
+            "Ancient Studies"
+          ]
+        },
+        {
+          "code": "56826",
+          "level": "WO-BA",
+          "names": [
+            "Communicatie- en Informatiewetenschappen",
+            "Communication and Information Studies"
+          ]
+        },
+        {
+          "code": "56828",
+          "level": "WO-BA",
+          "names": [
+            "Notarieel Recht",
+            "Notarial Law"
+          ]
+        },
+        {
+          "code": "56833",
+          "level": "WO-BA",
+          "names": [
+            "Econometrie en Operationele Research",
+            "Econometrics and Operations Research"
+          ]
+        },
+        {
+          "code": "56856",
+          "level": "WO-BA",
+          "names": [
+            "Business Analytics"
+          ]
+        },
+        {
+          "code": "56860",
+          "level": "WO-BA",
+          "names": [
+            "Biologie",
+            "Biology"
+          ]
+        },
+        {
+          "code": "56945",
+          "level": "WO-BA",
+          "names": [
+            "Artificial Intelligence"
+          ]
+        },
+        {
+          "code": "56950",
+          "level": "WO-BA",
+          "names": [
+            "Bewegingswetenschappen",
+            "Human Movement Sciences"
+          ]
+        },
+        {
+          "code": "56986",
+          "level": "WO-BA",
+          "names": [
+            "Aardwetenschappen",
+            "Earth Sciences"
+          ]
+        },
+        {
+          "code": "56989",
+          "level": "WO-BA",
+          "names": [
+            "Farmaceutische Wetenschappen",
+            "Pharmaceutical Sciences"
+          ]
+        },
+        {
+          "code": "56990",
+          "level": "WO-BA",
+          "names": [
+            "Biomedische Wetenschappen",
+            "Biomedical Sciences"
+          ]
+        },
+        {
+          "code": "59322",
+          "level": "WO-BA",
+          "names": [
+            "Mathematics"
+          ]
+        },
+        {
+          "code": "59324",
+          "level": "WO-BA",
+          "names": [
+            "Biomedical Sciences"
+          ]
+        },
+        {
+          "code": "59332",
+          "level": "WO-BA",
+          "names": [
+            "Econometrics and Data Science"
+          ]
+        },
+        {
+          "code": "59334",
+          "level": "WO-BA",
+          "names": [
+            "Law in Society"
+          ]
+        },
+        {
+          "code": "60039",
+          "level": "WO-MA",
+          "names": [
+            "Oudheidstudies (research)",
+            "Classics & Ancient Civilizations (research)"
+          ]
+        },
+        {
+          "code": "60045",
+          "level": "WO-MA",
+          "names": [
+            "Environment and Resource Management"
+          ]
+        },
+        {
+          "code": "60046",
+          "level": "WO-MA",
+          "names": [
+            "Finance"
+          ]
+        },
+        {
+          "code": "60047",
+          "level": "WO-MA",
+          "names": [
+            "Accounting and Control"
+          ]
+        },
+        {
+          "code": "60048",
+          "level": "WO-MA",
+          "names": [
+            "Marketing"
+          ]
+        },
+        {
+          "code": "60049",
+          "level": "WO-MA",
+          "names": [
+            "Social and Cultural Anthropology"
+          ]
+        },
+        {
+          "code": "60050",
+          "level": "WO-MA",
+          "names": [
+            "Culture, Organization and Management"
+          ]
+        },
+        {
+          "code": "60052",
+          "level": "WO-MA",
+          "names": [
+            "Beleid, Communicatie en Organisatie",
+            "Policy, Communication and Organization"
+          ]
+        },
+        {
+          "code": "60053",
+          "level": "WO-MA",
+          "names": [
+            "Social Psychology: Regulation of Social Behaviour (research)"
+          ]
+        },
+        {
+          "code": "60072",
+          "level": "WO-MA",
+          "names": [
+            "International Business Law"
+          ]
+        },
+        {
+          "code": "60084",
+          "level": "WO-MA",
+          "names": [
+            "Rechtsgeleerdheid",
+            "Law"
+          ]
+        },
+        {
+          "code": "60087",
+          "level": "WO-MA",
+          "names": [
+            "Kunst- & cultuurwetenschappen",
+            "Arts & Culture"
+          ]
+        },
+        {
+          "code": "60203",
+          "level": "WO-MA",
+          "names": [
+            "Political Science"
+          ]
+        },
+        {
+          "code": "60255",
+          "level": "WO-MA",
+          "names": [
+            "Information Sciences"
+          ]
+        },
+        {
+          "code": "60260",
+          "level": "WO-MA",
+          "names": [
+            "Psychologie",
+            "Psychology"
+          ]
+        },
+        {
+          "code": "60365",
+          "level": "WO-MA",
+          "names": [
+            "Ecology and Evolution"
+          ]
+        },
+        {
+          "code": "60408",
+          "level": "WO-MA",
+          "names": [
+            "Ondernemingsrecht",
+            "Corporate Law"
+          ]
+        },
+        {
+          "code": "60444",
+          "level": "WO-MA",
+          "names": [
+            "Spatial, Transport and Environmental Economics"
+          ]
+        },
+        {
+          "code": "60471",
+          "level": "WO-MA",
+          "names": [
+            "Transport and Supply Chain Management"
+          ]
+        },
+        {
+          "code": "60510",
+          "level": "WO-MA",
+          "names": [
+            "Cognitive Neuropsychology (research)"
+          ]
+        },
+        {
+          "code": "60513",
+          "level": "WO-MA",
+          "names": [
+            "Clinical and Developmental Psychopathology (research)"
+          ]
+        },
+        {
+          "code": "60616",
+          "level": "WO-MA",
+          "names": [
+            "Biomolecular Sciences"
+          ]
+        },
+        {
+          "code": "60644",
+          "level": "WO-MA",
+          "names": [
+            "Business Administration"
+          ]
+        },
+        {
+          "code": "60685",
+          "level": "WO-MA",
+          "names": [
+            "Law and Politics of International Security"
+          ]
+        },
+        {
+          "code": "60800",
+          "level": "WO-MA",
+          "names": [
+            "Biomedical Technology and Physics"
+          ]
+        },
+        {
+          "code": "60802",
+          "level": "WO-MA",
+          "names": [
+            "Computer Security"
+          ]
+        },
+        {
+          "code": "60803",
+          "level": "WO-MA",
+          "names": [
+            "Management, Policy Analysis and Entrepreneurship in the Health and Life Sciences"
+          ]
+        },
+        {
+          "code": "60805",
+          "level": "WO-MA",
+          "names": [
+            "Archeologie",
+            "Archaeology"
+          ]
+        },
+        {
+          "code": "60806",
+          "level": "WO-MA",
+          "names": [
+            "Neurosciences (research)"
+          ]
+        },
+        {
+          "code": "60807",
+          "level": "WO-MA",
+          "names": [
+            "Hydrology"
+          ]
+        },
+        {
+          "code": "60808",
+          "level": "WO-MA",
+          "names": [
+            "Architecture, Cities, Landscapes: History and Heritage"
+          ]
+        },
+        {
+          "code": "60811",
+          "level": "WO-MA",
+          "names": [
+            "Oncology"
+          ]
+        },
+        {
+          "code": "60812",
+          "level": "WO-MA",
+          "names": [
+            "Human Movement Sciences: Sport, Exercise and Health (research)"
+          ]
+        },
+        {
+          "code": "60813",
+          "level": "WO-MA",
+          "names": [
+            "Letterkunde",
+            "Literary Studies"
+          ]
+        },
+        {
+          "code": "60815",
+          "level": "WO-MA",
+          "names": [
+            "Taalwetenschappen",
+            "Linguistics"
+          ]
+        },
+        {
+          "code": "60821",
+          "level": "WO-MA",
+          "names": [
+            "Oudheidstudies",
+            "Classics & Ancient Civilizations"
+          ]
+        },
+        {
+          "code": "60823",
+          "level": "WO-MA",
+          "names": [
+            "Filosofie",
+            "Philosophy"
+          ]
+        },
+        {
+          "code": "60824",
+          "level": "WO-MA",
+          "names": [
+            "Theologie & Religiewetenschappen",
+            "Theology & Religious Studies"
+          ]
+        },
+        {
+          "code": "60825",
+          "level": "WO-MA",
+          "names": [
+            "Theologie & Religiewetenschappen",
+            "Theology & Religious Studies"
+          ]
+        },
+        {
+          "code": "60827",
+          "level": "WO-MA",
+          "names": [
+            "Theologie & Religiewetenschappen (research)",
+            "Theology & Religious Studies (research)"
+          ]
+        },
+        {
+          "code": "60836",
+          "level": "WO-MA",
+          "names": [
+            "Erfgoedstudies",
+            "Curating Art and Cultures"
+          ]
+        },
+        {
+          "code": "60958",
+          "level": "WO-MA",
+          "names": [
+            "Humanities (research)"
+          ]
+        },
+        {
+          "code": "60968",
+          "level": "WO-MA",
+          "names": [
+            "Digital Business and Innovation"
+          ]
+        },
+        {
+          "code": "60970",
+          "level": "WO-MA",
+          "names": [
+            "Filosofie van Cultuur en Bestuur"
+          ]
+        },
+        {
+          "code": "65006",
+          "level": "WO-MA",
+          "names": [
+            "Entrepreneurship (joint degree)"
+          ]
+        },
+        {
+          "code": "65012",
+          "level": "WO-MA",
+          "names": [
+            "Chemistry (joint degree)"
+          ]
+        },
+        {
+          "code": "65014",
+          "level": "WO-MA",
+          "names": [
+            "Computer Science (joint degree)"
+          ]
+        },
+        {
+          "code": "65015",
+          "level": "WO-MA",
+          "names": [
+            "Computational Science (joint degree)"
+          ]
+        },
+        {
+          "code": "65016",
+          "level": "WO-MA",
+          "names": [
+            "Physics and Astronomy (joint degree)"
+          ]
+        },
+        {
+          "code": "65020",
+          "level": "WO-MA",
+          "names": [
+            "Bioinformatics and Systems Biology (joint degree)"
+          ]
+        },
+        {
+          "code": "65024",
+          "level": "WO-MA",
+          "names": [
+            "Research Master Business Data Science (joint degree)"
+          ]
+        },
+        {
+          "code": "65026",
+          "level": "WO-MA",
+          "names": [
+            "Educatieve Master Primair Onderwijs (joint degree)"
+          ]
+        },
+        {
+          "code": "65027",
+          "level": "WO-MA",
+          "names": [
+            "Tinbergen Institute Research Master in Economics (joint degree)"
+          ]
+        },
+        {
+          "code": "66034",
+          "level": "WO-MA",
+          "names": [
+            "Geschiedenis",
+            "History"
+          ]
+        },
+        {
+          "code": "66401",
+          "level": "WO-MA",
+          "names": [
+            "Economics"
+          ]
+        },
+        {
+          "code": "66469",
+          "level": "WO-MA",
+          "names": [
+            "Criminologie",
+            "Criminology"
+          ]
+        },
+        {
+          "code": "66551",
+          "level": "WO-MA",
+          "names": [
+            "Geneeskunde",
+            "Medicine"
+          ]
+        },
+        {
+          "code": "66553",
+          "level": "WO-MA",
+          "names": [
+            "Gezondheidswetenschappen",
+            "Health Sciences"
+          ]
+        },
+        {
+          "code": "66586",
+          "level": "WO-MA",
+          "names": [
+            "Personalized Medicine (research)"
+          ]
+        },
+        {
+          "code": "66588",
+          "level": "WO-MA",
+          "names": [
+            "Tandheelkunde",
+            "Dentistry"
+          ]
+        },
+        {
+          "code": "66601",
+          "level": "WO-MA",
+          "names": [
+            "Sociologie",
+            "Sociology"
+          ]
+        },
+        {
+          "code": "66607",
+          "level": "WO-MA",
+          "names": [
+            "Pedagogische Wetenschappen",
+            "Pedagogical Sciences"
+          ]
+        },
+        {
+          "code": "66615",
+          "level": "WO-MA",
+          "names": [
+            "Communicatiewetenschap",
+            "Communication Science"
+          ]
+        },
+        {
+          "code": "66627",
+          "level": "WO-MA",
+          "names": [
+            "Bestuurskunde",
+            "Public Administration"
+          ]
+        },
+        {
+          "code": "66724",
+          "level": "WO-MA",
+          "names": [
+            "International Crimes, Conflict and Criminology"
+          ]
+        },
+        {
+          "code": "66826",
+          "level": "WO-MA",
+          "names": [
+            "Communicatie- & Informatiewetenschappen",
+            "Communication & Information Studies"
+          ]
+        },
+        {
+          "code": "66827",
+          "level": "WO-MA",
+          "names": [
+            "Fiscaal Recht",
+            "Tax Law"
+          ]
+        },
+        {
+          "code": "66828",
+          "level": "WO-MA",
+          "names": [
+            "Notarieel Recht",
+            "Notarial Law"
+          ]
+        },
+        {
+          "code": "66833",
+          "level": "WO-MA",
+          "names": [
+            "Econometrics and Operations Research"
+          ]
+        },
+        {
+          "code": "66851",
+          "level": "WO-MA",
+          "names": [
+            "Health Sciences"
+          ]
+        },
+        {
+          "code": "66856",
+          "level": "WO-MA",
+          "names": [
+            "Business Analytics"
+          ]
+        },
+        {
+          "code": "66903",
+          "level": "WO-MA",
+          "names": [
+            "Global Health (research)"
+          ]
+        },
+        {
+          "code": "66950",
+          "level": "WO-MA",
+          "names": [
+            "Human Movement Sciences: Sport, Exercise and Health"
+          ]
+        },
+        {
+          "code": "66980",
+          "level": "WO-MA",
+          "names": [
+            "Mathematics"
+          ]
+        },
+        {
+          "code": "66981",
+          "level": "WO-MA",
+          "names": [
+            "Artificial Intelligence"
+          ]
+        },
+        {
+          "code": "66986",
+          "level": "WO-MA",
+          "names": [
+            "Earth Sciences"
+          ]
+        },
+        {
+          "code": "66989",
+          "level": "WO-MA",
+          "names": [
+            "Drug Discovery Sciences"
+          ]
+        },
+        {
+          "code": "66990",
+          "level": "WO-MA",
+          "names": [
+            "Biomedical Sciences"
+          ]
+        },
+        {
+          "code": "68532",
+          "level": "WO-MA",
+          "names": [
+            "Educatie in de Mens- en Maatschappijwetenschappen",
+            "Social Sciences and Humanities Education"
+          ]
+        },
+        {
+          "code": "68533",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Bètawetenschappen",
+            "Science Teaching in Secondary Education"
+          ]
+        },
+        {
+          "code": "68534",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen",
+            "Language Teaching in Secondary Education"
+          ]
+        },
+        {
+          "code": "68535",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Mens- en Maatschappijwetenschappen",
+            "Teaching Social Sciences and Humanities in Secondary Education"
+          ]
+        },
+        {
+          "code": "68536",
+          "level": "WO-MA",
+          "names": [
+            "Educatie in de Taal- en cultuurwetenschappen",
+            "Language and culture Education"
+          ]
+        },
+        {
+          "code": "69317",
+          "level": "WO-MA",
+          "names": [
+            "Musculoskeletal Physiotherapy Sciences"
+          ]
+        },
+        {
+          "code": "69320",
+          "level": "WO-MA",
+          "names": [
+            "Science, Business and Innovation"
+          ]
+        },
+        {
+          "code": "69324",
+          "level": "WO-MA",
+          "names": [
+            "Genes in Behaviour and Health (research)"
+          ]
+        },
+        {
+          "code": "69333",
+          "level": "WO-MA",
+          "names": [
+            "Social Sciences for a Digital Society (research)"
+          ]
+        }
+      ]
+    },
+    {
+      "institution": "Universiteit Leiden",
+      "label": "Leiden University",
+      "programmes": [
+        {
+          "code": "50035",
+          "level": "WO-BA",
+          "names": [
+            "Culturele Antropologie en Ontwikkelingssociologie",
+            "Cultural Anthropology and Development Sociology"
+          ]
+        },
+        {
+          "code": "50205",
+          "level": "WO-BA",
+          "names": [
+            "Sterrenkunde",
+            "Astronomy"
+          ]
+        },
+        {
+          "code": "50206",
+          "level": "WO-BA",
+          "names": [
+            "Natuurkunde",
+            "Physics"
+          ]
+        },
+        {
+          "code": "50207",
+          "level": "WO-BA",
+          "names": [
+            "Bio-Farmaceutische Wetenschappen"
+          ]
+        },
+        {
+          "code": "50300",
+          "level": "WO-BA",
+          "names": [
+            "Data Science and Artificial Intelligence"
+          ]
+        },
+        {
+          "code": "50414",
+          "level": "WO-BA",
+          "names": [
+            "Film- en Literatuurwetenschap",
+            "Film and Literary Studies"
+          ]
+        },
+        {
+          "code": "50429",
+          "level": "WO-BA",
+          "names": [
+            "Liberal Arts and Sciences: Global Challenges"
+          ]
+        },
+        {
+          "code": "50474",
+          "level": "WO-BA",
+          "names": [
+            "Science for Sustainable Societies"
+          ]
+        },
+        {
+          "code": "50700",
+          "level": "WO-BA",
+          "names": [
+            "Rechtsgeleerdheid"
+          ]
+        },
+        {
+          "code": "50855",
+          "level": "WO-BA",
+          "names": [
+            "Russische Studies",
+            "Russian Studies"
+          ]
+        },
+        {
+          "code": "50902",
+          "level": "WO-BA",
+          "names": [
+            "Religiewetenschappen",
+            "Religious Studies"
+          ]
+        },
+        {
+          "code": "50996",
+          "level": "WO-BA",
+          "names": [
+            "Economie & Samenleving",
+            "Economics & Society"
+          ]
+        },
+        {
+          "code": "55007",
+          "level": "WO-BA",
+          "names": [
+            "Klinische Technologie (joint degree)",
+            "Clinical Technology (joint degree)"
+          ]
+        },
+        {
+          "code": "55009",
+          "level": "WO-BA",
+          "names": [
+            "Molecular Science and Technology (joint degree)"
+          ]
+        },
+        {
+          "code": "55010",
+          "level": "WO-BA",
+          "names": [
+            "Life Science and Technology (joint degree)"
+          ]
+        },
+        {
+          "code": "56003",
+          "level": "WO-BA",
+          "names": [
+            "Griekse en Latijnse Taal en Cultuur",
+            "Classics"
+          ]
+        },
+        {
+          "code": "56034",
+          "level": "WO-BA",
+          "names": [
+            "Geschiedenis",
+            "History"
+          ]
+        },
+        {
+          "code": "56052",
+          "level": "WO-BA",
+          "names": [
+            "Latijns-Amerikastudies",
+            "Latin American Studies"
+          ]
+        },
+        {
+          "code": "56055",
+          "level": "WO-BA",
+          "names": [
+            "Nederlandkunde/Dutch Studies",
+            "Dutch Studies"
+          ]
+        },
+        {
+          "code": "56081",
+          "level": "WO-BA",
+          "names": [
+            "Filosofie"
+          ]
+        },
+        {
+          "code": "56098",
+          "level": "WO-BA",
+          "names": [
+            "Midden-Oostenstudies",
+            "Middle Eastern Studies"
+          ]
+        },
+        {
+          "code": "56099",
+          "level": "WO-BA",
+          "names": [
+            "Zuid- en Zuidoost-Aziëstudies",
+            "South and Southeast Asian Studies"
+          ]
+        },
+        {
+          "code": "56123",
+          "level": "WO-BA",
+          "names": [
+            "Oude Nabije Oosten-studies",
+            "Ancient Near Eastern Studies"
+          ]
+        },
+        {
+          "code": "56469",
+          "level": "WO-BA",
+          "names": [
+            "Criminologie"
+          ]
+        },
+        {
+          "code": "56551",
+          "level": "WO-BA",
+          "names": [
+            "Geneeskunde",
+            "Medicine"
+          ]
+        },
+        {
+          "code": "56604",
+          "level": "WO-BA",
+          "names": [
+            "Psychologie",
+            "Psychology"
+          ]
+        },
+        {
+          "code": "56606",
+          "level": "WO-BA",
+          "names": [
+            "Politicologie",
+            "Political Science"
+          ]
+        },
+        {
+          "code": "56607",
+          "level": "WO-BA",
+          "names": [
+            "Pedagogische Wetenschappen",
+            "Pedagogical Sciences"
+          ]
+        },
+        {
+          "code": "56627",
+          "level": "WO-BA",
+          "names": [
+            "Bestuurskunde",
+            "Public Administration"
+          ]
+        },
+        {
+          "code": "56703",
+          "level": "WO-BA",
+          "names": [
+            "Archeologie",
+            "Archaeology"
+          ]
+        },
+        {
+          "code": "56803",
+          "level": "WO-BA",
+          "names": [
+            "Taalwetenschap",
+            "Linguistics"
+          ]
+        },
+        {
+          "code": "56804",
+          "level": "WO-BA",
+          "names": [
+            "Nederlandse Taal en Cultuur",
+            "Dutch Language and Culture"
+          ]
+        },
+        {
+          "code": "56805",
+          "level": "WO-BA",
+          "names": [
+            "Duitse Taal en Cultuur"
+          ]
+        },
+        {
+          "code": "56806",
+          "level": "WO-BA",
+          "names": [
+            "Engelse Taal en Cultuur"
+          ]
+        },
+        {
+          "code": "56808",
+          "level": "WO-BA",
+          "names": [
+            "Franse Taal en Cultuur"
+          ]
+        },
+        {
+          "code": "56809",
+          "level": "WO-BA",
+          "names": [
+            "Italiaanse Taal en Cultuur"
+          ]
+        },
+        {
+          "code": "56818",
+          "level": "WO-BA",
+          "names": [
+            "Chinastudies",
+            "Chinese Studies"
+          ]
+        },
+        {
+          "code": "56819",
+          "level": "WO-BA",
+          "names": [
+            "Japanstudies",
+            "Japanese Studies"
+          ]
+        },
+        {
+          "code": "56820",
+          "level": "WO-BA",
+          "names": [
+            "Koreastudies",
+            "Korean Studies"
+          ]
+        },
+        {
+          "code": "56821",
+          "level": "WO-BA",
+          "names": [
+            "African Studies"
+          ]
+        },
+        {
+          "code": "56824",
+          "level": "WO-BA",
+          "names": [
+            "Kunstgeschiedenis"
+          ]
+        },
+        {
+          "code": "56827",
+          "level": "WO-BA",
+          "names": [
+            "Fiscaal Recht",
+            "Tax Law"
+          ]
+        },
+        {
+          "code": "56828",
+          "level": "WO-BA",
+          "names": [
+            "Notarieel Recht",
+            "Notarial Law"
+          ]
+        },
+        {
+          "code": "56860",
+          "level": "WO-BA",
+          "names": [
+            "Biologie",
+            "Biology"
+          ]
+        },
+        {
+          "code": "56978",
+          "level": "WO-BA",
+          "names": [
+            "Informatica",
+            "Computer Science"
+          ]
+        },
+        {
+          "code": "56980",
+          "level": "WO-BA",
+          "names": [
+            "Wiskunde",
+            "Mathematics"
+          ]
+        },
+        {
+          "code": "56990",
+          "level": "WO-BA",
+          "names": [
+            "Biomedische Wetenschappen"
+          ]
+        },
+        {
+          "code": "59316",
+          "level": "WO-BA",
+          "names": [
+            "International Studies"
+          ]
+        },
+        {
+          "code": "59320",
+          "level": "WO-BA",
+          "names": [
+            "Security Studies"
+          ]
+        },
+        {
+          "code": "59328",
+          "level": "WO-BA",
+          "names": [
+            "Urban Studies"
+          ]
+        },
+        {
+          "code": "59348",
+          "level": "WO-BA",
+          "names": [
+            "Cybersecurity & Cybercrime"
+          ]
+        },
+        {
+          "code": "60020",
+          "level": "WO-MA",
+          "names": [
+            "Public Administration"
+          ]
+        },
+        {
+          "code": "60039",
+          "level": "WO-MA",
+          "names": [
+            "Oudheidstudies (research)",
+            "Classics & Ancient Civilizations (research)"
+          ]
+        },
+        {
+          "code": "60084",
+          "level": "WO-MA",
+          "names": [
+            "Rechtsgeleerdheid"
+          ]
+        },
+        {
+          "code": "60087",
+          "level": "WO-MA",
+          "names": [
+            "Kunst- & cultuurwetenschappen",
+            "Arts & Culture"
+          ]
+        },
+        {
+          "code": "60133",
+          "level": "WO-MA",
+          "names": [
+            "Archeologie (research)",
+            "Archaeology (research)"
+          ]
+        },
+        {
+          "code": "60139",
+          "level": "WO-MA",
+          "names": [
+            "Geschiedenis (research)",
+            "History (research)"
+          ]
+        },
+        {
+          "code": "60156",
+          "level": "WO-MA",
+          "names": [
+            "Cultural Anthropology and Development Sociology"
+          ]
+        },
+        {
+          "code": "60159",
+          "level": "WO-MA",
+          "names": [
+            "Education and Child Studies (research)"
+          ]
+        },
+        {
+          "code": "60174",
+          "level": "WO-MA",
+          "names": [
+            "Latijns-Amerika Studies",
+            "Latin American Studies"
+          ]
+        },
+        {
+          "code": "60200",
+          "level": "WO-MA",
+          "names": [
+            "Astronomy"
+          ]
+        },
+        {
+          "code": "60202",
+          "level": "WO-MA",
+          "names": [
+            "Physics"
+          ]
+        },
+        {
+          "code": "60203",
+          "level": "WO-MA",
+          "names": [
+            "Political Science"
+          ]
+        },
+        {
+          "code": "60205",
+          "level": "WO-MA",
+          "names": [
+            "ICT in Business and the Public Sector"
+          ]
+        },
+        {
+          "code": "60206",
+          "level": "WO-MA",
+          "names": [
+            "Creative Intelligence & Technology"
+          ]
+        },
+        {
+          "code": "60207",
+          "level": "WO-MA",
+          "names": [
+            "Bio-Pharmaceutical Sciences"
+          ]
+        },
+        {
+          "code": "60300",
+          "level": "WO-MA",
+          "names": [
+            "Computer Science"
+          ]
+        },
+        {
+          "code": "60383",
+          "level": "WO-MA",
+          "names": [
+            "Psychology (research)"
+          ]
+        },
+        {
+          "code": "60396",
+          "level": "WO-MA",
+          "names": [
+            "Education and Child Studies"
+          ]
+        },
+        {
+          "code": "60416",
+          "level": "WO-MA",
+          "names": [
+            "Management Publieke Sector"
+          ]
+        },
+        {
+          "code": "60417",
+          "level": "WO-MA",
+          "names": [
+            "Crisis and Security Management"
+          ]
+        },
+        {
+          "code": "60418",
+          "level": "WO-MA",
+          "names": [
+            "Forensische Criminologie"
+          ]
+        },
+        {
+          "code": "60419",
+          "level": "WO-MA",
+          "names": [
+            "Criminaliteit en Rechtshandhaving"
+          ]
+        },
+        {
+          "code": "60515",
+          "level": "WO-MA",
+          "names": [
+            "Health, Ageing and Society"
+          ]
+        },
+        {
+          "code": "60734",
+          "level": "WO-MA",
+          "names": [
+            "Internationale betrekkingen",
+            "International Relations"
+          ]
+        },
+        {
+          "code": "60770",
+          "level": "WO-MA",
+          "names": [
+            "Law & Society: Governance and Global Development"
+          ]
+        },
+        {
+          "code": "60805",
+          "level": "WO-MA",
+          "names": [
+            "Archeologie",
+            "Archaeology"
+          ]
+        },
+        {
+          "code": "60813",
+          "level": "WO-MA",
+          "names": [
+            "Letterkunde",
+            "Literary Studies"
+          ]
+        },
+        {
+          "code": "60815",
+          "level": "WO-MA",
+          "names": [
+            "Taalwetenschappen",
+            "Linguistics"
+          ]
+        },
+        {
+          "code": "60817",
+          "level": "WO-MA",
+          "names": [
+            "Taalwetenschappen (research)",
+            "Linguistics (research)"
+          ]
+        },
+        {
+          "code": "60821",
+          "level": "WO-MA",
+          "names": [
+            "Oudheidstudies",
+            "Classics & Ancient Civilizations"
+          ]
+        },
+        {
+          "code": "60822",
+          "level": "WO-MA",
+          "names": [
+            "Filosofie",
+            "Philosophy"
+          ]
+        },
+        {
+          "code": "60823",
+          "level": "WO-MA",
+          "names": [
+            "Filosofie",
+            "Philosophy"
+          ]
+        },
+        {
+          "code": "60830",
+          "level": "WO-MA",
+          "names": [
+            "Mediastudies",
+            "Media Studies"
+          ]
+        },
+        {
+          "code": "60837",
+          "level": "WO-MA",
+          "names": [
+            "Afrika Studies",
+            "African Studies"
+          ]
+        },
+        {
+          "code": "60838",
+          "level": "WO-MA",
+          "names": [
+            "Afrika Studies (research)",
+            "African Studies (research)"
+          ]
+        },
+        {
+          "code": "60839",
+          "level": "WO-MA",
+          "names": [
+            "Azië Studies",
+            "Asian Studies"
+          ]
+        },
+        {
+          "code": "60840",
+          "level": "WO-MA",
+          "names": [
+            "Azië Studies",
+            "Asian Studies"
+          ]
+        },
+        {
+          "code": "60841",
+          "level": "WO-MA",
+          "names": [
+            "Azië Studies (research)",
+            "Asian Studies (research)"
+          ]
+        },
+        {
+          "code": "60842",
+          "level": "WO-MA",
+          "names": [
+            "Midden-Oosten Studies",
+            "Middle Eastern Studies"
+          ]
+        },
+        {
+          "code": "60843",
+          "level": "WO-MA",
+          "names": [
+            "Midden-Oosten Studies (research)",
+            "Middle Eastern Studies (research)"
+          ]
+        },
+        {
+          "code": "60844",
+          "level": "WO-MA",
+          "names": [
+            "Latijns-Amerika Studies (research)",
+            "Latin American Studies (research)"
+          ]
+        },
+        {
+          "code": "60845",
+          "level": "WO-MA",
+          "names": [
+            "Noord-Amerika Studies",
+            "North American Studies"
+          ]
+        },
+        {
+          "code": "60848",
+          "level": "WO-MA",
+          "names": [
+            "Russische en Euraziatische Studies",
+            "Russian and Eurasian Studies"
+          ]
+        },
+        {
+          "code": "60849",
+          "level": "WO-MA",
+          "names": [
+            "Neerlandistiek",
+            "Dutch Studies"
+          ]
+        },
+        {
+          "code": "60858",
+          "level": "WO-MA",
+          "names": [
+            "Population Health Management"
+          ]
+        },
+        {
+          "code": "60957",
+          "level": "WO-MA",
+          "names": [
+            "Statistics and Data Science"
+          ]
+        },
+        {
+          "code": "60965",
+          "level": "WO-MA",
+          "names": [
+            "Governance of Sustainability"
+          ]
+        },
+        {
+          "code": "60972",
+          "level": "WO-MA",
+          "names": [
+            "Arts, Literature and Media (research)"
+          ]
+        },
+        {
+          "code": "60974",
+          "level": "WO-MA",
+          "names": [
+            "Religious Studies"
+          ]
+        },
+        {
+          "code": "60995",
+          "level": "WO-MA",
+          "names": [
+            "Economie van de Publieke Sector",
+            "Public Sector Economics"
+          ]
+        },
+        {
+          "code": "65003",
+          "level": "WO-MA",
+          "names": [
+            "Industrial Ecology (joint degree)"
+          ]
+        },
+        {
+          "code": "65019",
+          "level": "WO-MA",
+          "names": [
+            "Technical Medicine (joint degree)"
+          ]
+        },
+        {
+          "code": "65022",
+          "level": "WO-MA",
+          "names": [
+            "European Politics and Society: Vaclav Havel Joint Master Programme (joint degree)"
+          ]
+        },
+        {
+          "code": "65026",
+          "level": "WO-MA",
+          "names": [
+            "Educatieve Master Primair Onderwijs (joint degree)"
+          ]
+        },
+        {
+          "code": "65029",
+          "level": "WO-MA",
+          "names": [
+            "Quantum Information Science & Technology (joint degree)"
+          ]
+        },
+        {
+          "code": "66034",
+          "level": "WO-MA",
+          "names": [
+            "Geschiedenis",
+            "History"
+          ]
+        },
+        {
+          "code": "66157",
+          "level": "WO-MA",
+          "names": [
+            "Farmacie",
+            "Pharmacy"
+          ]
+        },
+        {
+          "code": "66286",
+          "level": "WO-MA",
+          "names": [
+            "Life Science and Technology"
+          ]
+        },
+        {
+          "code": "66474",
+          "level": "WO-MA",
+          "names": [
+            "Jeugdrecht"
+          ]
+        },
+        {
+          "code": "66551",
+          "level": "WO-MA",
+          "names": [
+            "Geneeskunde",
+            "Medicine"
+          ]
+        },
+        {
+          "code": "66604",
+          "level": "WO-MA",
+          "names": [
+            "Psychology"
+          ]
+        },
+        {
+          "code": "66827",
+          "level": "WO-MA",
+          "names": [
+            "Fiscaal Recht"
+          ]
+        },
+        {
+          "code": "66828",
+          "level": "WO-MA",
+          "names": [
+            "Notarieel Recht"
+          ]
+        },
+        {
+          "code": "66857",
+          "level": "WO-MA",
+          "names": [
+            "Chemistry"
+          ]
+        },
+        {
+          "code": "66860",
+          "level": "WO-MA",
+          "names": [
+            "Biology"
+          ]
+        },
+        {
+          "code": "66980",
+          "level": "WO-MA",
+          "names": [
+            "Mathematics"
+          ]
+        },
+        {
+          "code": "66990",
+          "level": "WO-MA",
+          "names": [
+            "Biomedical Sciences"
+          ]
+        },
+        {
+          "code": "68532",
+          "level": "WO-MA",
+          "names": [
+            "Educatie in de Mens- en Maatschappijwetenschappen",
+            "Social Sciences and Humanities Education"
+          ]
+        },
+        {
+          "code": "68533",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Bètawetenschappen",
+            "Science Teaching in Secondary Education"
+          ]
+        },
+        {
+          "code": "68534",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen",
+            "Language Teaching in Secondary Education"
+          ]
+        },
+        {
+          "code": "68535",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Mens- en Maatschappijwetenschappen",
+            "Teaching Social Sciences and Humanities in Secondary Education"
+          ]
+        },
+        {
+          "code": "68536",
+          "level": "WO-MA",
+          "names": [
+            "Educatie in de Taal- en cultuurwetenschappen",
+            "Language and Culture Education"
+          ]
+        }
+      ]
+    },
+    {
+      "institution": "Radboud Universiteit Nijmegen",
+      "label": "Radboud University",
+      "programmes": [
+        {
+          "code": "50017",
+          "level": "WO-BA",
+          "names": [
+            "European Law School"
+          ]
+        },
+        {
+          "code": "50035",
+          "level": "WO-BA",
+          "names": [
+            "Culturele Antropologie en Ontwikkelingssociologie",
+            "Cultural Anthropology and Development Sociology"
+          ]
+        },
+        {
+          "code": "50290",
+          "level": "WO-BA",
+          "names": [
+            "English Language and Culture"
+          ]
+        },
+        {
+          "code": "50645",
+          "level": "WO-BA",
+          "names": [
+            "Bedrijfskunde",
+            "Business Administration"
+          ]
+        },
+        {
+          "code": "50700",
+          "level": "WO-BA",
+          "names": [
+            "Rechtsgeleerdheid",
+            "Law"
+          ]
+        },
+        {
+          "code": "50902",
+          "level": "WO-BA",
+          "names": [
+            "Religiewetenschappen",
+            "Religious Studies"
+          ]
+        },
+        {
+          "code": "50950",
+          "level": "WO-BA",
+          "names": [
+            "Economie en Bedrijfseconomie",
+            "Economics and Business Economics"
+          ]
+        },
+        {
+          "code": "56003",
+          "level": "WO-BA",
+          "names": [
+            "Griekse en Latijnse Taal en Cultuur",
+            "Classics"
+          ]
+        },
+        {
+          "code": "56034",
+          "level": "WO-BA",
+          "names": [
+            "Geschiedenis",
+            "History"
+          ]
+        },
+        {
+          "code": "56074",
+          "level": "WO-BA",
+          "names": [
+            "Romaanse Talen en Culturen",
+            "Romance Languages and Cultures"
+          ]
+        },
+        {
+          "code": "56081",
+          "level": "WO-BA",
+          "names": [
+            "Filosofie",
+            "Philosophy"
+          ]
+        },
+        {
+          "code": "56109",
+          "level": "WO-BA",
+          "names": [
+            "Theologie",
+            "Theology"
+          ]
+        },
+        {
+          "code": "56551",
+          "level": "WO-BA",
+          "names": [
+            "Geneeskunde",
+            "Medicine"
+          ]
+        },
+        {
+          "code": "56560",
+          "level": "WO-BA",
+          "names": [
+            "Tandheelkunde",
+            "Dentistry"
+          ]
+        },
+        {
+          "code": "56601",
+          "level": "WO-BA",
+          "names": [
+            "Sociologie",
+            "Sociology"
+          ]
+        },
+        {
+          "code": "56604",
+          "level": "WO-BA",
+          "names": [
+            "Psychologie",
+            "Psychology"
+          ]
+        },
+        {
+          "code": "56606",
+          "level": "WO-BA",
+          "names": [
+            "Politicologie",
+            "Political Science"
+          ]
+        },
+        {
+          "code": "56607",
+          "level": "WO-BA",
+          "names": [
+            "Pedagogische Wetenschappen",
+            "Pedagogical Sciences"
+          ]
+        },
+        {
+          "code": "56615",
+          "level": "WO-BA",
+          "names": [
+            "Communicatiewetenschap",
+            "Communication Science"
+          ]
+        },
+        {
+          "code": "56627",
+          "level": "WO-BA",
+          "names": [
+            "Bestuurskunde",
+            "Public Administration"
+          ]
+        },
+        {
+          "code": "56803",
+          "level": "WO-BA",
+          "names": [
+            "Taalwetenschap",
+            "Linguistics"
+          ]
+        },
+        {
+          "code": "56804",
+          "level": "WO-BA",
+          "names": [
+            "Nederlandse Taal en Cultuur",
+            "Dutch Language and Culture"
+          ]
+        },
+        {
+          "code": "56805",
+          "level": "WO-BA",
+          "names": [
+            "Duitse Taal en Cultuur",
+            "German Language and Culture"
+          ]
+        },
+        {
+          "code": "56823",
+          "level": "WO-BA",
+          "names": [
+            "Algemene Cultuurwetenschappen",
+            "Arts and Culture Studies"
+          ]
+        },
+        {
+          "code": "56824",
+          "level": "WO-BA",
+          "names": [
+            "Kunstgeschiedenis",
+            "Art History"
+          ]
+        },
+        {
+          "code": "56826",
+          "level": "WO-BA",
+          "names": [
+            "Communicatie- en Informatiewetenschappen",
+            "Communication and Information Studies"
+          ]
+        },
+        {
+          "code": "56828",
+          "level": "WO-BA",
+          "names": [
+            "Notarieel Recht",
+            "Notarial Law"
+          ]
+        },
+        {
+          "code": "56943",
+          "level": "WO-BA",
+          "names": [
+            "Chemistry"
+          ]
+        },
+        {
+          "code": "56944",
+          "level": "WO-BA",
+          "names": [
+            "Molecular Life Sciences"
+          ]
+        },
+        {
+          "code": "56945",
+          "level": "WO-BA",
+          "names": [
+            "Artificial Intelligence"
+          ]
+        },
+        {
+          "code": "56947",
+          "level": "WO-BA",
+          "names": [
+            "Geografie, Planologie en Milieu",
+            "Geography, Spatial Planning and Environment"
+          ]
+        },
+        {
+          "code": "56948",
+          "level": "WO-BA",
+          "names": [
+            "Natural Sciences"
+          ]
+        },
+        {
+          "code": "56980",
+          "level": "WO-BA",
+          "names": [
+            "Wiskunde",
+            "Mathematics"
+          ]
+        },
+        {
+          "code": "56984",
+          "level": "WO-BA",
+          "names": [
+            "Natuur- en Sterrenkunde",
+            "Physics and Astronomy"
+          ]
+        },
+        {
+          "code": "56990",
+          "level": "WO-BA",
+          "names": [
+            "Biomedische Wetenschappen",
+            "Biomedical Sciences"
+          ]
+        },
+        {
+          "code": "57085",
+          "level": "WO-BA",
+          "names": [
+            "Nederlands, Europees en Internationaal Recht"
+          ]
+        },
+        {
+          "code": "59325",
+          "level": "WO-BA",
+          "names": [
+            "Biology"
+          ]
+        },
+        {
+          "code": "59326",
+          "level": "WO-BA",
+          "names": [
+            "Computing Science"
+          ]
+        },
+        {
+          "code": "59329",
+          "level": "WO-BA",
+          "names": [
+            "Pedagogische Wetenschappen van Primair Onderwijs",
+            "Pedagogical Sciences of Primary Education"
+          ]
+        },
+        {
+          "code": "59349",
+          "level": "WO-BA",
+          "names": [
+            "Humane Neurowetenschappen",
+            "Human Neuroscience"
+          ]
+        },
+        {
+          "code": "60087",
+          "level": "WO-MA",
+          "names": [
+            "Kunst- & cultuurwetenschappen",
+            "Arts & Culture"
+          ]
+        },
+        {
+          "code": "60099",
+          "level": "WO-MA",
+          "names": [
+            "Onderwijswetenschappen",
+            "Educational Sciences"
+          ]
+        },
+        {
+          "code": "60128",
+          "level": "WO-MA",
+          "names": [
+            "Filosofie ( research )",
+            "Philosophy (research)"
+          ]
+        },
+        {
+          "code": "60132",
+          "level": "WO-MA",
+          "names": [
+            "Social and Cultural Science: Comparative Research on Societies (research)"
+          ]
+        },
+        {
+          "code": "60203",
+          "level": "WO-MA",
+          "names": [
+            "Political Science"
+          ]
+        },
+        {
+          "code": "60224",
+          "level": "WO-MA",
+          "names": [
+            "International and European Law"
+          ]
+        },
+        {
+          "code": "60253",
+          "level": "WO-MA",
+          "names": [
+            "Anthropology and Development Studies"
+          ]
+        },
+        {
+          "code": "60255",
+          "level": "WO-MA",
+          "names": [
+            "Information Sciences"
+          ]
+        },
+        {
+          "code": "60257",
+          "level": "WO-MA",
+          "names": [
+            "Theologie",
+            "Theology"
+          ]
+        },
+        {
+          "code": "60260",
+          "level": "WO-MA",
+          "names": [
+            "Psychologie",
+            "Psychology"
+          ]
+        },
+        {
+          "code": "60266",
+          "level": "WO-MA",
+          "names": [
+            "Behavioural Science (research)"
+          ]
+        },
+        {
+          "code": "60322",
+          "level": "WO-MA",
+          "names": [
+            "Molecular Mechanisms of Disease (research)"
+          ]
+        },
+        {
+          "code": "60364",
+          "level": "WO-MA",
+          "names": [
+            "Computing Science"
+          ]
+        },
+        {
+          "code": "60386",
+          "level": "WO-MA",
+          "names": [
+            "Onderneming en Recht (research)",
+            "Business and Law (research)"
+          ]
+        },
+        {
+          "code": "60466",
+          "level": "WO-MA",
+          "names": [
+            "Human Geography"
+          ]
+        },
+        {
+          "code": "60473",
+          "level": "WO-MA",
+          "names": [
+            "Curriculumontwikkeling voor Primair Onderwijs",
+            "Curriculum Development for Primary Education"
+          ]
+        },
+        {
+          "code": "60506",
+          "level": "WO-MA",
+          "names": [
+            "Cognitive Neuroscience (research)"
+          ]
+        },
+        {
+          "code": "60610",
+          "level": "WO-MA",
+          "names": [
+            "Medical Biology"
+          ]
+        },
+        {
+          "code": "60644",
+          "level": "WO-MA",
+          "names": [
+            "Business Administration"
+          ]
+        },
+        {
+          "code": "60813",
+          "level": "WO-MA",
+          "names": [
+            "Letterkunde",
+            "Literary Studies"
+          ]
+        },
+        {
+          "code": "60815",
+          "level": "WO-MA",
+          "names": [
+            "Taalwetenschappen",
+            "Linguistics"
+          ]
+        },
+        {
+          "code": "60821",
+          "level": "WO-MA",
+          "names": [
+            "Oudheidstudies",
+            "Classics & Ancient Civilizations"
+          ]
+        },
+        {
+          "code": "60822",
+          "level": "WO-MA",
+          "names": [
+            "Filosofie",
+            "Philosophy"
+          ]
+        },
+        {
+          "code": "60823",
+          "level": "WO-MA",
+          "names": [
+            "Filosofie",
+            "Philosophy"
+          ]
+        },
+        {
+          "code": "60824",
+          "level": "WO-MA",
+          "names": [
+            "Theologie & Religiewetenschappen",
+            "Theology & Religious Studies"
+          ]
+        },
+        {
+          "code": "60845",
+          "level": "WO-MA",
+          "names": [
+            "Noord-Amerika Studies",
+            "North American Studies"
+          ]
+        },
+        {
+          "code": "60857",
+          "level": "WO-MA",
+          "names": [
+            "Historical, Literary and Cultural Studies (research)"
+          ]
+        },
+        {
+          "code": "60960",
+          "level": "WO-MA",
+          "names": [
+            "Linguistics and Communication Sciences (research)"
+          ]
+        },
+        {
+          "code": "60998",
+          "level": "WO-MA",
+          "names": [
+            "Intersectional Gender Studies"
+          ]
+        },
+        {
+          "code": "61000",
+          "level": "WO-MA",
+          "names": [
+            "Healthcare Humanities"
+          ]
+        },
+        {
+          "code": "65002",
+          "level": "WO-MA",
+          "names": [
+            "Europese Studies (joint degree)",
+            "European Studies (joint degree)"
+          ]
+        },
+        {
+          "code": "65033",
+          "level": "WO-MA",
+          "names": [
+            "Crop Biotechnology and Engineering (joint degree)"
+          ]
+        },
+        {
+          "code": "66034",
+          "level": "WO-MA",
+          "names": [
+            "Geschiedenis",
+            "History"
+          ]
+        },
+        {
+          "code": "66401",
+          "level": "WO-MA",
+          "names": [
+            "Economics"
+          ]
+        },
+        {
+          "code": "66451",
+          "level": "WO-MA",
+          "names": [
+            "Nederlands Recht",
+            "Dutch Law"
+          ]
+        },
+        {
+          "code": "66551",
+          "level": "WO-MA",
+          "names": [
+            "Geneeskunde",
+            "Medicine"
+          ]
+        },
+        {
+          "code": "66588",
+          "level": "WO-MA",
+          "names": [
+            "Tandheelkunde",
+            "Dentistry"
+          ]
+        },
+        {
+          "code": "66601",
+          "level": "WO-MA",
+          "names": [
+            "Sociologie",
+            "Sociology"
+          ]
+        },
+        {
+          "code": "66607",
+          "level": "WO-MA",
+          "names": [
+            "Pedagogische Wetenschappen",
+            "Pedagogical Sciences"
+          ]
+        },
+        {
+          "code": "66615",
+          "level": "WO-MA",
+          "names": [
+            "Communicatiewetenschap",
+            "Communication Science"
+          ]
+        },
+        {
+          "code": "66627",
+          "level": "WO-MA",
+          "names": [
+            "Bestuurskunde",
+            "Public Administration"
+          ]
+        },
+        {
+          "code": "66655",
+          "level": "WO-MA",
+          "names": [
+            "Spatial Planning"
+          ]
+        },
+        {
+          "code": "66826",
+          "level": "WO-MA",
+          "names": [
+            "Communicatie- & Informatiewetenschappen",
+            "Communication & Information Studies"
+          ]
+        },
+        {
+          "code": "66827",
+          "level": "WO-MA",
+          "names": [
+            "Fiscaal Recht",
+            "Tax Law"
+          ]
+        },
+        {
+          "code": "66828",
+          "level": "WO-MA",
+          "names": [
+            "Notarieel Recht",
+            "Notarial Law"
+          ]
+        },
+        {
+          "code": "66839",
+          "level": "WO-MA",
+          "names": [
+            "Environment and Society Studies"
+          ]
+        },
+        {
+          "code": "66860",
+          "level": "WO-MA",
+          "names": [
+            "Biology"
+          ]
+        },
+        {
+          "code": "66980",
+          "level": "WO-MA",
+          "names": [
+            "Mathematics"
+          ]
+        },
+        {
+          "code": "66981",
+          "level": "WO-MA",
+          "names": [
+            "Artificial Intelligence"
+          ]
+        },
+        {
+          "code": "66984",
+          "level": "WO-MA",
+          "names": [
+            "Physics and Astronomy"
+          ]
+        },
+        {
+          "code": "66990",
+          "level": "WO-MA",
+          "names": [
+            "Biomedical Sciences"
+          ]
+        },
+        {
+          "code": "66991",
+          "level": "WO-MA",
+          "names": [
+            "Molecular Sciences"
+          ]
+        },
+        {
+          "code": "68532",
+          "level": "WO-MA",
+          "names": [
+            "Educatie in de Mens- en Maatschappijwetenschappen",
+            "Social Sciences and Humanities Education"
+          ]
+        },
+        {
+          "code": "68533",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Bètawetenschappen",
+            "Science Teaching in Secondary Education"
+          ]
+        },
+        {
+          "code": "68534",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen",
+            "Language Teaching in Secondary Education"
+          ]
+        },
+        {
+          "code": "68535",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Mens- en Maatschappijwetenschappen",
+            "Teaching Social Sciences and Humanities in Secondary Education"
+          ]
+        },
+        {
+          "code": "68536",
+          "level": "WO-MA",
+          "names": [
+            "Educatie in de Taal- en cultuurwetenschappen",
+            "Language and culture Education"
+          ]
+        },
+        {
+          "code": "69345",
+          "level": "WO-MA",
+          "names": [
+            "Educatie in de Bètawetenschappen",
+            "Science Education"
+          ]
+        },
+        {
+          "code": "69351",
+          "level": "WO-MA",
+          "names": [
+            "Science for Sustainability"
+          ]
+        }
+      ]
+    },
+    {
+      "institution": "Universiteit Maastricht",
+      "label": "Maastricht University",
+      "programmes": [
+        {
+          "code": "50004",
+          "level": "WO-BA",
+          "names": [
+            "Cultuurwetenschappen",
+            "Arts and Culture"
+          ]
+        },
+        {
+          "code": "50017",
+          "level": "WO-BA",
+          "names": [
+            "European Law School"
+          ]
+        },
+        {
+          "code": "50019",
+          "level": "WO-BA",
+          "names": [
+            "International Business"
+          ]
+        },
+        {
+          "code": "50296",
+          "level": "WO-BA",
+          "names": [
+            "European Public Health"
+          ]
+        },
+        {
+          "code": "50300",
+          "level": "WO-BA",
+          "names": [
+            "Data Science and Artificial Intelligence"
+          ]
+        },
+        {
+          "code": "50393",
+          "level": "WO-BA",
+          "names": [
+            "Liberal Arts and Sciences"
+          ]
+        },
+        {
+          "code": "50426",
+          "level": "WO-BA",
+          "names": [
+            "Computer Science"
+          ]
+        },
+        {
+          "code": "50478",
+          "level": "WO-BA",
+          "names": [
+            "Sustainable Bioscience"
+          ]
+        },
+        {
+          "code": "50700",
+          "level": "WO-BA",
+          "names": [
+            "Rechtsgeleerdheid",
+            "Dutch Law"
+          ]
+        },
+        {
+          "code": "50769",
+          "level": "WO-BA",
+          "names": [
+            "Business Engineering"
+          ]
+        },
+        {
+          "code": "50950",
+          "level": "WO-BA",
+          "names": [
+            "Economie en Bedrijfseconomie",
+            "Economics and Business Economics"
+          ]
+        },
+        {
+          "code": "55031",
+          "level": "WO-BA",
+          "names": [
+            "Urban Sustainability Studies (joint degree)"
+          ]
+        },
+        {
+          "code": "56051",
+          "level": "WO-BA",
+          "names": [
+            "Europese Studies",
+            "European Studies"
+          ]
+        },
+        {
+          "code": "56402",
+          "level": "WO-BA",
+          "names": [
+            "Fiscale Economie",
+            "Fiscal Economics"
+          ]
+        },
+        {
+          "code": "56551",
+          "level": "WO-BA",
+          "names": [
+            "Geneeskunde",
+            "Medicine"
+          ]
+        },
+        {
+          "code": "56553",
+          "level": "WO-BA",
+          "names": [
+            "Gezondheidswetenschappen",
+            "Health Sciences"
+          ]
+        },
+        {
+          "code": "56604",
+          "level": "WO-BA",
+          "names": [
+            "Psychologie",
+            "Psychology"
+          ]
+        },
+        {
+          "code": "56827",
+          "level": "WO-BA",
+          "names": [
+            "Fiscaal Recht",
+            "Tax Law"
+          ]
+        },
+        {
+          "code": "56833",
+          "level": "WO-BA",
+          "names": [
+            "Econometrie en Operationele Research",
+            "Econometrics and Operations Research"
+          ]
+        },
+        {
+          "code": "56856",
+          "level": "WO-BA",
+          "names": [
+            "Business Analytics"
+          ]
+        },
+        {
+          "code": "56990",
+          "level": "WO-BA",
+          "names": [
+            "Biomedische Wetenschappen",
+            "Biomedical Sciences"
+          ]
+        },
+        {
+          "code": "59337",
+          "level": "WO-BA",
+          "names": [
+            "Digital Society"
+          ]
+        },
+        {
+          "code": "59339",
+          "level": "WO-BA",
+          "names": [
+            "Global Studies"
+          ]
+        },
+        {
+          "code": "59341",
+          "level": "WO-BA",
+          "names": [
+            "Circular Engineering"
+          ]
+        },
+        {
+          "code": "59346",
+          "level": "WO-BA",
+          "names": [
+            "Regenerative Medicine and Technology"
+          ]
+        },
+        {
+          "code": "59347",
+          "level": "WO-BA",
+          "names": [
+            "Brain Science"
+          ]
+        },
+        {
+          "code": "60001",
+          "level": "WO-MA",
+          "names": [
+            "Learning and Development in Organisations"
+          ]
+        },
+        {
+          "code": "60002",
+          "level": "WO-MA",
+          "names": [
+            "European Studies on Society, Science and Technology"
+          ]
+        },
+        {
+          "code": "60003",
+          "level": "WO-MA",
+          "names": [
+            "European Public Affairs"
+          ]
+        },
+        {
+          "code": "60006",
+          "level": "WO-MA",
+          "names": [
+            "Mental Health"
+          ]
+        },
+        {
+          "code": "60007",
+          "level": "WO-MA",
+          "names": [
+            "Occupational Health and Sustainable Work"
+          ]
+        },
+        {
+          "code": "60011",
+          "level": "WO-MA",
+          "names": [
+            "Epidemiology"
+          ]
+        },
+        {
+          "code": "60012",
+          "level": "WO-MA",
+          "names": [
+            "Economic and Financial Research (research)"
+          ]
+        },
+        {
+          "code": "60017",
+          "level": "WO-MA",
+          "names": [
+            "European Law School"
+          ]
+        },
+        {
+          "code": "60018",
+          "level": "WO-MA",
+          "names": [
+            "Digital Business and Economics"
+          ]
+        },
+        {
+          "code": "60019",
+          "level": "WO-MA",
+          "names": [
+            "International Business"
+          ]
+        },
+        {
+          "code": "60087",
+          "level": "WO-MA",
+          "names": [
+            "Kunst- & cultuurwetenschappen",
+            "Arts and Culture"
+          ]
+        },
+        {
+          "code": "60121",
+          "level": "WO-MA",
+          "names": [
+            "Cognitive and Clinical Neuroscience (research)"
+          ]
+        },
+        {
+          "code": "60168",
+          "level": "WO-MA",
+          "names": [
+            "International Laws"
+          ]
+        },
+        {
+          "code": "60169",
+          "level": "WO-MA",
+          "names": [
+            "Recht en Arbeid",
+            "Law and Labour"
+          ]
+        },
+        {
+          "code": "60170",
+          "level": "WO-MA",
+          "names": [
+            "Globalisation and Law"
+          ]
+        },
+        {
+          "code": "60171",
+          "level": "WO-MA",
+          "names": [
+            "Forensica, Criminologie en Rechtspleging",
+            "Forensics, Criminology and Law"
+          ]
+        },
+        {
+          "code": "60307",
+          "level": "WO-MA",
+          "names": [
+            "Econometrics and Operations Research"
+          ]
+        },
+        {
+          "code": "60321",
+          "level": "WO-MA",
+          "names": [
+            "Financial Economics"
+          ]
+        },
+        {
+          "code": "60328",
+          "level": "WO-MA",
+          "names": [
+            "Public Policy and Human Development"
+          ]
+        },
+        {
+          "code": "60377",
+          "level": "WO-MA",
+          "names": [
+            "European Studies (research)"
+          ]
+        },
+        {
+          "code": "60379",
+          "level": "WO-MA",
+          "names": [
+            "Governance and Leadership in European Public Health"
+          ]
+        },
+        {
+          "code": "60445",
+          "level": "WO-MA",
+          "names": [
+            "Global Supply Chain Management and Change"
+          ]
+        },
+        {
+          "code": "60459",
+          "level": "WO-MA",
+          "names": [
+            "International and European Tax Law"
+          ]
+        },
+        {
+          "code": "60460",
+          "level": "WO-MA",
+          "names": [
+            "Healthcare Policy, Innovation and Management"
+          ]
+        },
+        {
+          "code": "60461",
+          "level": "WO-MA",
+          "names": [
+            "Health Education and Promotion"
+          ]
+        },
+        {
+          "code": "60462",
+          "level": "WO-MA",
+          "names": [
+            "Bewegingswetenschappen",
+            "Human Movement Sciences"
+          ]
+        },
+        {
+          "code": "60464",
+          "level": "WO-MA",
+          "names": [
+            "Human Decision Science"
+          ]
+        },
+        {
+          "code": "60465",
+          "level": "WO-MA",
+          "names": [
+            "Globalisation and Development Studies"
+          ]
+        },
+        {
+          "code": "60512",
+          "level": "WO-MA",
+          "names": [
+            "Health Food Innovation Management"
+          ]
+        },
+        {
+          "code": "60829",
+          "level": "WO-MA",
+          "names": [
+            "Kunst- & cultuurwetenschappen (research)",
+            "Arts and Culture (research)"
+          ]
+        },
+        {
+          "code": "60830",
+          "level": "WO-MA",
+          "names": [
+            "Mediastudies",
+            "Media Studies"
+          ]
+        },
+        {
+          "code": "60955",
+          "level": "WO-MA",
+          "names": [
+            "Biobased Materials"
+          ]
+        },
+        {
+          "code": "60956",
+          "level": "WO-MA",
+          "names": [
+            "Systems Biology and Bioinformatics"
+          ]
+        },
+        {
+          "code": "60959",
+          "level": "WO-MA",
+          "names": [
+            "Business Intelligence and Smart Services"
+          ]
+        },
+        {
+          "code": "60990",
+          "level": "WO-MA",
+          "names": [
+            "Health and Digital Transformation"
+          ]
+        },
+        {
+          "code": "61001",
+          "level": "WO-MA",
+          "names": [
+            "Responsible Data Science"
+          ]
+        },
+        {
+          "code": "65023",
+          "level": "WO-MA",
+          "names": [
+            "International Joint Master of Research in Work and Organizational Psychology (joint degree)"
+          ]
+        },
+        {
+          "code": "65033",
+          "level": "WO-MA",
+          "names": [
+            "Crop Biotechnology and Engineering (joint degree)"
+          ]
+        },
+        {
+          "code": "66401",
+          "level": "WO-MA",
+          "names": [
+            "Economics"
+          ]
+        },
+        {
+          "code": "66402",
+          "level": "WO-MA",
+          "names": [
+            "Fiscale Economie",
+            "Fiscal Economics"
+          ]
+        },
+        {
+          "code": "66451",
+          "level": "WO-MA",
+          "names": [
+            "Nederlands Recht",
+            "Dutch Law"
+          ]
+        },
+        {
+          "code": "66551",
+          "level": "WO-MA",
+          "names": [
+            "Geneeskunde",
+            "Medicine"
+          ]
+        },
+        {
+          "code": "66585",
+          "level": "WO-MA",
+          "names": [
+            "Geneeskunde en Klinisch Onderzoek (research)",
+            "Medicine - Clinical Research (research)"
+          ]
+        },
+        {
+          "code": "66604",
+          "level": "WO-MA",
+          "names": [
+            "Psychology"
+          ]
+        },
+        {
+          "code": "66827",
+          "level": "WO-MA",
+          "names": [
+            "Fiscaal Recht",
+            "Tax Law"
+          ]
+        },
+        {
+          "code": "66902",
+          "level": "WO-MA",
+          "names": [
+            "Global Health"
+          ]
+        },
+        {
+          "code": "67087",
+          "level": "WO-MA",
+          "names": [
+            "Economics and Strategy in Emerging Markets"
+          ]
+        },
+        {
+          "code": "69303",
+          "level": "WO-MA",
+          "names": [
+            "European Studies"
+          ]
+        },
+        {
+          "code": "69305",
+          "level": "WO-MA",
+          "names": [
+            "Forensic Psychology"
+          ]
+        },
+        {
+          "code": "69315",
+          "level": "WO-MA",
+          "names": [
+            "Sustainability Science, Policy and Society"
+          ]
+        },
+        {
+          "code": "69343",
+          "level": "WO-MA",
+          "names": [
+            "Imaging Engineering"
+          ]
+        }
+      ]
+    },
+    {
+      "institution": "Erasmus Universiteit Rotterdam",
+      "label": "Erasmus University Rotterdam",
+      "programmes": [
+        {
+          "code": "50374",
+          "level": "WO-BA",
+          "names": [
+            "International Bachelor's Programme in Communication and Media"
+          ]
+        },
+        {
+          "code": "50393",
+          "level": "WO-BA",
+          "names": [
+            "Liberal Arts and Sciences"
+          ]
+        },
+        {
+          "code": "50645",
+          "level": "WO-BA",
+          "names": [
+            "Bedrijfskunde",
+            "Business Administration"
+          ]
+        },
+        {
+          "code": "50700",
+          "level": "WO-BA",
+          "names": [
+            "Rechtsgeleerdheid"
+          ]
+        },
+        {
+          "code": "50950",
+          "level": "WO-BA",
+          "names": [
+            "Economie en Bedrijfseconomie",
+            "Economics and Business Economics"
+          ]
+        },
+        {
+          "code": "50952",
+          "level": "WO-BA",
+          "names": [
+            "International Business Administration"
+          ]
+        },
+        {
+          "code": "55003",
+          "level": "WO-BA",
+          "names": [
+            "Nanobiologie (joint degree)",
+            "Nanobiology (joint degree)"
+          ]
+        },
+        {
+          "code": "55007",
+          "level": "WO-BA",
+          "names": [
+            "Klinische Technologie (joint degree)",
+            "Clinical Technology (joint degree)"
+          ]
+        },
+        {
+          "code": "56034",
+          "level": "WO-BA",
+          "names": [
+            "Geschiedenis",
+            "History"
+          ]
+        },
+        {
+          "code": "56081",
+          "level": "WO-BA",
+          "names": [
+            "Filosofie"
+          ]
+        },
+        {
+          "code": "56402",
+          "level": "WO-BA",
+          "names": [
+            "Fiscale Economie"
+          ]
+        },
+        {
+          "code": "56469",
+          "level": "WO-BA",
+          "names": [
+            "Criminologie"
+          ]
+        },
+        {
+          "code": "56551",
+          "level": "WO-BA",
+          "names": [
+            "Geneeskunde",
+            "Medicine"
+          ]
+        },
+        {
+          "code": "56553",
+          "level": "WO-BA",
+          "names": [
+            "Gezondheidswetenschappen"
+          ]
+        },
+        {
+          "code": "56601",
+          "level": "WO-BA",
+          "names": [
+            "Sociologie",
+            "Sociology"
+          ]
+        },
+        {
+          "code": "56604",
+          "level": "WO-BA",
+          "names": [
+            "Psychologie",
+            "Psychology"
+          ]
+        },
+        {
+          "code": "56607",
+          "level": "WO-BA",
+          "names": [
+            "Pedagogische Wetenschappen",
+            "Pedagogical Sciences"
+          ]
+        },
+        {
+          "code": "56627",
+          "level": "WO-BA",
+          "names": [
+            "Bestuurskunde",
+            "Public Administration Science"
+          ]
+        },
+        {
+          "code": "56823",
+          "level": "WO-BA",
+          "names": [
+            "Algemene Cultuurwetenschappen",
+            "Arts and Culture Studies"
+          ]
+        },
+        {
+          "code": "56827",
+          "level": "WO-BA",
+          "names": [
+            "Fiscaal Recht",
+            "Tax Law"
+          ]
+        },
+        {
+          "code": "56833",
+          "level": "WO-BA",
+          "names": [
+            "Econometrie en Operationele Research",
+            "Econometrics and Operations Research"
+          ]
+        },
+        {
+          "code": "57084",
+          "level": "WO-BA",
+          "names": [
+            "Filosofie van een Bepaald Wetenschapsgebied",
+            "Philosophy of a Specific Discipline"
+          ]
+        },
+        {
+          "code": "60020",
+          "level": "WO-MA",
+          "names": [
+            "Public Administration"
+          ]
+        },
+        {
+          "code": "60063",
+          "level": "WO-MA",
+          "names": [
+            "Marketing Management"
+          ]
+        },
+        {
+          "code": "60066",
+          "level": "WO-MA",
+          "names": [
+            "Strategic Management"
+          ]
+        },
+        {
+          "code": "60079",
+          "level": "WO-MA",
+          "names": [
+            "Econometrics and Management Science"
+          ]
+        },
+        {
+          "code": "60081",
+          "level": "WO-MA",
+          "names": [
+            "Zorgmanagement",
+            "Health Care Management"
+          ]
+        },
+        {
+          "code": "60082",
+          "level": "WO-MA",
+          "names": [
+            "Health Economics, Policy and Law"
+          ]
+        },
+        {
+          "code": "60084",
+          "level": "WO-MA",
+          "names": [
+            "Rechtsgeleerdheid"
+          ]
+        },
+        {
+          "code": "60086",
+          "level": "WO-MA",
+          "names": [
+            "Financieel Recht"
+          ]
+        },
+        {
+          "code": "60087",
+          "level": "WO-MA",
+          "names": [
+            "Kunst- & cultuurwetenschappen",
+            "Arts & Culture"
+          ]
+        },
+        {
+          "code": "60093",
+          "level": "WO-MA",
+          "names": [
+            "Supply Chain Management"
+          ]
+        },
+        {
+          "code": "60120",
+          "level": "WO-MA",
+          "names": [
+            "Health Sciences (research)"
+          ]
+        },
+        {
+          "code": "60128",
+          "level": "WO-MA",
+          "names": [
+            "Filosofie ( research )",
+            "Philosophy (research)"
+          ]
+        },
+        {
+          "code": "60222",
+          "level": "WO-MA",
+          "names": [
+            "Arbeidsrecht"
+          ]
+        },
+        {
+          "code": "60256",
+          "level": "WO-MA",
+          "names": [
+            "International Management"
+          ]
+        },
+        {
+          "code": "60278",
+          "level": "WO-MA",
+          "names": [
+            "Neuroscience (research)"
+          ]
+        },
+        {
+          "code": "60279",
+          "level": "WO-MA",
+          "names": [
+            "Molecular Medicine (research)"
+          ]
+        },
+        {
+          "code": "60375",
+          "level": "WO-MA",
+          "names": [
+            "Infection and Immunity (research)"
+          ]
+        },
+        {
+          "code": "60391",
+          "level": "WO-MA",
+          "names": [
+            "Research in Public Administration and Organizational Science (research)"
+          ]
+        },
+        {
+          "code": "60408",
+          "level": "WO-MA",
+          "names": [
+            "Ondernemingsrecht",
+            "Company Law"
+          ]
+        },
+        {
+          "code": "60409",
+          "level": "WO-MA",
+          "names": [
+            "Finance & Investments"
+          ]
+        },
+        {
+          "code": "60420",
+          "level": "WO-MA",
+          "names": [
+            "Pedagogische en Onderwijswetenschappen",
+            "Pedagogy and Education"
+          ]
+        },
+        {
+          "code": "60448",
+          "level": "WO-MA",
+          "names": [
+            "International Public Management and Public Policy"
+          ]
+        },
+        {
+          "code": "60449",
+          "level": "WO-MA",
+          "names": [
+            "Aansprakelijkheid en verzekering"
+          ]
+        },
+        {
+          "code": "60450",
+          "level": "WO-MA",
+          "names": [
+            "Togamaster"
+          ]
+        },
+        {
+          "code": "60451",
+          "level": "WO-MA",
+          "names": [
+            "Recht van de Gezondheidszorg"
+          ]
+        },
+        {
+          "code": "60452",
+          "level": "WO-MA",
+          "names": [
+            "Commercial Law"
+          ]
+        },
+        {
+          "code": "60453",
+          "level": "WO-MA",
+          "names": [
+            "Business Information Management"
+          ]
+        },
+        {
+          "code": "60455",
+          "level": "WO-MA",
+          "names": [
+            "Strategic Entrepreneurship"
+          ]
+        },
+        {
+          "code": "60456",
+          "level": "WO-MA",
+          "names": [
+            "Global Business & Sustainability"
+          ]
+        },
+        {
+          "code": "60458",
+          "level": "WO-MA",
+          "names": [
+            "Management of Innovation"
+          ]
+        },
+        {
+          "code": "60644",
+          "level": "WO-MA",
+          "names": [
+            "Business Administration"
+          ]
+        },
+        {
+          "code": "60652",
+          "level": "WO-MA",
+          "names": [
+            "Economics and Business"
+          ]
+        },
+        {
+          "code": "60822",
+          "level": "WO-MA",
+          "names": [
+            "Filosofie",
+            "Philosophy"
+          ]
+        },
+        {
+          "code": "60830",
+          "level": "WO-MA",
+          "names": [
+            "Mediastudies",
+            "Media Studies"
+          ]
+        },
+        {
+          "code": "60832",
+          "level": "WO-MA",
+          "names": [
+            "Mediastudies (research)",
+            "Media Studies (research)"
+          ]
+        },
+        {
+          "code": "60979",
+          "level": "WO-MA",
+          "names": [
+            "Educatieve Master Primair Onderwijs",
+            "Teaching in Primary Education"
+          ]
+        },
+        {
+          "code": "60987",
+          "level": "WO-MA",
+          "names": [
+            "Genomics in Society (research)"
+          ]
+        },
+        {
+          "code": "60989",
+          "level": "WO-MA",
+          "names": [
+            "Societal Transitions"
+          ]
+        },
+        {
+          "code": "60991",
+          "level": "WO-MA",
+          "names": [
+            "People, Organisations & Change"
+          ]
+        },
+        {
+          "code": "65004",
+          "level": "WO-MA",
+          "names": [
+            "Redesigning the Post-Industrial City (joint degree)"
+          ]
+        },
+        {
+          "code": "65011",
+          "level": "WO-MA",
+          "names": [
+            "Nanobiology (joint degree)"
+          ]
+        },
+        {
+          "code": "65017",
+          "level": "WO-MA",
+          "names": [
+            "European Master in Health Economics and Management (joint degree)"
+          ]
+        },
+        {
+          "code": "65019",
+          "level": "WO-MA",
+          "names": [
+            "Technical Medicine (joint degree)"
+          ]
+        },
+        {
+          "code": "65024",
+          "level": "WO-MA",
+          "names": [
+            "Research Master Business Data Science (joint degree)"
+          ]
+        },
+        {
+          "code": "65027",
+          "level": "WO-MA",
+          "names": [
+            "Tinbergen Institute Research Master in Economics (joint degree)"
+          ]
+        },
+        {
+          "code": "66034",
+          "level": "WO-MA",
+          "names": [
+            "Geschiedenis",
+            "History"
+          ]
+        },
+        {
+          "code": "66402",
+          "level": "WO-MA",
+          "names": [
+            "Fiscale Economie"
+          ]
+        },
+        {
+          "code": "66469",
+          "level": "WO-MA",
+          "names": [
+            "Criminologie"
+          ]
+        },
+        {
+          "code": "66551",
+          "level": "WO-MA",
+          "names": [
+            "Geneeskunde",
+            "Medicine"
+          ]
+        },
+        {
+          "code": "66601",
+          "level": "WO-MA",
+          "names": [
+            "Sociologie"
+          ]
+        },
+        {
+          "code": "66604",
+          "level": "WO-MA",
+          "names": [
+            "Psychology"
+          ]
+        },
+        {
+          "code": "66827",
+          "level": "WO-MA",
+          "names": [
+            "Fiscaal Recht"
+          ]
+        },
+        {
+          "code": "69313",
+          "level": "WO-MA",
+          "names": [
+            "Accounting, Auditing and Control"
+          ]
+        }
+      ]
+    },
+    {
+      "institution": "Tilburg University",
+      "label": "Tilburg University",
+      "programmes": [
+        {
+          "code": "50393",
+          "level": "WO-BA",
+          "names": [
+            "Liberal Arts and Sciences"
+          ]
+        },
+        {
+          "code": "50645",
+          "level": "WO-BA",
+          "names": [
+            "Bedrijfskunde",
+            "Business Administration"
+          ]
+        },
+        {
+          "code": "50700",
+          "level": "WO-BA",
+          "names": [
+            "Rechtsgeleerdheid",
+            "Law"
+          ]
+        },
+        {
+          "code": "50754",
+          "level": "WO-BA",
+          "names": [
+            "Organisatie- en Managementwetenschappen",
+            "Organization and Management Studies"
+          ]
+        },
+        {
+          "code": "50755",
+          "level": "WO-BA",
+          "names": [
+            "Personeelwetenschappen",
+            "Human Resource Studies"
+          ]
+        },
+        {
+          "code": "50950",
+          "level": "WO-BA",
+          "names": [
+            "Economie en Bedrijfseconomie",
+            "Economics and Business Economics"
+          ]
+        },
+        {
+          "code": "50952",
+          "level": "WO-BA",
+          "names": [
+            "International Business Administration"
+          ]
+        },
+        {
+          "code": "55018",
+          "level": "WO-BA",
+          "names": [
+            "Data Science (joint degree)"
+          ]
+        },
+        {
+          "code": "56081",
+          "level": "WO-BA",
+          "names": [
+            "Filosofie",
+            "Philosophy"
+          ]
+        },
+        {
+          "code": "56109",
+          "level": "WO-BA",
+          "names": [
+            "Theologie",
+            "Theology"
+          ]
+        },
+        {
+          "code": "56401",
+          "level": "WO-BA",
+          "names": [
+            "Economie",
+            "Economics"
+          ]
+        },
+        {
+          "code": "56402",
+          "level": "WO-BA",
+          "names": [
+            "Fiscale Economie",
+            "Tax Economics"
+          ]
+        },
+        {
+          "code": "56475",
+          "level": "WO-BA",
+          "names": [
+            "Global Law"
+          ]
+        },
+        {
+          "code": "56601",
+          "level": "WO-BA",
+          "names": [
+            "Sociologie",
+            "Sociology"
+          ]
+        },
+        {
+          "code": "56604",
+          "level": "WO-BA",
+          "names": [
+            "Psychologie",
+            "Psychology"
+          ]
+        },
+        {
+          "code": "56627",
+          "level": "WO-BA",
+          "names": [
+            "Bestuurskunde",
+            "Public Governance"
+          ]
+        },
+        {
+          "code": "56823",
+          "level": "WO-BA",
+          "names": [
+            "Algemene Cultuurwetenschappen",
+            "Culture Studies"
+          ]
+        },
+        {
+          "code": "56826",
+          "level": "WO-BA",
+          "names": [
+            "Communicatie- en Informatiewetenschappen",
+            "Communication and Information Sciences"
+          ]
+        },
+        {
+          "code": "56827",
+          "level": "WO-BA",
+          "names": [
+            "Fiscaal Recht",
+            "Tax Law"
+          ]
+        },
+        {
+          "code": "56833",
+          "level": "WO-BA",
+          "names": [
+            "Econometrie en Operationele Research",
+            "Econometrics and Operations Research"
+          ]
+        },
+        {
+          "code": "59338",
+          "level": "WO-BA",
+          "names": [
+            "Cognitive Science and Artificial Intelligence"
+          ]
+        },
+        {
+          "code": "59340",
+          "level": "WO-BA",
+          "names": [
+            "Entrepreneurship and Business Innovation"
+          ]
+        },
+        {
+          "code": "60046",
+          "level": "WO-MA",
+          "names": [
+            "Finance"
+          ]
+        },
+        {
+          "code": "60055",
+          "level": "WO-MA",
+          "names": [
+            "Information Management"
+          ]
+        },
+        {
+          "code": "60056",
+          "level": "WO-MA",
+          "names": [
+            "Econometrics and Mathematical Economics"
+          ]
+        },
+        {
+          "code": "60057",
+          "level": "WO-MA",
+          "names": [
+            "Business Analytics and Operations Research"
+          ]
+        },
+        {
+          "code": "60058",
+          "level": "WO-MA",
+          "names": [
+            "Quantitative Finance and Actuarial Science"
+          ]
+        },
+        {
+          "code": "60063",
+          "level": "WO-MA",
+          "names": [
+            "Marketing Management"
+          ]
+        },
+        {
+          "code": "60064",
+          "level": "WO-MA",
+          "names": [
+            "Marketing Analytics"
+          ]
+        },
+        {
+          "code": "60066",
+          "level": "WO-MA",
+          "names": [
+            "Strategic Management"
+          ]
+        },
+        {
+          "code": "60069",
+          "level": "WO-MA",
+          "names": [
+            "Law and Technology"
+          ]
+        },
+        {
+          "code": "60070",
+          "level": "WO-MA",
+          "names": [
+            "Sociaal Recht en Sociale Politiek",
+            "Labour Law and Employment Relations"
+          ]
+        },
+        {
+          "code": "60072",
+          "level": "WO-MA",
+          "names": [
+            "International Business Law"
+          ]
+        },
+        {
+          "code": "60075",
+          "level": "WO-MA",
+          "names": [
+            "Human Resource Studies"
+          ]
+        },
+        {
+          "code": "60076",
+          "level": "WO-MA",
+          "names": [
+            "Psychologie en Geestelijke Gezondheid",
+            "Psychology and Mental Health"
+          ]
+        },
+        {
+          "code": "60077",
+          "level": "WO-MA",
+          "names": [
+            "Social Psychology"
+          ]
+        },
+        {
+          "code": "60084",
+          "level": "WO-MA",
+          "names": [
+            "Rechtsgeleerdheid",
+            "Law"
+          ]
+        },
+        {
+          "code": "60087",
+          "level": "WO-MA",
+          "names": [
+            "Kunst- & cultuurwetenschappen",
+            "Culture Studies"
+          ]
+        },
+        {
+          "code": "60093",
+          "level": "WO-MA",
+          "names": [
+            "Supply Chain Management"
+          ]
+        },
+        {
+          "code": "60224",
+          "level": "WO-MA",
+          "names": [
+            "International and European Law"
+          ]
+        },
+        {
+          "code": "60257",
+          "level": "WO-MA",
+          "names": [
+            "Theologie",
+            "Theology"
+          ]
+        },
+        {
+          "code": "60391",
+          "level": "WO-MA",
+          "names": [
+            "Research in Public Administration and Organizational Science (research)"
+          ]
+        },
+        {
+          "code": "60394",
+          "level": "WO-MA",
+          "names": [
+            "Social and Behavioural Sciences (research)"
+          ]
+        },
+        {
+          "code": "60407",
+          "level": "WO-MA",
+          "names": [
+            "International Management"
+          ]
+        },
+        {
+          "code": "60408",
+          "level": "WO-MA",
+          "names": [
+            "Ondernemingsrecht",
+            "Business Law"
+          ]
+        },
+        {
+          "code": "60686",
+          "level": "WO-MA",
+          "names": [
+            "International Business Taxation"
+          ]
+        },
+        {
+          "code": "60754",
+          "level": "WO-MA",
+          "names": [
+            "Organization and Management Studies"
+          ]
+        },
+        {
+          "code": "60822",
+          "level": "WO-MA",
+          "names": [
+            "Filosofie",
+            "Philosophy"
+          ]
+        },
+        {
+          "code": "60824",
+          "level": "WO-MA",
+          "names": [
+            "Theologie & Religiewetenschappen",
+            "Theology and Religious Studies"
+          ]
+        },
+        {
+          "code": "60900",
+          "level": "WO-MA",
+          "names": [
+            "Accountancy and Control"
+          ]
+        },
+        {
+          "code": "60909",
+          "level": "WO-MA",
+          "names": [
+            "Research Master in Economics (research)"
+          ]
+        },
+        {
+          "code": "60954",
+          "level": "WO-MA",
+          "names": [
+            "Individual Differences and Assessment (research)",
+            "Individual Differences & Assessment (research)"
+          ]
+        },
+        {
+          "code": "60960",
+          "level": "WO-MA",
+          "names": [
+            "Linguistics and Communication Sciences (research)"
+          ]
+        },
+        {
+          "code": "60964",
+          "level": "WO-MA",
+          "names": [
+            "Data Science and Society"
+          ]
+        },
+        {
+          "code": "60969",
+          "level": "WO-MA",
+          "names": [
+            "Cognitive Science and Artificial Intelligence"
+          ]
+        },
+        {
+          "code": "60994",
+          "level": "WO-MA",
+          "names": [
+            "Geestelijke Verzorging"
+          ]
+        },
+        {
+          "code": "65018",
+          "level": "WO-MA",
+          "names": [
+            "Data Science in Business and Entrepreneurship (joint degree)"
+          ]
+        },
+        {
+          "code": "66401",
+          "level": "WO-MA",
+          "names": [
+            "Economics"
+          ]
+        },
+        {
+          "code": "66402",
+          "level": "WO-MA",
+          "names": [
+            "Fiscale Economie",
+            "Tax Economics"
+          ]
+        },
+        {
+          "code": "66581",
+          "level": "WO-MA",
+          "names": [
+            "Medische Psychologie",
+            "Medical Psychology"
+          ]
+        },
+        {
+          "code": "66599",
+          "level": "WO-MA",
+          "names": [
+            "Sociology"
+          ]
+        },
+        {
+          "code": "66627",
+          "level": "WO-MA",
+          "names": [
+            "Bestuurskunde",
+            "Public Governance"
+          ]
+        },
+        {
+          "code": "66826",
+          "level": "WO-MA",
+          "names": [
+            "Communicatie- & Informatiewetenschappen",
+            "Communication and Information Sciences"
+          ]
+        },
+        {
+          "code": "66827",
+          "level": "WO-MA",
+          "names": [
+            "Fiscaal Recht",
+            "Tax Law"
+          ]
+        },
+        {
+          "code": "68075",
+          "level": "WO-MA",
+          "names": [
+            "Opleiding tot leraar voortgezet onderwijs van de eerste graad in Godsdienst en Levensbeschouwing",
+            "Academic Teacher in Religion and Philosophy of Life"
+          ]
+        },
+        {
+          "code": "68534",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen",
+            "Language Teaching in Secondary Education"
+          ]
+        },
+        {
+          "code": "68535",
+          "level": "WO-MA",
+          "names": [
+            "Leraar Voorbereidend Hoger Onderwijs in de Mens- en Maatschappijwetenschappen",
+            "Teaching Social Sciences and Humanities in Secondary Education"
+          ]
+        },
+        {
+          "code": "68536",
+          "level": "WO-MA",
+          "names": [
+            "Educatie in de Taal- en cultuurwetenschappen",
+            "Language and culture Education"
+          ]
+        }
+      ]
+    },
+    {
+      "institution": "Universiteit Twente",
+      "label": "University of Twente",
+      "programmes": [
+        {
+          "code": "50002",
+          "level": "WO-BA",
+          "names": [
+            "Advanced Technology"
+          ]
+        },
+        {
+          "code": "50033",
+          "level": "WO-BA",
+          "names": [
+            "Klinische Technologie",
+            "Clinical Technology"
+          ]
+        },
+        {
+          "code": "50352",
+          "level": "WO-BA",
+          "names": [
+            "Civil Engineering"
+          ]
+        },
+        {
+          "code": "50427",
+          "level": "WO-BA",
+          "names": [
+            "Technology and Liberal Arts & Sciences"
+          ]
+        },
+        {
+          "code": "50439",
+          "level": "WO-BA",
+          "names": [
+            "Mechanical Engineering"
+          ]
+        },
+        {
+          "code": "50447",
+          "level": "WO-BA",
+          "names": [
+            "Creative Technology"
+          ]
+        },
+        {
+          "code": "50952",
+          "level": "WO-BA",
+          "names": [
+            "International Business Administration"
+          ]
+        },
+        {
+          "code": "50975",
+          "level": "WO-BA",
+          "names": [
+            "Industrial Design Engineering"
+          ]
+        },
+        {
+          "code": "56066",
+          "level": "WO-BA",
+          "names": [
+            "Business Information Technology"
+          ]
+        },
+        {
+          "code": "56226",
+          "level": "WO-BA",
+          "names": [
+            "Biomedische Technologie",
+            "Biomedical Engineering"
+          ]
+        },
+        {
+          "code": "56553",
+          "level": "WO-BA",
+          "names": [
+            "Gezondheidswetenschappen"
+          ]
+        },
+        {
+          "code": "56604",
+          "level": "WO-BA",
+          "names": [
+            "Psychologie",
+            "Psychology"
+          ]
+        },
+        {
+          "code": "56615",
+          "level": "WO-BA",
+          "names": [
+            "Communicatiewetenschap",
+            "Communication Science"
+          ]
+        },
+        {
+          "code": "56627",
+          "level": "WO-BA",
+          "names": [
+            "Bestuurskunde",
+            "Public Administration"
+          ]
+        },
+        {
+          "code": "56654",
+          "level": "WO-BA",
+          "names": [
+            "Management, Society and Technology"
+          ]
+        },
+        {
+          "code": "56953",
+          "level": "WO-BA",
+          "names": [
+            "Electrical Engineering"
+          ]
+        },
+        {
+          "code": "56960",
+          "level": "WO-BA",
+          "names": [
+            "Scheikundige Technologie",
+            "Chemical Science & Engineering"
+          ]
+        },
+        {
+          "code": "56962",
+          "level": "WO-BA",
+          "names": [
+            "Technische Natuurkunde",
+            "Applied Physics"
+          ]
+        },
+        {
+          "code": "56994",
+          "level": "WO-BA",
+          "names": [
+            "Technische Bedrijfskunde",
+            "Industrial Engineering & Management Science"
+          ]
+        },
+        {
+          "code": "59335",
+          "level": "WO-BA",
+          "names": [
+            "Technical Computer Science"
+          ]
+        },
+        {
+          "code": "59336",
+          "level": "WO-BA",
+          "names": [
+            "Applied Mathematics"
+          ]
+        },
+        {
+          "code": "60020",
+          "level": "WO-MA",
+          "names": [
+            "Public Administration"
+          ]
+        },
+        {
+          "code": "60023",
+          "level": "WO-MA",
+          "names": [
+            "Educational Science and Technology"
+          ]
+        },
+        {
+          "code": "60024",
+          "level": "WO-MA",
+          "names": [
+            "Philosophy of Science, Technology and Society"
+          ]
+        },
+        {
+          "code": "60025",
+          "level": "WO-MA",
+          "names": [
+            "Business Information Technology"
+          ]
+        },
+        {
+          "code": "60026",
+          "level": "WO-MA",
+          "names": [
+            "Civil Engineering and Management"
+          ]
+        },
+        {
+          "code": "60028",
+          "level": "WO-MA",
+          "names": [
+            "Nanotechnology"
+          ]
+        },
+        {
+          "code": "60029",
+          "level": "WO-MA",
+          "names": [
+            "Industrial Engineering and Management"
+          ]
+        },
+        {
+          "code": "60030",
+          "level": "WO-MA",
+          "names": [
+            "Interaction Technology"
+          ]
+        },
+        {
+          "code": "60033",
+          "level": "WO-MA",
+          "names": [
+            "Technical Medicine"
+          ]
+        },
+        {
+          "code": "60300",
+          "level": "WO-MA",
+          "names": [
+            "Computer Science"
+          ]
+        },
+        {
+          "code": "60331",
+          "level": "WO-MA",
+          "names": [
+            "Embedded Systems"
+          ]
+        },
+        {
+          "code": "60337",
+          "level": "WO-MA",
+          "names": [
+            "Construction Management and Engineering"
+          ]
+        },
+        {
+          "code": "60348",
+          "level": "WO-MA",
+          "names": [
+            "Applied Mathematics"
+          ]
+        },
+        {
+          "code": "60353",
+          "level": "WO-MA",
+          "names": [
+            "Electrical Engineering"
+          ]
+        },
+        {
+          "code": "60436",
+          "level": "WO-MA",
+          "names": [
+            "Applied Physics"
+          ]
+        },
+        {
+          "code": "60439",
+          "level": "WO-MA",
+          "names": [
+            "Mechanical Engineering"
+          ]
+        },
+        {
+          "code": "60443",
+          "level": "WO-MA",
+          "names": [
+            "Sustainable Energy Technology"
+          ]
+        },
+        {
+          "code": "60475",
+          "level": "WO-MA",
+          "names": [
+            "Humanitarian Engineering"
+          ]
+        },
+        {
+          "code": "60480",
+          "level": "WO-MA",
+          "names": [
+            "Geo-information Science and Earth Observation"
+          ]
+        },
+        {
+          "code": "60644",
+          "level": "WO-MA",
+          "names": [
+            "Business Administration"
+          ]
+        },
+        {
+          "code": "60713",
+          "level": "WO-MA",
+          "names": [
+            "Communication Science"
+          ]
+        },
+        {
+          "code": "60962",
+          "level": "WO-MA",
+          "names": [
+            "Spatial Engineering"
+          ]
+        },
+        {
+          "code": "60973",
+          "level": "WO-MA",
+          "names": [
+            "Robotics"
+          ]
+        },
+        {
+          "code": "60977",
+          "level": "WO-MA",
+          "names": [
+            "Chemical Science & Engineering"
+          ]
+        },
+        {
+          "code": "65005",
+          "level": "WO-MA",
+          "names": [
+            "Water Technology (joint degree)"
+          ]
+        },
+        {
+          "code": "65030",
+          "level": "WO-MA",
+          "names": [
+            "Geographical Information Management and Applications (joint degree)"
+          ]
+        },
+        {
+          "code": "66226",
+          "level": "WO-MA",
+          "names": [
+            "Biomedical Engineering"
+          ]
+        },
+        {
+          "code": "66604",
+          "level": "WO-MA",
+          "names": [
+            "Psychology"
+          ]
+        },
+        {
+          "code": "66851",
+          "level": "WO-MA",
+          "names": [
+            "Health Sciences"
+          ]
+        },
+        {
+          "code": "66955",
+          "level": "WO-MA",
+          "names": [
+            "Industrial Design Engineering"
+          ]
+        },
+        {
+          "code": "69303",
+          "level": "WO-MA",
+          "names": [
+            "European Studies"
+          ]
+        },
+        {
+          "code": "69319",
+          "level": "WO-MA",
+          "names": [
+            "Environmental and Energy Management"
+          ]
+        },
+        {
+          "code": "69345",
+          "level": "WO-MA",
+          "names": [
+            "Educatie in de Bètawetenschappen",
+            "Science Education"
+          ]
+        }
+      ]
+    },
+    {
+      "institution": "Wageningen University",
+      "label": "Wageningen University",
+      "programmes": [
+        {
+          "code": "50016",
+          "level": "WO-BA",
+          "names": [
+            "Communicatie en Life Sciences",
+            "Communication and Life Sciences"
+          ]
+        },
+        {
+          "code": "50018",
+          "level": "WO-BA",
+          "names": [
+            "Gezondheid en Maatschappij",
+            "Health and Society"
+          ]
+        },
+        {
+          "code": "50100",
+          "level": "WO-BA",
+          "names": [
+            "International Land and Water Management"
+          ]
+        },
+        {
+          "code": "50101",
+          "level": "WO-BA",
+          "names": [
+            "Economie en Beleid",
+            "Economics and Governance"
+          ]
+        },
+        {
+          "code": "50859",
+          "level": "WO-BA",
+          "names": [
+            "Marine Sciences"
+          ]
+        },
+        {
+          "code": "55001",
+          "level": "WO-BA",
+          "names": [
+            "Tourism (joint degree)"
+          ]
+        },
+        {
+          "code": "56219",
+          "level": "WO-BA",
+          "names": [
+            "Bos- en Natuurbeheer",
+            "Forest and Nature Conservation"
+          ]
+        },
+        {
+          "code": "56283",
+          "level": "WO-BA",
+          "names": [
+            "Environmental Sciences"
+          ]
+        },
+        {
+          "code": "56831",
+          "level": "WO-BA",
+          "names": [
+            "Agrotechnologie",
+            "Biosystems Engineering"
+          ]
+        },
+        {
+          "code": "56835",
+          "level": "WO-BA",
+          "names": [
+            "Plantenwetenschappen",
+            "Plant Sciences"
+          ]
+        },
+        {
+          "code": "56836",
+          "level": "WO-BA",
+          "names": [
+            "Bedrijfs- en Consumentenwetenschappen",
+            "Business and Consumer Studies"
+          ]
+        },
+        {
+          "code": "56837",
+          "level": "WO-BA",
+          "names": [
+            "Internationale Ontwikkelingsstudies",
+            "International Development Studies"
+          ]
+        },
+        {
+          "code": "56841",
+          "level": "WO-BA",
+          "names": [
+            "Biotechnologie",
+            "Biotechnology"
+          ]
+        },
+        {
+          "code": "56848",
+          "level": "WO-BA",
+          "names": [
+            "Landschapsarchitectuur en ruimtelijke planning",
+            "Landscape Architecture and Planning"
+          ]
+        },
+        {
+          "code": "56849",
+          "level": "WO-BA",
+          "names": [
+            "Animal Sciences"
+          ]
+        },
+        {
+          "code": "56860",
+          "level": "WO-BA",
+          "names": [
+            "Biologie",
+            "Biology"
+          ]
+        },
+        {
+          "code": "56868",
+          "level": "WO-BA",
+          "names": [
+            "Voeding en Gezondheid",
+            "Nutrition and Health"
+          ]
+        },
+        {
+          "code": "56968",
+          "level": "WO-BA",
+          "names": [
+            "Soil, Water, Atmosphere"
+          ]
+        },
+        {
+          "code": "56973",
+          "level": "WO-BA",
+          "names": [
+            "Food Technology"
+          ]
+        },
+        {
+          "code": "59026",
+          "level": "WO-BA",
+          "names": [
+            "Data Science for Global Challenges"
+          ]
+        },
+        {
+          "code": "59304",
+          "level": "WO-BA",
+          "names": [
+            "Moleculaire Levenswetenschappen",
+            "Molecular Life Sciences"
+          ]
+        },
+        {
+          "code": "60100",
+          "level": "WO-MA",
+          "names": [
+            "Earth and Environment"
+          ]
+        },
+        {
+          "code": "60103",
+          "level": "WO-MA",
+          "names": [
+            "Development and Rural Innovation"
+          ]
+        },
+        {
+          "code": "60104",
+          "level": "WO-MA",
+          "names": [
+            "International Land- and Water Management"
+          ]
+        },
+        {
+          "code": "60105",
+          "level": "WO-MA",
+          "names": [
+            "Plant Biotechnology"
+          ]
+        },
+        {
+          "code": "60106",
+          "level": "WO-MA",
+          "names": [
+            "Bioinformatics and Systems Biology"
+          ]
+        },
+        {
+          "code": "60107",
+          "level": "WO-MA",
+          "names": [
+            "Climate Studies"
+          ]
+        },
+        {
+          "code": "60108",
+          "level": "WO-MA",
+          "names": [
+            "Geo-information Science"
+          ]
+        },
+        {
+          "code": "60109",
+          "level": "WO-MA",
+          "names": [
+            "Food Quality Management"
+          ]
+        },
+        {
+          "code": "60110",
+          "level": "WO-MA",
+          "names": [
+            "Urban Environmental Management"
+          ]
+        },
+        {
+          "code": "60111",
+          "level": "WO-MA",
+          "names": [
+            "Tourism, Society and Environment"
+          ]
+        },
+        {
+          "code": "60112",
+          "level": "WO-MA",
+          "names": [
+            "Food Safety"
+          ]
+        },
+        {
+          "code": "60303",
+          "level": "WO-MA",
+          "names": [
+            "Molecular Life Sciences"
+          ]
+        },
+        {
+          "code": "60804",
+          "level": "WO-MA",
+          "names": [
+            "Aquaculture and Marine Resource Management"
+          ]
+        },
+        {
+          "code": "60810",
+          "level": "WO-MA",
+          "names": [
+            "Environmental Sciences"
+          ]
+        },
+        {
+          "code": "60961",
+          "level": "WO-MA",
+          "names": [
+            "Biobased Sciences"
+          ]
+        },
+        {
+          "code": "60983",
+          "level": "WO-MA",
+          "names": [
+            "Data Science for Food and Health"
+          ]
+        },
+        {
+          "code": "65005",
+          "level": "WO-MA",
+          "names": [
+            "Water Technology (joint degree)"
+          ]
+        },
+        {
+          "code": "65021",
+          "level": "WO-MA",
+          "names": [
+            "Metropolitan Analysis, Design and Engineering (joint degree)"
+          ]
+        },
+        {
+          "code": "65030",
+          "level": "WO-MA",
+          "names": [
+            "Geographical Information Management and Applications (joint degree)"
+          ]
+        },
+        {
+          "code": "66219",
+          "level": "WO-MA",
+          "names": [
+            "Forest and Nature Conservation"
+          ]
+        },
+        {
+          "code": "66652",
+          "level": "WO-MA",
+          "names": [
+            "Communication, Health and Life Sciences"
+          ]
+        },
+        {
+          "code": "66831",
+          "level": "WO-MA",
+          "names": [
+            "Biosystems Engineering"
+          ]
+        },
+        {
+          "code": "66835",
+          "level": "WO-MA",
+          "names": [
+            "Plant Sciences"
+          ]
+        },
+        {
+          "code": "66836",
+          "level": "WO-MA",
+          "names": [
+            "Management, Economics and Consumer Studies"
+          ]
+        },
+        {
+          "code": "66837",
+          "level": "WO-MA",
+          "names": [
+            "International Development Studies"
+          ]
+        },
+        {
+          "code": "66841",
+          "level": "WO-MA",
+          "names": [
+            "Biotechnology"
+          ]
+        },
+        {
+          "code": "66848",
+          "level": "WO-MA",
+          "names": [
+            "Landscape Architecture and Planning"
+          ]
+        },
+        {
+          "code": "66849",
+          "level": "WO-MA",
+          "names": [
+            "Animal Sciences"
+          ]
+        },
+        {
+          "code": "66860",
+          "level": "WO-MA",
+          "names": [
+            "Biology"
+          ]
+        },
+        {
+          "code": "66868",
+          "level": "WO-MA",
+          "names": [
+            "Nutrition and Health"
+          ]
+        },
+        {
+          "code": "66973",
+          "level": "WO-MA",
+          "names": [
+            "Food Technology"
+          ]
+        },
+        {
+          "code": "69300",
+          "level": "WO-MA",
+          "names": [
+            "Resilient Farming and Food Systems"
+          ]
+        }
+      ]
+    },
+    {
+      "institution": "Open Universiteit",
+      "label": "Open University",
+      "programmes": [
+        {
+          "code": "50645",
+          "level": "WO-BA",
+          "names": [
+            "Bedrijfskunde",
+            "Business Administration"
+          ]
+        },
+        {
+          "code": "50700",
+          "level": "WO-BA",
+          "names": [
+            "Rechtsgeleerdheid"
+          ]
+        },
+        {
+          "code": "50997",
+          "level": "WO-BA",
+          "names": [
+            "Lerarenopleiding Open Universiteit"
+          ]
+        },
+        {
+          "code": "56604",
+          "level": "WO-BA",
+          "names": [
+            "Psychologie",
+            "Psychology"
+          ]
+        },
+        {
+          "code": "56823",
+          "level": "WO-BA",
+          "names": [
+            "Algemene Cultuurwetenschappen"
+          ]
+        },
+        {
+          "code": "56842",
+          "level": "WO-BA",
+          "names": [
+            "Informatiekunde",
+            "Information Science"
+          ]
+        },
+        {
+          "code": "56978",
+          "level": "WO-BA",
+          "names": [
+            "Informatica"
+          ]
+        },
+        {
+          "code": "56988",
+          "level": "WO-BA",
+          "names": [
+            "Milieu-natuurwetenschappen",
+            "Environmental Sciences"
+          ]
+        },
+        {
+          "code": "60084",
+          "level": "WO-MA",
+          "names": [
+            "Rechtsgeleerdheid"
+          ]
+        },
+        {
+          "code": "60087",
+          "level": "WO-MA",
+          "names": [
+            "Kunst- & cultuurwetenschappen",
+            "Arts & Culture"
+          ]
+        },
+        {
+          "code": "60094",
+          "level": "WO-MA",
+          "names": [
+            "Business Process Management and IT"
+          ]
+        },
+        {
+          "code": "60099",
+          "level": "WO-MA",
+          "names": [
+            "Onderwijswetenschappen",
+            "Educational Sciences"
+          ]
+        },
+        {
+          "code": "60164",
+          "level": "WO-MA",
+          "names": [
+            "Environmental Sciences"
+          ]
+        },
+        {
+          "code": "60228",
+          "level": "WO-MA",
+          "names": [
+            "Software Engineering"
+          ]
+        },
+        {
+          "code": "60300",
+          "level": "WO-MA",
+          "names": [
+            "Computer Science"
+          ]
+        },
+        {
+          "code": "60334",
+          "level": "WO-MA",
+          "names": [
+            "Management"
+          ]
+        },
+        {
+          "code": "66553",
+          "level": "WO-MA",
+          "names": [
+            "Gezondheidswetenschappen",
+            "Health Sciences"
+          ]
+        },
+        {
+          "code": "66604",
+          "level": "WO-MA",
+          "names": [
+            "Psychology"
+          ]
+        },
+        {
+          "code": "67088",
+          "level": "WO-MA",
+          "names": [
+            "Artificial Intelligence"
+          ]
+        },
+        {
+          "code": "69344",
+          "level": "WO-MA",
+          "names": [
+            "Gegevensbescherming en Privacyrecht",
+            "Data Protection and Privacy Law"
+          ]
+        }
+      ]
+    }
+  ]
+}

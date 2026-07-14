@@ -7,6 +7,8 @@ City, Country | email@example.com | +00 000000000
 
 *Replace every placeholder with verified information. Delete sections that do not apply.*
 
+*Optional source sections include Publications, Research, Fieldwork, Laboratory Work, Policy Work, Portfolio, Certifications, and Licences. Add only sections supported by real evidence.*
+
 ---
 
 ## Professional Summary Bank

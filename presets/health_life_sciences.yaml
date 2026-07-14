@@ -1,0 +1,52 @@
+label: Health and Life Sciences
+marketplace_discovery:
+  queries:
+  - Clinical Research Coordinator
+  - Biomedical Research Assistant
+  - Quality Officer Life Sciences
+title_keywords:
+- biomedical
+- clinical research
+- life sciences
+- laboratory
+- epidemiology
+- regulatory affairs
+relevance_keywords:
+  strong:
+  - biomedical research
+  - clinical research
+  - life sciences
+  - epidemiology
+  - laboratory analysis
+  - regulatory affairs
+  weak:
+  - protocol
+  - quality
+  - compliance
+  - documentation
+  - research
+role_fit:
+  clear_title: \b(?:clinical research|biomedical|laboratory|regulatory affairs|quality)
+    (?:coordinator|assistant|analyst|specialist|officer)\b
+  excluded_title: \b(?:sales|recruitment|hospitality|retail)\b
+seniority_role_pattern: (?:researcher|assistant|analyst|officer|coordinator|consultant|advisor|adviser|specialist)
+keyword_patterns: {}
+cv_skill_categories:
+  knowledge-work:
+  - Domain knowledge
+  - Research and analysis
+  - Delivery
+  - Communication
+cv_role_patterns:
+  knowledge-work: .*
+cv_default_role: knowledge-work
+cv_references: {}
+cv_phrase_replacements: {}
+pdf_text_defects: []
+education_detail_rules: []
+regulated_role_patterns:
+- \b(?:physician|medical doctor|basisarts|huisarts|bedrijfsarts|verzekeringsarts|surgeon|nurse|verpleegkundige)\b
+- \b(?:clinical psychologist|gezondheidszorgpsycholoog|gz-psycholoog|psychotherapist)\b
+- \b(?:advocaat|notaris|civil-law notary)\b
+- \b(?:licensed teacher|bevoegd docent|qualified teacher)\b
+general_cv_prompt: prompts/presets/health_life_sciences.md

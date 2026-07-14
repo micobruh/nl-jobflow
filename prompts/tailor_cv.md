@@ -12,7 +12,7 @@ Rank assessed items: direct experience; exceptional projects with stronger/uniqu
 
 ## Output
 
-Return CV Markdown only. Order: Header, Summary, optional Experience, optional Projects, Education, Skills, Languages. Omit unavailable/unselected optional sections; never emit an empty heading.
+Return CV Markdown only. Order: Header, Summary, optional Experience, optional Projects, other evidence, Education, Skills, Languages. Omit irrelevant sections and empty headings.
 
 - Header: exactly the candidate name and contacts from `MASTER_CV`. Never append a role or tagline.
 - Summary: ≤40 words/2 lines; supported domain, methods, tech, impact; no location, relocation, availability, or start date.

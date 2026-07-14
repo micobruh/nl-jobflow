@@ -6,8 +6,9 @@ import os
 import io
 import re
 import copy
+import csv
 import subprocess
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
 from pathlib import Path
 
@@ -15,6 +16,21 @@ import yaml
 import requests
 
 import jobflow
+
+
+def valid_user_config():
+    value = yaml.safe_load((Path(__file__).parents[1] / "config.example.yaml").read_text())
+    value["search_criteria"].update({
+        "study_profiles": ["data_science_ai"],
+        "job_families": ["technology_data_digital"],
+        "roles": ["data_scientist", "data_analyst", "data_engineer",
+                  "machine_learning_engineer", "ai_engineer"],
+        "max_required_experience_years": 1,
+        "accepted_seniority": ["entry", "junior"],
+    })
+    value["applicant"].update({"residence_route": "highly_skilled_migrant", "dutch_level": "A2"})
+    value["search_criteria"]["eligibility"]["require_recognized_sponsor"] = True
+    return value
 
 TEST_EXPERIENCE_CV = """## Professional Experience
 
@@ -64,7 +80,7 @@ def master_cv_review_payload(digest, **updates):
 class JobFlowTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.cfg = jobflow.resolved_config(yaml.safe_load((Path(__file__).parents[1] / "config.example.yaml").read_text()))
+        cls.cfg = jobflow.resolved_config(valid_user_config())
         cls.cv = "Python SQL machine learning data analytics NLP Amsterdam experience skills education summary"
         cls.sponsors = {"example tech"}
 
@@ -83,6 +99,81 @@ class JobFlowTest(unittest.TestCase):
         accepted, reasons, relevance = jobflow.filter_job(self.job(), self.sponsors, self.cfg, self.cv)
         self.assertTrue(accepted, reasons)
         self.assertGreaterEqual(relevance, 75)
+
+    def test_profile_roots_isolate_private_state_and_references(self):
+        original = jobflow.PROFILE_ROOT
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                first, second = Path(folder) / "first", Path(folder) / "second"
+                jobflow.init_profile(first)
+                jobflow.init_profile(second)
+                (first / "master_cv.md").write_text("# Candidate One\n")
+                (second / "master_cv.md").write_text("# Candidate Two\n")
+                (first / ".env").write_text("PROFILE_TEST_SECRET=first\n")
+                (second / ".env").write_text("PROFILE_TEST_SECRET=second\n")
+                (first / "references").mkdir()
+                (first / "references" / "motivation-letter.pdf").write_bytes(b"first")
+                jobflow.set_profile_root(first)
+                self.assertEqual(jobflow.master_cv(), "# Candidate One\n")
+                self.assertEqual(jobflow.DB_PATH.parent, first / "data")
+                self.assertEqual(jobflow.document_reference("letter", cfg=self.cfg).parent, first / "references")
+                jobflow.load_env()
+                self.assertEqual(os.environ["PROFILE_TEST_SECRET"], "first")
+                jobflow.set_profile_root(second)
+                jobflow.load_env()
+                self.assertEqual(os.environ["PROFILE_TEST_SECRET"], "second")
+                self.assertEqual(jobflow.master_cv(), "# Candidate Two\n")
+                self.assertFalse(jobflow.DB_PATH.exists())
+                self.assertEqual(jobflow.ARTIFACTS, second / "artifacts")
+        finally:
+            jobflow.set_profile_root(original)
+
+    def test_new_profile_requires_explicit_neutral_setup(self):
+        example = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        self.assertEqual(example["search_criteria"]["study_profiles"], [])
+        self.assertEqual(example["search_criteria"]["job_families"], [])
+        self.assertEqual(example["search_criteria"]["roles"], [])
+        self.assertEqual(example["applicant"]["dutch_level"], "unknown")
+        with self.assertRaisesRegex(SystemExit, "setup is incomplete"):
+            jobflow.resolved_config(example)
+        original = jobflow.PROFILE_ROOT
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                profile = Path(folder) / "profile"
+                result = jobflow.init_profile(profile)
+                self.assertTrue(result["setup_required"])
+                self.assertIn(" setup", result["next_command"])
+                jobflow.set_profile_root(profile)
+                (profile / "master_cv.md").write_text(
+                    "## Professional Summary Bank\n\n### Unmapped Future Role\nEvidence.\n\n"
+                    "## Education\n\n### BSc Psychology — Fictional University\n")
+                messages = io.StringIO()
+                with redirect_stderr(messages), self.assertRaisesRegex(SystemExit, "explicit selection"):
+                    jobflow.setup_config(input_fn=lambda _: "")
+                self.assertIn("RIO programme:", messages.getvalue())
+                self.assertIn("confidence=low", messages.getvalue())
+                self.assertIn("user confirmation is required", messages.getvalue())
+                self.assertFalse(jobflow.setup_status()["complete"])
+        finally:
+            jobflow.set_profile_root(original)
+
+    def test_conditional_seniority_experience_and_dutch_filters(self):
+        cfg = copy.deepcopy(self.cfg)
+        cfg["search_criteria"]["max_required_experience_years"] = None
+        cfg["search_criteria"]["accepted_seniority"] = ["senior"]
+        cfg["applicant"]["dutch_level"] = "unknown"
+        job = self.job(title="Senior Data Scientist", description=(
+            "Requires 5 years of professional experience. Dutch B2 required. "
+            "Python SQL machine learning data analytics NLP."))
+        result = jobflow.filter_job(job, self.sponsors, cfg, self.cv)
+        self.assertTrue(result.eligible, result.rejection_reasons)
+        self.assertTrue(any("Dutch level requirement" in value for value in result.verification_needed))
+
+        cfg["search_criteria"]["experience_policy"]["countable_types"] = ["professional_employment"]
+        fields = experience_fields("mandatory", 1, "confirmed")
+        fields["experience_roles"][0]["experience_type"] = "formal_internship"
+        with self.assertRaisesRegex(SystemExit, "disabled by applicant policy"):
+            jobflow.relevant_experience_assessment(fields, TEST_EXPERIENCE_CV, cfg=cfg)
 
     def test_structured_result_keeps_unknown_material_facts(self):
         result = jobflow.filter_job(self.job(), self.sponsors, self.cfg, self.cv)
@@ -189,6 +280,8 @@ class JobFlowTest(unittest.TestCase):
             summary = json.loads(output.getvalue().splitlines()[-1])
             self.assertEqual(summary["found"], 0)
             self.assertEqual(summary["screening_job_ids"], [])
+            self.assertEqual(summary["sources_selected"], 0)
+            self.assertEqual(summary["sources_skipped_family"], 0)
             self.assertIsInstance(summary["scan_run_id"], int)
             conn = jobflow.db()
             run = conn.execute("SELECT screening_job_ids FROM scan_runs WHERE id=?",
@@ -211,20 +304,20 @@ class JobFlowTest(unittest.TestCase):
             jobflow.validate_config(cfg)
 
     def test_config_layers_defaults_preset_user_and_override(self):
-        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        user = valid_user_config()
         cfg = jobflow.resolved_config(user)
         self.assertEqual(cfg["marketplace_discovery"]["queries"][0], "Data Scientist")
         self.assertIn("ASML", {item["name"] for item in cfg["priority_companies"]})
         self.assertIn("groups", cfg["search_criteria"]["locations"])
 
     def test_unknown_preset_lists_available_presets(self):
-        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        user = valid_user_config()
         user["search_criteria"]["preset"] = "unknown"
         with self.assertRaisesRegex(SystemExit, "unknown legacy preset"):
             jobflow.resolved_config(user)
 
     def test_preset_validation_rejects_missing_invalid_regex_and_unsafe_paths(self):
-        preset = yaml.safe_load((jobflow.ROOT / "presets" / "data_ai.yaml").read_text())
+        preset = yaml.safe_load((jobflow.ROOT / "presets" / "data_science_ai.yaml").read_text())
         missing = copy.deepcopy(preset)
         missing.pop("label")
         with self.assertRaisesRegex(SystemExit, "requires valid fields: label"):
@@ -239,7 +332,7 @@ class JobFlowTest(unittest.TestCase):
             jobflow.validate_preset(unsafe, Path("broken.yaml"))
 
     def test_software_preset_uses_shared_screening_without_data_ai_leaks(self):
-        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        user = valid_user_config()
         user["search_criteria"]["preset"] = "software_engineering"
         software = jobflow.resolved_config(user)
         vacancy = self.job(
@@ -252,7 +345,7 @@ class JobFlowTest(unittest.TestCase):
         self.assertIn("lacks Data Science and AI relevance", data_result.rejection_reasons)
 
     def test_multi_study_roles_deduplicate_and_drive_soft_filter(self):
-        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        user = valid_user_config()
         user["search_criteria"]["study_profiles"] = ["data_science_ai", "computer_science", "statistics"]
         user["search_criteria"]["roles"] = ["data_scientist", "software_engineer"]
         cfg = jobflow.resolved_config(user)
@@ -265,8 +358,394 @@ class JobFlowTest(unittest.TestCase):
         self.assertTrue(result.eligible, result.rejection_reasons)
         self.assertIn("role title requires fit verification", result.verification_needed)
 
+    def test_legacy_config_derives_job_families_from_selected_roles(self):
+        user = valid_user_config()
+        user["search_criteria"].pop("job_families")
+        cfg = jobflow.resolved_config(user)
+        self.assertEqual(cfg["job_families"], ["technology_data_digital"])
+
+    def test_confirmed_job_families_control_role_selection(self):
+        user = valid_user_config()
+        user["search_criteria"]["job_families"] = ["finance_accounting_risk"]
+        user["search_criteria"]["roles"] = ["financial_analyst"]
+        cfg = jobflow.resolved_config(user)
+        self.assertEqual(cfg["selected_roles"], ["financial_analyst"])
+        user["search_criteria"]["roles"] = ["software_engineer"]
+        with self.assertRaisesRegex(SystemExit, "selected job families"):
+            jobflow.resolved_config(user)
+
+    def test_every_study_profile_has_a_distinct_valid_policy(self):
+        profiles = yaml.safe_load((jobflow.ROOT / "study_profiles.yaml").read_text())["profiles"]
+        self.assertEqual(len(profiles), 14)
+        paths = []
+        for profile_id, profile in profiles.items():
+            path = jobflow.ROOT / profile["policy"]
+            paths.append(path)
+            self.assertEqual(path.name, f"{profile_id}.yaml")
+            preset = jobflow.read_yaml(path)
+            self.assertNotIn("extends", preset)
+            jobflow.validate_preset(preset, path)
+        self.assertEqual(len(set(paths)), len(paths))
+        self.assertEqual({path.name for path in (jobflow.ROOT / "presets").glob("*.yaml")},
+                         {f"{profile_id}.yaml" for profile_id in profiles})
+        families, roles = jobflow.role_catalog()
+        self.assertTrue(all("profiles" not in family for family in families.values()))
+        for role in roles.values():
+            self.assertTrue((jobflow.ROOT / role["prompt"]).is_file(), role["prompt"])
+
+    def test_all_current_tue_programmes_have_curated_profiles_and_families(self):
+        fixture = json.loads((jobflow.ROOT / "tests" / "fixtures" / "tue_programmes.json").read_text())
+        catalogue = jobflow.wo_programme_catalog()
+        self.assertEqual(fixture["source_date"], catalogue["source_date"])
+        self.assertEqual(fixture["source_sha256"], catalogue["source_sha256"])
+        self.assertEqual(len(fixture["programmes"]), 38)
+        self.assertEqual(sum(item["level"] == "WO-BA" for item in fixture["programmes"]), 14)
+        self.assertEqual(sum(item["level"] == "WO-MA" for item in fixture["programmes"]), 24)
+        self.assertEqual(len({(item["level"], item["names"][-1])
+                              for item in fixture["programmes"]}), 37)
+
+        catalogue_keys = {(item["code"], item["level"]) for item in catalogue["programmes"]}
+        for programme in fixture["programmes"]:
+            self.assertIn((programme["code"], programme["level"]), catalogue_keys)
+            prefix = "BSc" if programme["level"] == "WO-BA" else "MSc"
+            for name in programme["names"]:
+                document = ("## Professional Summary Bank\n\n### Unmapped Future Role\n\nSupported.\n\n"
+                            f"## Education\n\n### {prefix} {name} — {fixture['institution']}\n")
+                matches = jobflow.programme_matches(document)
+                profiles = {item["profile"] for item in jobflow.study_profile_suggestions(document)}
+                families = {item["family"] for item in jobflow.job_family_suggestions(document)}
+                with self.subTest(code=programme["code"], name=name):
+                    self.assertIn((programme["code"], programme["level"]),
+                                  {(item["code"], item["level"]) for item in matches})
+                    self.assertEqual(profiles, set(programme["profiles"]))
+                    self.assertEqual(families, set(programme["families"]))
+
+        mechanical = [item for item in fixture["programmes"]
+                      if item["level"] == "WO-BA" and item["names"][-1] == "Mechanical Engineering"]
+        self.assertEqual({item["code"] for item in mechanical}, {"50439", "56966"})
+        self.assertEqual(mechanical[0]["families"], mechanical[1]["families"])
+        punctuation = jobflow.programme_matches(
+            "## Education\n\n### MSc Artificial Intelligence and Engineering Systems — Fictional University\n")
+        joint = jobflow.programme_matches(
+            "## Education\n\n### BSc Data Science — Fictional University\n")
+        self.assertTrue(any(item["code"] == "66476" for item in punctuation))
+        self.assertTrue(any(item["code"] == "55018" for item in joint))
+        unmatched = ("## Professional Summary Bank\n\n### Unmapped Future Role\n\nSupported.\n\n"
+                     "## Education\n\n### MSc Automotive Systems — Fictional Institute\n")
+        self.assertEqual(jobflow.programme_matches(unmatched), [])
+        unmatched_families = jobflow.job_family_suggestions(unmatched)
+        self.assertEqual({item["family"] for item in unmatched_families},
+                         {"engineering_science", "manufacturing_maintenance"})
+        self.assertTrue(all(item["evidence"][0]["source"] == "degree"
+                            for item in unmatched_families))
+
+    def test_uva_delft_and_utrecht_programme_alias_coverage(self):
+        fixture = json.loads(
+            (jobflow.ROOT / "tests" / "fixtures" / "university_programmes.json").read_text())
+        catalogue = jobflow.wo_programme_catalog()
+        self.assertEqual(fixture["source_date"], catalogue["source_date"])
+        self.assertEqual(fixture["source_sha256"], catalogue["source_sha256"])
+        expected = {
+            "Universiteit van Amsterdam": (161, 268),
+            "Technische Universiteit Delft": (55, 69),
+            "Universiteit Utrecht": (125, 209),
+        }
+        catalogue_keys = {(item["code"], item["level"]) for item in catalogue["programmes"]}
+        self.assertEqual(sum(len(item["programmes"]) for item in fixture["universities"]), 341)
+        self.assertEqual(sum(len(programme["names"])
+                             for item in fixture["universities"]
+                             for programme in item["programmes"]), 546)
+        for university in fixture["universities"]:
+            programmes = university["programmes"]
+            with self.subTest(institution=university["institution"]):
+                self.assertEqual((len(programmes), sum(len(item["names"]) for item in programmes)),
+                                 expected[university["institution"]])
+            for programme in programmes:
+                self.assertIn((programme["code"], programme["level"]), catalogue_keys)
+                prefix = "BSc" if programme["level"] == "WO-BA" else "MSc"
+                for name in programme["names"]:
+                    document = ("## Professional Summary Bank\n\n### Unmapped Future Role\n\nSupported.\n\n"
+                                f"## Education\n\n### {prefix} {name} — {university['label']}\n")
+                    matches = jobflow.programme_matches(document)
+                    with self.subTest(code=programme["code"], name=name):
+                        self.assertIn((programme["code"], programme["level"]),
+                                      {(item["code"], item["level"]) for item in matches})
+                document = ("## Professional Summary Bank\n\n### Unmapped Future Role\n\nSupported.\n\n"
+                            f"## Education\n\n### {prefix} {programme['names'][-1]} — {university['label']}\n")
+                self.assertTrue(jobflow.study_profile_suggestions(document))
+                self.assertNotIn("customer_business_support",
+                                 {item["family"] for item in jobflow.job_family_suggestions(document)})
+
+    def test_other_research_university_fixture_quality_and_aliases(self):
+        fixture = json.loads(
+            (jobflow.ROOT / "tests" / "fixtures" / "other_research_universities.json").read_text())
+        catalogue = jobflow.wo_programme_catalog()
+        self.assertEqual(fixture["source_date"], catalogue["source_date"])
+        self.assertEqual(fixture["source_sha256"], catalogue["source_sha256"])
+        expected = {
+            "Rijksuniversiteit Groningen": (153, 237),
+            "Vrije Universiteit Amsterdam": (133, 199),
+            "Universiteit Leiden": (123, 188),
+            "Radboud Universiteit Nijmegen": (99, 162),
+            "Universiteit Maastricht": (77, 99),
+            "Erasmus Universiteit Rotterdam": (75, 100),
+            "Tilburg University": (68, 102),
+            "Universiteit Twente": (54, 63),
+            "Wageningen University": (53, 66),
+            "Open Universiteit": (20, 28),
+        }
+        catalogue_by_key = {(item["code"], item["level"]): item for item in catalogue["programmes"]}
+        self.assertEqual(len(fixture["universities"]), 10)
+        self.assertEqual(sum(len(item["programmes"]) for item in fixture["universities"]), 855)
+        self.assertEqual(sum(len(programme["names"])
+                             for item in fixture["universities"]
+                             for programme in item["programmes"]), 1244)
+        for university in fixture["universities"]:
+            programmes = university["programmes"]
+            keys = [(item["code"], item["level"]) for item in programmes]
+            with self.subTest(institution=university["institution"]):
+                self.assertEqual((len(programmes), sum(len(item["names"]) for item in programmes)),
+                                 expected[university["institution"]])
+                self.assertEqual(len(keys), len(set(keys)))
+            for programme in programmes:
+                self.assertIn(programme["level"], {"WO-BA", "WO-MA"})
+                self.assertTrue(programme["names"])
+                catalogue_item = catalogue_by_key[(programme["code"], programme["level"])]
+                aliases = {jobflow.normalized_degree_text(name) for name in catalogue_item["names"]}
+                for name in programme["names"]:
+                    self.assertIn(jobflow.normalized_degree_text(name), aliases)
+
+            representative = programmes[0]
+            prefix = "BSc" if representative["level"] == "WO-BA" else "MSc"
+            document = (f"## Education\n\n### {prefix} {representative['names'][-1]}"
+                        f" — {university['label']}\n")
+            self.assertIn((representative["code"], representative["level"]),
+                          {(item["code"], item["level"])
+                           for item in jobflow.programme_matches(document)})
+
+        tue = json.loads((jobflow.ROOT / "tests" / "fixtures" / "tue_programmes.json").read_text())
+        first_three = json.loads(
+            (jobflow.ROOT / "tests" / "fixtures" / "university_programmes.json").read_text())
+        registration_count = (len(tue["programmes"]) +
+                              sum(len(item["programmes"]) for item in first_three["universities"]) +
+                              sum(len(item["programmes"]) for item in fixture["universities"]))
+        alias_count = (sum(len(item["names"]) for item in tue["programmes"]) +
+                       sum(len(programme["names"])
+                           for item in first_three["universities"] for programme in item["programmes"]) +
+                       sum(len(programme["names"])
+                           for item in fixture["universities"] for programme in item["programmes"]))
+        institutions = ({tue["institution"]} |
+                        {item["institution"] for item in first_three["universities"]} |
+                        {item["institution"] for item in fixture["universities"]})
+        self.assertEqual((len(institutions), registration_count, alias_count), (14, 1234, 1838))
+
+    def test_every_catalogue_programme_has_explicit_or_sector_family(self):
+        catalogue = jobflow.wo_programme_catalog()
+        families, _ = jobflow.role_catalog()
+        self.assertEqual(len(catalogue["programmes"]), 744)
+        self.assertEqual(set(jobflow.SECTOR_FAMILY_FALLBACKS), set(jobflow.SECTOR_PROFILES))
+        self.assertTrue(set(jobflow.SECTOR_FAMILY_FALLBACKS.values()) <= set(families))
+        self.assertNotIn("customer_business_support", jobflow.SECTOR_FAMILY_FALLBACKS.values())
+        for programme in catalogue["programmes"]:
+            explicit = any(re.search(pattern, name, re.I)
+                           for family in families.values()
+                           for pattern in family["programme_patterns"]
+                           for name in programme["names"])
+            with self.subTest(code=programme["code"], level=programme["level"]):
+                self.assertTrue(explicit or programme["sector"] in jobflow.SECTOR_FAMILY_FALLBACKS)
+
+    def test_curated_university_programmes_have_exact_families(self):
+        expected = {
+            ("50014", "WO-BA"): {"research_development"},
+            ("50425", "WO-BA"): {"sustainability_environment"},
+            ("55003", "WO-BA"): {"health_clinical_operations", "research_development"},
+            ("55007", "WO-BA"): {"health_clinical_operations", "research_development"},
+            ("55009", "WO-BA"): {"engineering_science", "research_development"},
+            ("55010", "WO-BA"): {"health_clinical_operations", "research_development"},
+            ("55825", "WO-BA"): {"health_clinical_operations", "research_development"},
+            ("56157", "WO-BA"): {"health_clinical_operations", "quality_regulatory", "research_development"},
+            ("56402", "WO-BA"): {"finance_accounting_risk"},
+            ("56573", "WO-BA"): {"health_clinical_operations", "technology_data_digital"},
+            ("56842", "WO-BA"): {"technology_data_digital"},
+            ("56856", "WO-BA"): {"technology_data_digital"},
+            ("60227", "WO-MA"): {"engineering_science", "technology_data_digital"},
+            ("60229", "WO-MA"): {"technology_data_digital"},
+            ("60338", "WO-MA"): {"research_development"},
+            ("60354", "WO-MA"): {"product_design"},
+            ("60703", "WO-MA"): {"engineering_science", "research_development"},
+            ("60706", "WO-MA"): {"engineering_science"},
+            ("60801", "WO-MA"): {"engineering_science", "finance_accounting_risk", "research_development"},
+            ("60967", "WO-MA"): {"sustainability_environment"},
+            ("60973", "WO-MA"): {"engineering_science", "manufacturing_maintenance", "research_development"},
+            ("65011", "WO-MA"): {"health_clinical_operations", "research_development"},
+            ("65015", "WO-MA"): {"research_development", "technology_data_digital"},
+            ("65019", "WO-MA"): {"health_clinical_operations", "research_development"},
+            ("65020", "WO-MA"): {"health_clinical_operations", "research_development", "technology_data_digital"},
+            ("65029", "WO-MA"): {"engineering_science", "research_development", "technology_data_digital"},
+            ("66157", "WO-MA"): {"health_clinical_operations", "quality_regulatory", "research_development"},
+            ("66286", "WO-MA"): {"health_clinical_operations", "research_development"},
+            ("66402", "WO-MA"): {"finance_accounting_risk"},
+            ("66573", "WO-MA"): {"health_clinical_operations", "technology_data_digital"},
+            ("66954", "WO-MA"): {"engineering_science", "technology_data_digital"},
+            ("66957", "WO-MA"): {"engineering_science", "manufacturing_maintenance"},
+            ("68713", "WO-MA"): {"research_development"},
+        }
+        fixture = json.loads(
+            (jobflow.ROOT / "tests" / "fixtures" / "university_programmes.json").read_text())
+        programmes = {(item["code"], item["level"]): item
+                      for university in fixture["universities"] for item in university["programmes"]}
+        for key, families in expected.items():
+            programme = programmes[key]
+            prefix = "BSc" if programme["level"] == "WO-BA" else "MSc"
+            document = ("## Professional Summary Bank\n\n### Unmapped Future Role\n\nSupported.\n\n"
+                        f"## Education\n\n### {prefix} {programme['names'][-1]} — Fictional University\n")
+            with self.subTest(code=programme["code"], name=programme["names"][-1]):
+                suggestions = jobflow.job_family_suggestions(document)
+                self.assertEqual({item["family"] for item in suggestions}, families)
+                self.assertTrue(all(item["confidence"] == "high" for item in suggestions))
+                self.assertTrue(all(evidence["source"] != "rio_sector"
+                                    for item in suggestions for evidence in item["evidence"]))
+
+        delft_gaps = {"55003", "55007", "55009", "55010", "60354", "60973",
+                      "65011", "65019", "65029", "66286", "66954", "66957"}
+        self.assertTrue(delft_gaps <= {code for code, _ in expected})
+
+    def test_unmapped_rio_programmes_receive_one_low_confidence_sector_family(self):
+        cases = {
+            ("BSc", "Economics and Business Economics"): "project_programme_consulting",
+            ("BSc", "Psychology"): "research_development",
+            ("BSc", "Medicine"): "health_clinical_operations",
+            ("BSc", "Marine Sciences"): "sustainability_environment",
+            ("BSc", "Biology"): "research_development",
+            ("BSc", "Lerarenopleiding Open Universiteit"): "education_knowledge",
+            ("MSc", "Aansprakelijkheid en verzekering"): "legal_compliance_policy",
+            ("BSc", "Liberal Arts and Sciences"): "project_programme_consulting",
+            ("BSc", "History"): "research_development",
+            ("BSc", "Advanced Technology"): "engineering_science",
+        }
+
+        def document(prefix, name, summary="Unmapped Future Role"):
+            return (f"## Professional Summary Bank\n\n### {summary}\n\nSupported.\n\n"
+                    f"## Education\n\n### {prefix} {name} — Fictional University\n")
+
+        for (prefix, name), family in cases.items():
+            suggestions = jobflow.job_family_suggestions(document(prefix, name))
+            with self.subTest(name=name):
+                self.assertEqual(len(suggestions), 1)
+                self.assertEqual(suggestions[0]["family"], family)
+                self.assertEqual(suggestions[0]["confidence"], "low")
+                self.assertEqual(suggestions[0]["evidence"][0]["source"], "rio_sector")
+                self.assertIn("user confirmation", suggestions[0]["rationale"])
+
+        promoted = jobflow.job_family_suggestions(document("BSc", "Psychology", "Researcher"))
+        self.assertEqual(len(promoted), 1)
+        self.assertEqual(promoted[0]["confidence"], "high")
+        self.assertEqual({item["source"] for item in promoted[0]["evidence"]},
+                         {"rio_sector", "summary"})
+        unknown = document("MSc", "Unmapped Speculative Studies")
+        self.assertEqual(jobflow.programme_matches(unknown), [])
+        self.assertEqual(jobflow.job_family_suggestions(unknown), [])
+
+        medicine = jobflow.programme_matches(document("BSc", "Medicine"))
+        self.assertTrue(medicine)
+        self.assertTrue(all(item["professional_requirements"] for item in medicine))
+
+    def test_programme_catalog_builder_deduplicates_current_wo_programmes(self):
+        fields = ["ONDERWIJSBESTUUR_NAAM", "OPLEIDINGSEENHEID_SOORT", "NIVEAU",
+                  "INSTROOM_EINDDATUM", "ERKENDEOPLEIDINGSCODE", "ONDERDEEL",
+                  "OPLEIDINGSEENHEID_NAAM", "OPLEIDINGSEENHEID_INTERNATIONALE_NAAM",
+                  "BEROEPSEISEN"]
+        rows = [
+            ["Fictional Board A", "OPLEIDING", "WO-MA", "", "90001", "TECHNIEK",
+             "Fictieve Systeemtechniek", "Fictional Systems Engineering", "GEEN_BEROEPSEISEN"],
+            ["Fictional Board B", "OPLEIDING", "WO-MA", "", "90001", "TECHNIEK",
+             "Fictieve Systeemtechniek", "Fictional Systems Engineering", "GEEN_BEROEPSEISEN"],
+            ["Fictional Board C", "OPLEIDING", "WO-BA", "2025-01-01", "90002", "ECONOMIE",
+             "Historische Analyse", "Historical Analysis", "GEEN_BEROEPSEISEN"],
+            ["Fictional Board D", "OPLEIDING", "HBO-BA", "", "90003", "TECHNIEK",
+             "Toegepaste Techniek", "Applied Engineering", "GEEN_BEROEPSEISEN"],
+        ]
+        with tempfile.TemporaryDirectory() as folder:
+            source, destination = Path(folder) / "rio.csv", Path(folder) / "catalog.json"
+            source.write_text("\n".join([",".join(fields), *[",".join(row) for row in rows]]) + "\n")
+            first = jobflow.build_wo_programme_catalog(source, destination, jobflow.date(2026, 7, 13))
+            rendered = destination.read_text()
+            second = jobflow.build_wo_programme_catalog(source, destination, jobflow.date(2026, 7, 13))
+            self.assertEqual(rendered, destination.read_text())
+            self.assertEqual(first, second)
+            self.assertEqual([(item["code"], item["level"]) for item in first["programmes"]],
+                             [("90001", "WO-MA")])
+
+    def test_atomic_programme_refresh_and_check_use_one_digest(self):
+        fields = ["ONDERWIJSBESTUUR_NAAM", "OPLEIDINGSEENHEID_SOORT", "NIVEAU",
+                  "INSTROOM_EINDDATUM", "ERKENDEOPLEIDINGSCODE", "ONDERDEEL",
+                  "OPLEIDINGSEENHEID_NAAM", "OPLEIDINGSEENHEID_INTERNATIONALE_NAAM",
+                  "BEROEPSEISEN"]
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(fields)
+        for index, institution in enumerate(jobflow.RESEARCH_UNIVERSITIES):
+            writer.writerow([institution, "OPLEIDING", "WO-MA", "", str(91000 + index), "TECHNIEK",
+                             f"Fictieve Opleiding {index}", f"Fictional Programme {index}",
+                             "BEROEPSEIS" if index == 0 else "GEEN_BEROEPSEISEN"])
+        original = output.getvalue()
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            source, catalog, fixtures = root / "rio.csv", root / "catalog.json", root / "fixtures"
+            fixtures.mkdir()
+            source.write_text(original)
+            (fixtures / "tue_programmes.json").write_text(json.dumps({
+                "programmes": [{"code": "91000", "level": "WO-MA",
+                                "profiles": ["engineering_technology"],
+                                "families": ["engineering_science"]}]
+            }))
+            refreshed = jobflow.refresh_programme_catalog(
+                source, jobflow.date(2026, 7, 13), catalog_path=catalog, fixture_root=fixtures)
+            self.assertEqual(refreshed["programmes"], 14)
+            self.assertTrue(refreshed["check"])
+            check = jobflow.refresh_programme_catalog(
+                source, jobflow.date(2026, 7, 13), True, catalog, fixtures)
+            self.assertTrue(check["check"])
+            self.assertEqual(check["changed"], [])
+            generated = json.loads(catalog.read_text())
+            self.assertTrue(generated["programmes"][0]["professional_requirements"])
+            before = catalog.read_bytes()
+            source.write_text(original +
+                              "Technische Universiteit Eindhoven,OPLEIDING,WO-MA,,99999,TECHNIEK,"
+                              "Nieuwe Opleiding,New Programme,GEEN_BEROEPSEISEN\n")
+            with self.assertRaisesRegex(RuntimeError, "needs curated"):
+                jobflow.refresh_programme_catalog(
+                    source, jobflow.date(2026, 7, 13), catalog_path=catalog, fixture_root=fixtures)
+            self.assertEqual(catalog.read_bytes(), before)
+
+    def test_rio_programmes_suggest_multiple_families_without_customer_support(self):
+        cases = {
+            "MSc Biomedical Engineering — Fictional University": {
+                "engineering_science", "health_clinical_operations", "research_development"},
+            "MSc Data Science for Food and Health — Fictional University": {
+                "technology_data_digital", "health_clinical_operations", "sustainability_environment"},
+            "BSc Computational Social Science — Fictional University": {
+                "research_development", "project_programme_consulting"},
+        }
+        for heading, expected in cases.items():
+            document = ("## Professional Summary Bank\n\n### Unmapped Future Role\n\nSupported.\n\n"
+                        f"## Education\n\n### {heading}\n")
+            matches = jobflow.programme_matches(document)
+            families = {item["family"] for item in jobflow.job_family_suggestions(document)}
+            with self.subTest(heading=heading):
+                self.assertEqual(len(matches), 1)
+                self.assertTrue(expected <= families, families)
+                self.assertNotIn("customer_business_support", families)
+
+        joint = jobflow.programme_matches(
+            "## Education\n\n### BSc Tourism — Fictional University\n")
+        punctuation = jobflow.programme_matches(
+            "## Education\n\n### BSc Cybersecurity and Cybercrime — Fictional University\n")
+        self.assertEqual(joint[0]["name"], "Tourism (joint degree)")
+        self.assertEqual(punctuation[0]["name"], "Cybersecurity & Cybercrime")
+
     def test_study_union_applies_only_matching_cv_rules(self):
-        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        user = valid_user_config()
         user["search_criteria"]["study_profiles"] = ["computer_science", "statistics"]
         user["search_criteria"]["roles"] = ["software_engineer", "data_scientist"]
         cfg = jobflow.resolved_config(user)
@@ -277,7 +756,7 @@ class JobFlowTest(unittest.TestCase):
                       jobflow.document_preflight(cv, "cv", {}, cfg))
 
     def test_summary_bank_role_warnings_do_not_edit_master_cv(self):
-        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        user = valid_user_config()
         user["search_criteria"]["roles"] = ["data_scientist", "data_analyst"]
         cfg = jobflow.resolved_config(user)
         warnings = jobflow.summary_bank_role_warnings(
@@ -286,7 +765,7 @@ class JobFlowTest(unittest.TestCase):
         self.assertTrue(any("Statistician" in warning for warning in warnings))
 
     def test_preset_specific_cv_rules_do_not_leak_to_software(self):
-        user = yaml.safe_load((jobflow.ROOT / "config.example.yaml").read_text())
+        user = valid_user_config()
         user["search_criteria"]["preset"] = "software_engineering"
         software = jobflow.resolved_config(user)
         cv = ("# Name\n## Summary\nx\n## Experience\nx\n## Projects\nx\n## Education\n"
@@ -294,7 +773,7 @@ class JobFlowTest(unittest.TestCase):
               "**Testing:** pytest\n## Languages\nEnglish (Fluent)\nimbalanced-classification")
         failures = jobflow.document_preflight(cv, "cv", {}, software)
         self.assertFalse(any("thesis" in item.lower() or "extraction-risk" in item for item in failures))
-        self.assertEqual(jobflow.cv_reference("Backend Engineer", software).name, "cv-data-scientist.pdf")
+        self.assertEqual(jobflow.cv_reference("Backend Engineer", software).name, "cv-reference.pdf")
         self.assertEqual(jobflow.cv_role("Frontend Engineer", software), "frontend-engineer")
         self.assertNotEqual(jobflow.general_cv_prompt_digest(software), jobflow.general_cv_prompt_digest(self.cfg))
 
@@ -332,6 +811,13 @@ class JobFlowTest(unittest.TestCase):
         accepted, reasons, _ = jobflow.filter_job(plain, self.sponsors, self.cfg, self.cv, review_anyway=True)
         self.assertTrue(accepted, reasons)
 
+    def test_workday_family_text_cannot_override_title_and_duties(self):
+        vacancy = self.job(title="Customer Support Specialist", description=(
+            "Workday Job Family: Technology, Data and Digital. Handle customer tickets and service requests."))
+        result = jobflow.filter_job(vacancy, self.sponsors, self.cfg, self.cv)
+        self.assertFalse(result.eligible)
+        self.assertIn("role intentionally deselected", result.rejection_reasons)
+
         hard_blockers = (
             {"title": "Senior Risk Traineeship"},
             {"employment_type": "PART_TIME"},
@@ -352,24 +838,94 @@ class JobFlowTest(unittest.TestCase):
             "KLM", {"koninklijke luchtvaart maatschappij"}, self.cfg
         ))
 
-    def test_priority_source_urls_are_current(self):
+    def test_priority_sources_are_family_tagged(self):
         urls = {item["name"]: item["career_url"] for item in self.cfg["priority_companies"]}
-        self.assertEqual(urls["Booking.com"], "https://jobs.booking.com/booking/jobs?location=Netherlands")
         self.assertEqual(urls["Philips"], "https://www.careers.philips.com/nl/en/search-results")
-        self.assertEqual(urls["ABN AMRO"], "https://www.werkenbijabnamro.nl/vacatures/land/nederland")
-        self.assertIn("linkedin.com/jobs-guest/", urls["KLM"])
         self.assertIn("linkedin.com/jobs-guest/", urls["Rabobank"])
-        self.assertIn("linkedin.com/jobs-guest/", urls["Coolblue"])
-        self.assertEqual(urls["Airbus"], "https://ag.wd3.myworkdayjobs.com/Airbus")
         self.assertEqual(urls["Deloitte"], "https://www.deloitte.com/nl/en/careers.html")
         self.assertEqual(urls["PwC"], "https://www.pwc.nl/careers")
-        self.assertEqual(urls["Capgemini"], "https://www.capgemini.com/careers/join-capgemini/job-search/")
-        self.assertEqual(urls["Bitvavo"], "https://jobs.bitvavo.com/find-your-role")
-        self.assertEqual(urls["Uber"], "https://jobs.uber.com/en/jobs/?location=Amsterdam")
+        families = set(jobflow.role_catalog()[0])
+        self.assertTrue(all(set(item["families"]) <= families for item in self.cfg["priority_companies"]))
+        self.assertTrue(all(sum(family in item["families"] for item in self.cfg["priority_companies"]) >= 2
+                            for family in families))
         self.assertEqual(urls["Heineken"], "https://careers.theheinekencompany.com/Job-Listing?field_location_country_code_1[]=NL")
-        self.assertEqual(urls["Klarna"], "https://jobs.deel.com/klarna?locationIds[]=a013b13b-89f0-4d4b-9675-88594255fd0c")
-        self.assertIn("linkedin.com/jobs-guest/", urls["Tesla"])
-        self.assertIn("linkedin.com/jobs-guest/", urls["McKinsey"])
+
+    def test_confirmed_families_scope_maintained_but_not_custom_sources(self):
+        cfg = copy.deepcopy(self.cfg)
+        cfg["job_families"] = ["technology_data_digital"]
+        self.assertTrue(jobflow.source_selected_for_profile(jobflow.normalize_company("ASML"), cfg))
+        self.assertFalse(jobflow.source_selected_for_profile(jobflow.normalize_company("AkzoNobel"), cfg))
+        self.assertTrue(jobflow.source_selected_for_profile(jobflow.normalize_company("Fictional Custom Lab"), cfg))
+
+    def test_role_gap_report_requires_three_jobs_and_two_employers(self):
+        original = jobflow.PROFILE_ROOT
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                jobflow.set_profile_root(folder)
+                conn = jobflow.db()
+                now = jobflow.datetime.now(jobflow.timezone.utc).isoformat()
+                rows = [
+                    ("a", "Fictional Lab", "Junior Insights Specialist"),
+                    ("b", "Fictional Lab", "Insights Specialist"),
+                    ("c", "Imaginary Research", "Insights Specialist"),
+                    ("d", "Solo Employer", "Evidence Coordinator"),
+                    ("e", "Solo Employer", "Evidence Coordinator"),
+                ]
+                with conn:
+                    for jid, company, title in rows:
+                        conn.execute(
+                            "INSERT INTO jobs(id,company,title,location,url,description,status,relevance,reasons,discovered_at) "
+                            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                            (jid, company, title, "Netherlands", f"https://example.test/{jid}",
+                             "Machine learning and predictive modelling.", "rejected", 70, "[]", now))
+                conn.close()
+                with mock.patch.object(jobflow, "config", return_value=self.cfg):
+                    report = jobflow.role_gap_report()
+                self.assertTrue(report["advisory_only"])
+                self.assertEqual([item["normalized_title"] for item in report["gaps"]],
+                                 ["insights specialist"])
+                self.assertEqual(report["gaps"][0]["jobs"], 3)
+                self.assertEqual(report["gaps"][0]["employers"], 2)
+        finally:
+            jobflow.set_profile_root(original)
+
+    def test_scan_lock_is_profile_scoped_and_nonblocking(self):
+        original = jobflow.PROFILE_ROOT
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                jobflow.set_profile_root(folder)
+                jobflow.DATA.mkdir()
+                with (jobflow.DATA / "scan.lock").open("a") as held:
+                    jobflow.fcntl.flock(held, jobflow.fcntl.LOCK_EX | jobflow.fcntl.LOCK_NB)
+                    with mock.patch.object(jobflow, "_scan") as inner, self.assertRaisesRegex(
+                            SystemExit, "scan already running"):
+                        jobflow.scan()
+                    inner.assert_not_called()
+        finally:
+            jobflow.set_profile_root(original)
+
+    def test_sqlite_migration_creates_valid_backup_and_doctor_status(self):
+        original = jobflow.PROFILE_ROOT
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                jobflow.set_profile_root(folder)
+                conn = jobflow.db()
+                self.assertEqual(conn.execute("PRAGMA user_version").fetchone()[0], jobflow.SCHEMA_VERSION)
+                conn.execute("PRAGMA user_version=0")
+                conn.commit()
+                conn.close()
+                migrated = jobflow.db()
+                migrated.close()
+                backups = list((jobflow.DATA / "backups").glob("jobs-*.sqlite3"))
+                self.assertEqual(len(backups), 1)
+                backup = jobflow.sqlite3.connect(backups[0])
+                self.assertEqual(jobflow.sqlite_quick_check(backup), "ok")
+                backup.close()
+                status = jobflow.database_status()
+                self.assertEqual(status["schema_version"], jobflow.SCHEMA_VERSION)
+                self.assertEqual(status["quick_check"], "ok")
+        finally:
+            jobflow.set_profile_root(original)
 
     def test_linkedin_fallback_keeps_only_exact_employer(self):
         listing = '''
@@ -867,11 +1423,14 @@ class JobFlowTest(unittest.TestCase):
         for title in ("Machine Learning Engineer", "Junior Data Analyst", "Data Platform Engineer",
                       "Analytics Consultant", "Backend Engineer"):
             with self.subTest(title=title):
-                self.assertEqual(jobflow.cv_reference(title).name, "cv-data-scientist.pdf")
+                self.assertEqual(jobflow.cv_reference(title).name, "cv-reference.pdf")
                 self.assertEqual(jobflow.cv_reference(title).parent, jobflow.ROOT / "references")
         cfg = copy.deepcopy(self.cfg)
         cfg["cv_references"]["data-analyst"] = "custom-analyst.pdf"
         self.assertEqual(jobflow.cv_reference("Junior Data Analyst", cfg).name, "custom-analyst.pdf")
+        cfg["cv_references"].pop("data-analyst")
+        cfg["visual_references"]["cv"] = "cv-data-scientist.pdf"
+        self.assertEqual(jobflow.cv_reference("Junior Data Analyst", cfg).name, "cv-reference.pdf")
         self.assertEqual(jobflow.document_reference("letter", cfg=cfg).name, "motivation-letter.pdf")
 
     def test_general_cv_title_validation_and_slug(self):
@@ -1446,7 +2005,6 @@ City | Aug 2026 – Dec 2026
             ("formal_internship", "direct", "confirmed", 12),
             ("academic_employment", "direct", "confirmed", 12),
             ("academic_employment", "supporting", "excluded", 0),
-            ("volunteering", "direct", "possible", 12),
             ("professional_employment", "unrelated", "excluded", 0),
         )
         for experience_type, relevance, count_status, expected in valid:
@@ -1455,6 +2013,10 @@ City | Aug 2026 – Dec 2026
             result = jobflow.relevant_experience_assessment(fields, TEST_EXPERIENCE_CV)
             with self.subTest(experience_type=experience_type, relevance=relevance):
                 self.assertEqual(result["confirmed_or_possible_months"], expected)
+        disabled = experience_fields("mandatory", 1, "possible")
+        disabled["experience_roles"][0].update({"experience_type": "volunteering", "relevance": "direct"})
+        with self.assertRaisesRegex(SystemExit, "disabled by applicant policy"):
+            jobflow.relevant_experience_assessment(disabled, TEST_EXPERIENCE_CV)
 
     def test_record_match_gates_mandatory_experience_and_surfaces_caution(self):
         old = jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH
@@ -1886,10 +2448,10 @@ City | Aug 2026 – Dec 2026
             "# Alex Example\n\n## Summary\nx\n## Experience\n*Analyst | 2024 - 2025*\nExample\n- Built reports.\n"
             "## Projects\n*Forecasting Platform*\n- Built forecasts.\n"
             "## Education\n*MSc Data Science and Artificial Intelligence | 2023 - 2025*\n"
-            "Eindhoven University of Technology\n"
+            "Northbridge University\n"
             "- Thesis: Reward-Free Safe Reinforcement Learning Exploration Using Different Entropy Measures\n"
             "*BSc Data Science | 2020 - 2023*\n"
-            "Eindhoven University of Technology and Tilburg University\n"
+            "Northbridge University and Westhaven University\n"
             "- Bachelor End Project: Health Platform Text Classification Using Active Learning\n"
             "## Skills\n**Programming:** Python, SQL\n**Analytics:** process mining, Power BI\n"
             "## Languages\nEnglish (Fluent), Dutch (A2)\n"
@@ -1923,7 +2485,7 @@ City | Aug 2026 – Dec 2026
     def test_general_cv_check_records_reference_comparison_and_blocks_missing_reference(self):
         master = (
             "## Professional Summary Bank\n### Data Scientist\nPredictive modeling.\n"
-            "## Professional Experience\n### Junior AI Specialist — Example Analytics\n"
+            "## Professional Experience\n### Junior Research Analyst — Example Analytics\n"
             "City | Jun 2026 – Sep 2026\n- Built modeling dashboards.\n"
             "## Complete Project Bank\n### Fraud Detection MLOps Pipeline - IEEE-CIS\n"
             "- Built predictive workflows.\n## Skills\nPython\n"
@@ -1931,14 +2493,14 @@ City | Aug 2026 – Dec 2026
         passing_cv = (
             "# Alex Example\n\n## Summary\nData Scientist with predictive modeling, NLP, time-series, process mining, "
             "reinforcement learning, imbalanced classification, dashboards, validation, and recommendations.\n"
-            "## Experience\n*Junior AI Specialist | Jun 2026 - Sep 2026*\nExample Analytics\n"
+            "## Experience\n*Junior Research Analyst | Jan 2024 - Dec 2024*\nExample Analytics\n"
             "- Built modeling dashboards.\n"
             "## Projects\n*Fraud Detection MLOps Pipeline - IEEE-CIS*\n"
             "- Built predictive workflows.\n- Trained XGBoost models.\n- Served FastAPI models.\n"
             "## Education\n*MSc Data Science and Artificial Intelligence | 2023 - 2025*\n"
-            "Eindhoven University of Technology\n"
+            "Northbridge University\n"
             "- Thesis: Reward-Free Safe Reinforcement Learning Exploration Using Different Entropy Measures\n"
-            "*BSc Data Science | 2020 - 2023*\nEindhoven University of Technology and Tilburg University\n"
+            "*BSc Data Science | 2020 - 2023*\nNorthbridge University and Westhaven University\n"
             "- Bachelor End Project: Health Platform Text Classification Using Active Learning\n"
             "## Skills\nProgramming: Python, SQL, R, C++, Java, Bash, pandas, NumPy, validation, dashboards, workflows, recommendations\n"
             "Machine Learning: scikit-learn, XGBoost, PyTorch, TensorFlow, Keras, predictive modeling, classification\n"
@@ -2022,7 +2584,7 @@ City | Aug 2026 – Dec 2026
             path = Path(folder) / "cv.md"
             path.write_text(
                 "# Alex Example — Data Scientist\nemail | phone | location\n\n"
-                "## Experience\n\n### Junior AI Specialist | Jun 2026 – Sep 2026\nCompany\n"
+                "## Experience\n\n### Junior Research Analyst | Jan 2024 – Dec 2024\nCompany\n"
             )
             blocks = jobflow.markdown_blocks(path, "cv")
             destination = path.with_suffix(".docx")
@@ -2031,7 +2593,7 @@ City | Aug 2026 – Dec 2026
                 document = docx.read("word/document.xml").decode()
         self.assertEqual(blocks["title"], "Alex Example")
         self.assertEqual(blocks["sections"][0]["items"][0], {
-            "kind": "text", "text": "Junior AI Specialist | Jun 2026 – Sep 2026", "main": True})
+            "kind": "text", "text": "Junior Research Analyst | Jan 2024 – Dec 2024", "main": True})
         self.assertIn('<w:tab w:val="right"', document)
         self.assertNotIn("Data Scientist", document)
 
@@ -2040,7 +2602,7 @@ City | Aug 2026 – Dec 2026
             "title": "Alex Example",
             "contacts": [],
             "sections": [{"heading": "EXPERIENCE", "items": [
-                {"kind": "text", "text": "Junior AI Specialist | Jun 2026 – Sep 2026", "main": True},
+                {"kind": "text", "text": "Junior Research Analyst | Jan 2024 – Dec 2024", "main": True},
                 {"kind": "text", "text": "Example Analytics", "main": False},
             ]}],
         }
@@ -2056,11 +2618,11 @@ City | Aug 2026 – Dec 2026
             path.write_text(
                 "# Alex Example\nemail | phone\n\n"
                 "## Experience\n"
-                "### Junior AI Specialist - Example Analytics\n"
-                "*Eindhoven, The Netherlands | Jun 2026 - Sep 2026*\n"
+                "### Junior Research Analyst - Example Analytics\n"
+                "*Northbridge, The Netherlands | Jan 2024 - Dec 2024*\n"
                 "## Education\n"
-                "### MSc Data Science and Artificial Intelligence\n"
-                "*Eindhoven, The Netherlands | 2023 - 2025*\n"
+                "### MSc Applied Research\n"
+                "*Northbridge, The Netherlands | 2021 - 2023*\n"
             )
             blocks = jobflow.markdown_blocks(path, "cv")
             destination = path.with_suffix(".docx")
@@ -2068,10 +2630,10 @@ City | Aug 2026 – Dec 2026
             with zipfile.ZipFile(destination) as docx:
                 document = docx.read("word/document.xml").decode()
         experience, education = (section["items"] for section in blocks["sections"])
-        self.assertEqual(experience[0]["text"], "Junior AI Specialist - Example Analytics | Jun 2026 - Sep 2026")
-        self.assertEqual(experience[1]["text"], "Eindhoven, The Netherlands")
-        self.assertEqual(education[0]["text"], "MSc Data Science and Artificial Intelligence | 2023 - 2025")
-        self.assertEqual(education[1]["text"], "Eindhoven, The Netherlands")
+        self.assertEqual(experience[0]["text"], "Junior Research Analyst - Example Analytics | Jan 2024 - Dec 2024")
+        self.assertEqual(experience[1]["text"], "Northbridge, The Netherlands")
+        self.assertEqual(education[0]["text"], "MSc Applied Research | 2021 - 2023")
+        self.assertEqual(education[1]["text"], "Northbridge, The Netherlands")
         self.assertIn('<w:tab w:val="right"', document)
 
     def test_letter_parser_ignores_legacy_div_alignment_markup(self):
@@ -2435,6 +2997,9 @@ City | Aug 2026 – Dec 2026
                 payload = jobflow.doctor_report()
             self.assertEqual(payload["preflight"], {"pdfinfo": True})
             self.assertTrue(payload["codex_cli"])
+            self.assertEqual(payload["database"]["quick_check"], "ok")
+            self.assertEqual(payload["database"]["schema_version"], jobflow.SCHEMA_VERSION)
+            self.assertIn("complete", payload["setup"])
             self.assertIn("screening_needs_match", payload["queues"])
             self.assertTrue(payload["master_cv"]["exists"])
         jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH = old
@@ -3017,7 +3582,7 @@ City | Aug 2026 – Dec 2026
         self.assertEqual(set(schema["properties"]["status"]["enum"]), jobflow.OUTCOME_STATUSES)
         self.assertEqual(set(schema["properties"]["stage"]["enum"]), jobflow.OUTCOME_STAGES)
 
-    def test_public_release_contains_no_private_markers_or_tracked_profile(self):
+    def test_public_release_tracks_no_private_profile(self):
         root = Path(__file__).parents[1]
         if (root / ".git").exists():
             tracked = subprocess.check_output(["git", "ls-files"], cwd=root, text=True).splitlines()
@@ -3029,11 +3594,70 @@ City | Aug 2026 – Dec 2026
         self.assertNotIn("config.yaml", tracked)
         self.assertIn("master_cv.example.md", tracked)
         self.assertIn("config.example.yaml", tracked)
-        text = "\n".join((root / name).read_text(errors="ignore") for name in tracked
-                          if (root / name).suffix in {".py", ".md", ".toml", ".yaml", ".yml", ".json"})
-        for marker in ("Marco " + "Mo", "/home/" + "marco", "mico" + "bruh",
-                       "ADC " + "Nederland", "Sim" + "Energy"):
-            self.assertNotIn(marker, text)
+
+    def test_privacy_audit_uses_fictional_external_markers(self):
+        with tempfile.TemporaryDirectory() as folder:
+            markers = Path(folder) / "markers.txt"
+            markers.write_text(f"untracked-candidate-{Path(folder).name}\nuntracked-employer-{Path(folder).name}\n")
+            result = jobflow.privacy_audit(markers)
+        self.assertTrue(result["passed"])
+        self.assertEqual(result["markers_checked"], 2)
+
+    def test_all_wo_sector_profiles_are_detectable_from_fictional_degrees(self):
+        examples = {
+            "natural_sciences": "MSc Physics", "engineering_technology": "MSc Mechanical Engineering",
+            "agriculture_environment": "MSc Environmental Sciences",
+            "health_life_sciences": "MSc Biomedical Sciences",
+            "economics_business": "MSc Economics", "law_governance": "MSc Public Administration",
+            "social_behavioural_sciences": "MSc Sociology", "language_culture": "MA Linguistics",
+            "education_research": "MSc Educational Science",
+            "cross_disciplinary": "BA Liberal Arts and Sciences",
+        }
+        for expected, degree in examples.items():
+            document = f"# Fictional Candidate\n\n## Education\n\n### {degree} — Fictional University\n"
+            detected = {item["profile"] for item in jobflow.study_profile_suggestions(document)}
+            with self.subTest(profile=expected):
+                self.assertIn(expected, detected)
+
+    def test_role_suggestions_use_accepted_jobs_but_not_rejected_jobs(self):
+        old = jobflow.DATA, jobflow.DB_PATH
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                jobflow.DATA = Path(folder) / "data"
+                jobflow.DB_PATH = jobflow.DATA / "jobs.sqlite3"
+                with jobflow.db() as conn:
+                    for jid, title, status in (("accepted", "Junior Policy Analyst", "accepted"),
+                                               ("rejected", "Junior Consultant", "rejected")):
+                        conn.execute("INSERT INTO jobs(id,company,title,url,description,status,relevance,reasons,discovered_at) "
+                                     "VALUES (?,?,?,?,?,?,?,?,?)",
+                                     (jid, "Fictional Organisation", title, f"https://example.test/{jid}", "", status, 80, "[]", "now"))
+                document = master_cv_review_fixture()
+                suggestions = jobflow.suggest_roles(document, self.cfg)["suggestions"]
+                roles = {item["role"] for item in suggestions}
+                self.assertIn("policy_analyst", roles)
+                self.assertNotIn("consultant", roles)
+        finally:
+            jobflow.DATA, jobflow.DB_PATH = old
+
+    def test_regulated_roles_fail_closed_and_optional_sections_require_content(self):
+        user = valid_user_config()
+        user["search_criteria"]["study_profiles"] = ["health_life_sciences"]
+        user["search_criteria"]["job_families"] = ["research_development"]
+        user["search_criteria"]["roles"] = ["researcher"]
+        cfg = jobflow.resolved_config(user)
+        result = jobflow.filter_job(self.job(title="Medical Doctor", description="Research and evaluation."),
+                                    self.sponsors, cfg, self.cv)
+        self.assertIn("regulated profession is not supported", result.rejection_reasons)
+
+        brief = {"source_item_counts": {"experience": 0, "projects": 0},
+                 "generation_constraints": {"required_cv_sections": ["Summary", "Education", "Skills", "Languages"],
+                                            "cv_word_budget": [0, 430]}}
+        empty = "# Fictional Candidate\n\n## Summary\nEvidence.\n\n## Research\n\n## Education\nDegree.\n\n## Skills\nMethods.\n\n## Languages\nEnglish (Fluent)\n"
+        self.assertIn("CV Research section must contain evidence or be omitted",
+                      jobflow.document_preflight(empty, "cv", brief, cfg))
+        filled = empty.replace("## Research\n\n", "## Research\n\nCompleted a supported study.\n\n")
+        self.assertNotIn("CV Research section must contain evidence or be omitted",
+                         jobflow.document_preflight(filled, "cv", brief, cfg))
 
     def test_outcome_report_uses_minimum_samples_and_never_changes_config(self):
         old = jobflow.DATA, jobflow.DB_PATH

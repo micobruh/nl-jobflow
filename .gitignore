@@ -9,3 +9,5 @@ __pycache__/
 *.pyc
 .venv/
 tmp/
+profiles/
+.privacy-markers

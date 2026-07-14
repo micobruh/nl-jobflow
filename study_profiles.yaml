@@ -1,17 +1,85 @@
 profiles:
   data_science_ai:
     label: Data Science and AI
+    degree_patterns: ["data science", "artificial intelligence", "machine learning"]
+    summary_patterns: ["data scientist", "machine learning", "ai engineer", "data analyst", "data engineer"]
     roles: [data_scientist, data_analyst, data_engineer, machine_learning_engineer, ai_engineer]
-    policy: presets/data_ai.yaml
+    policy: presets/data_science_ai.yaml
   computer_science:
     label: Computer Science
-    roles: [software_engineer, backend_engineer, frontend_engineer, full_stack_engineer, data_engineer, machine_learning_engineer, data_scientist]
-    policy: presets/software_engineering.yaml
+    degree_patterns: ["computer science", "informatics", "computing science", "embedded systems"]
+    summary_patterns: ["software engineer", "developer", "computer scientist"]
+    roles: [software_engineer, backend_engineer, frontend_engineer, full_stack_engineer, data_engineer, machine_learning_engineer, data_scientist, product_designer]
+    policy: presets/computer_science.yaml
   statistics:
     label: Statistics
-    roles: [statistician, data_scientist, data_analyst, quantitative_analyst]
-    policy: presets/data_ai.yaml
+    degree_patterns: ["statistics", "econometrics", "biostatistics"]
+    summary_patterns: ["statistician", "quantitative analyst"]
+    roles: [statistician, data_scientist, data_analyst, quantitative_analyst, financial_analyst]
+    policy: presets/statistics.yaml
   software_engineering:
     label: Software Engineering
+    degree_patterns: ["software engineering"]
+    summary_patterns: ["software engineer", "backend", "frontend", "full-stack"]
     roles: [software_engineer, backend_engineer, frontend_engineer, full_stack_engineer]
     policy: presets/software_engineering.yaml
+  natural_sciences:
+    label: Natural Sciences
+    degree_patterns: ["physics", "chemistry", "mathematics", "astronomy", "earth science"]
+    summary_patterns: ["researcher", "research assistant", "laboratory analyst"]
+    roles: [researcher, research_assistant, laboratory_analyst, quality_assurance_specialist, project_engineer]
+    policy: presets/natural_sciences.yaml
+  engineering_technology:
+    label: Engineering and Technology
+    degree_patterns: ["engineering", "technology", "industrial design", "built environment"]
+    summary_patterns: ["engineer", "project coordinator", "consultant", "researcher"]
+    roles: [project_engineer, manufacturing_engineer, product_designer, supply_chain_analyst, project_coordinator, sustainability_analyst, quality_assurance_specialist, researcher]
+    policy: presets/engineering_technology.yaml
+  agriculture_environment:
+    label: Agriculture and Environment
+    degree_patterns: ["agriculture", "environment", "sustainability", "food science", "ecology"]
+    summary_patterns: ["sustainability", "environmental", "researcher", "policy analyst"]
+    roles: [sustainability_analyst, researcher, research_assistant, laboratory_analyst, quality_assurance_specialist, supply_chain_analyst, policy_analyst, project_coordinator]
+    policy: presets/agriculture_environment.yaml
+  health_life_sciences:
+    label: Health and Life Sciences
+    degree_patterns: ["health science", "biomedical", "medical engineering", "biology", "life science", "neuroscience", "pharmacy"]
+    summary_patterns: ["health researcher", "clinical research", "laboratory analyst", "policy analyst"]
+    roles: [researcher, research_assistant, laboratory_analyst, clinical_research_coordinator, quality_assurance_specialist, compliance_analyst, policy_analyst]
+    policy: presets/health_life_sciences.yaml
+  economics_business:
+    label: Economics and Business
+    degree_patterns: ["economics", "business", "finance", "management", "econometrics"]
+    summary_patterns: ["business analyst", "consultant", "policy analyst", "project coordinator"]
+    roles: [business_analyst, financial_analyst, quantitative_analyst, supply_chain_analyst, marketing_analyst, hr_analyst, consultant, policy_analyst, project_coordinator]
+    policy: presets/economics_business.yaml
+  law_governance:
+    label: Law and Governance
+    degree_patterns: ["law", "legal", "governance", "public administration"]
+    summary_patterns: ["policy analyst", "legal researcher", "governance", "consultant"]
+    roles: [policy_analyst, compliance_analyst, researcher, research_assistant, consultant, project_coordinator]
+    policy: presets/law_governance.yaml
+  social_behavioural_sciences:
+    label: Social and Behavioural Sciences
+    degree_patterns: ["psychology", "sociology", "political science", "anthropology", "communication science"]
+    summary_patterns: ["researcher", "policy analyst", "communications advisor", "project coordinator"]
+    roles: [researcher, research_assistant, policy_analyst, communications_advisor, hr_analyst, marketing_analyst, product_designer, project_coordinator]
+    policy: presets/social_behavioural_sciences.yaml
+  language_culture:
+    label: Language and Culture
+    degree_patterns: ["language", "linguistics", "history", "philosophy", "literature", "culture", "arts"]
+    summary_patterns: ["researcher", "communications advisor", "project coordinator", "consultant"]
+    roles: [researcher, research_assistant, communications_advisor, marketing_analyst, education_researcher, project_coordinator, consultant]
+    policy: presets/language_culture.yaml
+  education_research:
+    label: Education and Research
+    degree_patterns: ["education", "pedagogy", "learning sciences", "educational science"]
+    summary_patterns: ["education researcher", "research assistant", "project coordinator", "policy analyst"]
+    roles: [education_researcher, researcher, research_assistant, policy_analyst, project_coordinator, communications_advisor]
+    policy: presets/education_research.yaml
+  cross_disciplinary:
+    label: Cross-disciplinary Programmes
+    degree_patterns: ["liberal arts", "university college", "interdisciplinary", "science technology and society"]
+    summary_patterns: ["researcher", "consultant", "policy analyst", "project coordinator"]
+    roles: [researcher, research_assistant, policy_analyst, project_coordinator, consultant, sustainability_analyst, product_designer, business_analyst]
+    policy: presets/cross_disciplinary.yaml

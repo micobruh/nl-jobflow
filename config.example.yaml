@@ -1,18 +1,23 @@
 schedule: "30 11 * * 1-5"
 timezone: Europe/Amsterdam
 applicant:
-  residence_route: highly_skilled_migrant
+  residence_route: other
   study_status: graduated
   current_education_level: wo_master
   highest_completed_education_level: wo_master
-  graduation_date: "2026-06-30"
-  dutch_level: A2
-  work_authorization_notes: "Verify the permit route and employer obligations before applying."
+  graduation_date: ""
+  dutch_level: unknown
+  work_authorization_notes: ""
 search_criteria:
-  study_profiles: [data_science_ai]
-  roles: [data_scientist, data_analyst, data_engineer, machine_learning_engineer, ai_engineer]
+  study_profiles: []
+  job_families: []
+  roles: []
   max_required_education_level: wo_master
-  max_required_experience_years: 1
+  max_required_experience_years: null
+  accepted_seniority: [entry, junior, medior, senior, lead]
+  seniority_title_exclusions: []
+  experience_policy:
+    countable_types: [professional_employment, formal_internship, academic_employment]
   internships:
     regular: false
     graduation: false
@@ -22,6 +27,6 @@ search_criteria:
   locations:
     selected: [Amsterdam, Eindhoven, Rotterdam, Utrecht, The Hague]
   eligibility:
-    require_recognized_sponsor: true
+    require_recognized_sponsor: false
     reject_explicit_visa_denial: true
     accept_security_screening: false

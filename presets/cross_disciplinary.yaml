@@ -1,0 +1,51 @@
+label: Cross-disciplinary Programmes
+marketplace_discovery:
+  queries:
+  - Junior Researcher
+  - Graduate Consultant
+  - Junior Project Coordinator
+title_keywords:
+- interdisciplinary research
+- policy
+- consulting
+- project coordination
+- sustainability
+- product design
+relevance_keywords:
+  strong:
+  - interdisciplinary research
+  - policy analysis
+  - consulting
+  - project coordination
+  - sustainability
+  - design research
+  weak:
+  - analysis
+  - research
+  - stakeholder
+  - reporting
+  - implementation
+role_fit:
+  clear_title: \b(?:researcher|analyst|consultant|project coordinator|product designer)\b
+  excluded_title: \b(?:licensed clinical|regulated practitioner)\b
+seniority_role_pattern: (?:researcher|assistant|analyst|officer|coordinator|consultant|advisor|adviser|specialist)
+keyword_patterns: {}
+cv_skill_categories:
+  knowledge-work:
+  - Domain knowledge
+  - Research and analysis
+  - Delivery
+  - Communication
+cv_role_patterns:
+  knowledge-work: .*
+cv_default_role: knowledge-work
+cv_references: {}
+cv_phrase_replacements: {}
+pdf_text_defects: []
+education_detail_rules: []
+regulated_role_patterns:
+- \b(?:physician|medical doctor|basisarts|huisarts|bedrijfsarts|verzekeringsarts|surgeon|nurse|verpleegkundige)\b
+- \b(?:clinical psychologist|gezondheidszorgpsycholoog|gz-psycholoog|psychotherapist)\b
+- \b(?:advocaat|notaris|civil-law notary)\b
+- \b(?:licensed teacher|bevoegd docent|qualified teacher)\b
+general_cv_prompt: prompts/presets/cross_disciplinary.md

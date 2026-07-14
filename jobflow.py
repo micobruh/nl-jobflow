@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import fcntl
 import hashlib
 import html
@@ -30,9 +31,11 @@ import yaml
 from bs4 import BeautifulSoup
 
 ROOT = Path(__file__).resolve().parent
-DATA = ROOT / "data"
-ARTIFACTS = ROOT / "artifacts"
+PROFILE_ROOT = Path(os.environ.get("JOBFLOW_PROFILE", ROOT)).expanduser().resolve()
+DATA = PROFILE_ROOT / "data"
+ARTIFACTS = PROFILE_ROOT / "artifacts"
 DB_PATH = DATA / "jobs.sqlite3"
+_PROFILE_ENV_KEYS: set[str] = set()
 USER_AGENT = "nl-jobflow/1.0 (personal job research; low-rate)"
 CHALLENGE_RE = re.compile(
     r"captcha|verify you are human|access denied|additional verification|required|"
@@ -41,6 +44,7 @@ CHALLENGE_RE = re.compile(
 )
 RENDER_CACHE_VERSION = "jobflow-docx-v5"
 SCORING_VERSION = "supported-concepts-v4"
+SCHEMA_VERSION = 1
 BANNED_CV_PHRASES = (
     "results-driven", "dynamic individual", "highly motivated", "team player",
     "proven track record", "passionate about", "passionate professional",
@@ -166,17 +170,41 @@ EXCESS_EXPERIENCE_RE = re.compile(
     r"\b((?:[2-9]|[1-9]\d+))\s*\+\s*jaar\s+ervaring\b",
     re.I,
 )
-ACCEPTABLE_MATCH_SENIORITIES = {"entry", "junior", "graduate"}
+SENIORITY_LEVELS = ("entry", "junior", "medior", "senior", "lead")
+SENIORITY_TERMS = {
+    "entry": ("entry level", "entry-level", "graduate", "trainee"),
+    "junior": ("junior", "jr"),
+    "medior": ("medior", "mid-level", "mid level", "mid senior"),
+    "senior": ("senior", "sr", "principal", "staff"),
+    "lead": ("lead", "team lead", "head", "director", "manager", "architect", "vice president",
+             "vp", "chief", "cto", "cio", "cdo", "ceo"),
+}
+
+
+def set_profile_root(path: Path | str) -> Path:
+    global PROFILE_ROOT, DATA, ARTIFACTS, DB_PATH
+    for key in _PROFILE_ENV_KEYS:
+        os.environ.pop(key, None)
+    _PROFILE_ENV_KEYS.clear()
+    PROFILE_ROOT = Path(path).expanduser().resolve()
+    DATA = PROFILE_ROOT / "data"
+    ARTIFACTS = PROFILE_ROOT / "artifacts"
+    DB_PATH = DATA / "jobs.sqlite3"
+    os.environ["JOBFLOW_PROFILE"] = str(PROFILE_ROOT)
+    return PROFILE_ROOT
 
 
 def load_env() -> None:
-    path = ROOT / ".env"
+    path = PROFILE_ROOT / ".env"
     if not path.exists():
         return
     for raw in path.read_text().splitlines():
         if raw.strip() and not raw.lstrip().startswith("#") and "=" in raw:
             key, value = raw.split("=", 1)
-            os.environ.setdefault(key.strip(), value.strip().strip('"\''))
+            key = key.strip()
+            if key not in os.environ:
+                os.environ[key] = value.strip().strip('"\'')
+                _PROFILE_ENV_KEYS.add(key)
 
 
 def deep_merge(base: dict, values: dict) -> dict:
@@ -206,10 +234,69 @@ LEGACY_PRESETS = {
                                                         "frontend_engineer", "full_stack_engineer"]),
 }
 
+WO_CATALOG_PATH = ROOT / "catalogs" / "wo_programmes.json"
+SECTOR_PROFILES = {
+    "ECONOMIE": "economics_business",
+    "GEDRAG_EN_MAATSCHAPPIJ": "social_behavioural_sciences",
+    "GEZONDHEIDSZORG": "health_life_sciences",
+    "LANDBOUW_EN_NATUURLIJKE_OMGEVING": "agriculture_environment",
+    "NATUUR": "natural_sciences",
+    "ONDERWIJS": "education_research",
+    "RECHT": "law_governance",
+    "SECTOROVERSTIJGEND": "cross_disciplinary",
+    "TAAL_EN_CULTUUR": "language_culture",
+    "TECHNIEK": "engineering_technology",
+}
+SECTOR_FAMILY_FALLBACKS = {
+    "ECONOMIE": "project_programme_consulting",
+    "GEDRAG_EN_MAATSCHAPPIJ": "research_development",
+    "GEZONDHEIDSZORG": "health_clinical_operations",
+    "LANDBOUW_EN_NATUURLIJKE_OMGEVING": "sustainability_environment",
+    "NATUUR": "research_development",
+    "ONDERWIJS": "education_knowledge",
+    "RECHT": "legal_compliance_policy",
+    "SECTOROVERSTIJGEND": "project_programme_consulting",
+    "TAAL_EN_CULTUUR": "research_development",
+    "TECHNIEK": "engineering_science",
+}
+
+
+def role_catalog() -> tuple[dict, dict]:
+    value = read_yaml(ROOT / "role_catalog.yaml")
+    families, roles = value.get("families"), value.get("roles")
+    if (not isinstance(families, dict) or not families or not isinstance(roles, dict) or not roles or
+            any(not isinstance(item, dict) or not isinstance(item.get("label"), str) or
+                not isinstance(item.get("programme_patterns", []), list)
+                for item in families.values()) or
+            any(not isinstance(item, dict) or item.get("family") not in families for item in roles.values())):
+        raise SystemExit("role_catalog.yaml contains invalid families or roles")
+    try:
+        for family in families.values():
+            for pattern in family.get("programme_patterns", []):
+                re.compile(pattern)
+    except re.error as exc:
+        raise SystemExit("role_catalog.yaml contains an invalid programme pattern") from exc
+    return families, roles
+
+
+def configured_job_families(criteria: dict, roles: dict, selected: list[str]) -> list[str]:
+    configured = criteria.get("job_families")
+    if configured is None:
+        return list(dict.fromkeys(roles[role]["family"] for role in selected))
+    return configured
+
 
 def compile_role_selection(criteria: dict, allow_unrecommended: bool = False) -> dict:
     profiles = read_yaml(ROOT / "study_profiles.yaml")["profiles"]
-    catalog = read_yaml(ROOT / "role_catalog.yaml")["roles"]
+    families, catalog = role_catalog()
+    for profile_id, profile in profiles.items():
+        if (not isinstance(profile, dict) or not isinstance(profile.get("label"), str) or
+                not isinstance(profile.get("roles"), list) or set(profile["roles"]) - set(catalog) or
+                profile.get("policy") != f"presets/{profile_id}.yaml" or
+                any(not isinstance(profile.get(key, []), list) or
+                    any(not isinstance(value, str) for value in profile.get(key, []))
+                    for key in ("degree_patterns", "summary_patterns"))):
+            raise SystemExit(f"invalid study profile: {profile_id}")
     if criteria.get("preset"):
         legacy = LEGACY_PRESETS.get(criteria["preset"])
         if not legacy:
@@ -220,9 +307,15 @@ def compile_role_selection(criteria: dict, allow_unrecommended: bool = False) ->
     if not isinstance(studies, list) or not studies or set(studies) - set(profiles):
         raise SystemExit("search_criteria.study_profiles must contain available study profiles")
     recommended = list(dict.fromkeys(role for study in studies for role in profiles[study]["roles"]))
-    allowed = set(catalog) if allow_unrecommended else set(recommended)
-    if not isinstance(selected, list) or not selected or set(selected) - allowed:
-        raise SystemExit("search_criteria.roles must contain recommended roles from the selected studies")
+    if not isinstance(selected, list) or not selected or set(selected) - set(catalog):
+        raise SystemExit("search_criteria.roles must contain available roles")
+    selected_families = configured_job_families(criteria, catalog, selected)
+    if (not isinstance(selected_families, list) or not selected_families or
+            set(selected_families) - set(families)):
+        raise SystemExit("search_criteria.job_families must contain available job families")
+    allowed = {role for role, definition in catalog.items() if definition["family"] in selected_families}
+    if set(selected) - (set(catalog) if allow_unrecommended else allowed):
+        raise SystemExit("search_criteria.roles must belong to the selected job families")
     policies = []
     for study in studies:
         policy_path = ROOT / profiles[study]["policy"]
@@ -235,15 +328,20 @@ def compile_role_selection(criteria: dict, allow_unrecommended: bool = False) ->
             runtime[key] = {**runtime.get(key, {}), **policy.get(key, {})}
         for key in ("pdf_text_defects", "education_detail_rules"):
             runtime[key] = [*runtime.get(key, []), *[item for item in policy.get(key, []) if item not in runtime.get(key, [])]]
+        runtime["regulated_role_patterns"] = [*runtime.get("regulated_role_patterns", []),
+                                               *policy.get("regulated_role_patterns", [])]
     chosen = [catalog[role] for role in selected]
     deselected = [catalog[role] for role in catalog if role not in selected]
     patterns = {}
     for role in chosen:
         patterns[role["cv_role"]] = "|".join(filter(None, (patterns.get(role["cv_role"]), role["title_pattern"])))
-    prompts = list(dict.fromkeys(role["prompt"] for role in chosen))
+    prompts = list(dict.fromkeys([*[policy["general_cv_prompt"] for policy in policies],
+                                  *[role["prompt"] for role in chosen]]))
     runtime.update({
         "label": " / ".join(profiles[study]["label"] for study in studies),
-        "study_profiles": studies, "selected_roles": selected, "recommended_roles": recommended,
+        "study_profiles": studies, "job_families": selected_families,
+        "job_family_labels": {key: families[key]["label"] for key in selected_families},
+        "selected_roles": selected, "recommended_roles": recommended,
         "role_labels": {key: catalog[key]["label"] for key in selected},
         "marketplace_discovery": {**runtime["marketplace_discovery"],
                                   "queries": list(dict.fromkeys(query for role in chosen for query in role["queries"]))},
@@ -275,10 +373,18 @@ def compile_role_selection(criteria: dict, allow_unrecommended: bool = False) ->
 def resolved_config(user: dict, override: dict | None = None) -> dict:
     override = override or {}
     combined = deep_merge(user, override)
+    criteria = combined.get("search_criteria", {})
+    if not criteria.get("preset") and any(
+            not criteria.get(key) for key in ("study_profiles", "roles")):
+        raise SystemExit("profile setup is incomplete; run: python jobflow.py --profile "
+                         f"{PROFILE_ROOT} setup")
     preset_config = compile_role_selection(
-        combined.get("search_criteria", {}),
+        criteria,
         isinstance(override.get("search_criteria"), dict) and "roles" in override["search_criteria"])
-    value = deep_merge(read_yaml(ROOT / "config.defaults.yaml"), preset_config)
+    defaults = read_yaml(ROOT / "config.defaults.yaml")
+    families, _ = role_catalog()
+    validate_priority_companies(defaults.get("priority_companies"), families, require_coverage=True)
+    value = deep_merge(defaults, preset_config)
     value = deep_merge(value, user)
     value = deep_merge(value, override)
     validate_config(value)
@@ -287,7 +393,7 @@ def resolved_config(user: dict, override: dict | None = None) -> dict:
 
 def config() -> dict:
     global _LEGACY_CONFIG_WARNED
-    path = ROOT / "config.yaml"
+    path = PROFILE_ROOT / "config.yaml"
     if not path.exists():
         raise SystemExit("config.yaml not found; copy config.example.yaml to config.yaml and edit it")
     user = read_yaml(path)
@@ -299,8 +405,13 @@ def config() -> dict:
             "legacy policy fields; move intentional overrides to config.override.yaml"
         emit("config.yaml contains " + message, stream=sys.stderr)
         _LEGACY_CONFIG_WARNED = True
-    override_path = ROOT / "config.override.yaml"
-    return resolved_config(user, read_yaml(override_path) if override_path.exists() else {})
+    override_path = PROFILE_ROOT / "config.override.yaml"
+    value = resolved_config(user, read_yaml(override_path) if override_path.exists() else {})
+    untagged = [item.get("name", "?") for item in value["priority_companies"] if not item.get("families")]
+    if untagged:
+        emit("untagged custom/legacy sources apply to every family: " + ", ".join(untagged),
+             stream=sys.stderr)
+    return value
 
 
 def preset_prompt(cfg: dict | None = None) -> str:
@@ -320,8 +431,36 @@ def general_cv_prompt_digest(cfg: dict | None = None) -> str:
 
 
 EDUCATION_LEVELS = ("mbo", "hbo_bachelor", "wo_bachelor", "hbo_master", "wo_master", "phd")
-DUTCH_LEVELS = ("none", "A1", "A2", "B1", "B2", "C1+")
+DUTCH_LEVELS = ("unknown", "none", "A1", "A2", "B1", "B2", "C1+")
 RESIDENCE_ROUTES = {"student_permit", "orientation_year", "highly_skilled_migrant", "other"}
+
+
+def validate_priority_companies(companies: object, families: dict,
+                                require_coverage: bool = False) -> None:
+    if not isinstance(companies, list) or not companies:
+        raise SystemExit("priority_companies must contain source definitions")
+    seen = set()
+    coverage = {family: 0 for family in families}
+    for item in companies:
+        if (not isinstance(item, dict) or not isinstance(item.get("name"), str) or
+                not item["name"].strip() or not isinstance(item.get("career_url"), str) or
+                urlparse(item["career_url"]).scheme not in {"http", "https"}):
+            raise SystemExit("priority_companies entries require name and HTTP(S) career_url")
+        key = normalize_company(item["name"])
+        if key in seen:
+            raise SystemExit(f"duplicate priority company: {item['name']}")
+        seen.add(key)
+        tagged = item.get("families")
+        if tagged is not None and (not isinstance(tagged, list) or not tagged or
+                                   any(not isinstance(value, str) for value in tagged) or
+                                   set(tagged) - set(families)):
+            raise SystemExit(f"priority company {item['name']} has invalid families")
+        for family in tagged or []:
+            coverage[family] += 1
+    missing = [family for family, count in coverage.items() if count < 2]
+    if require_coverage and missing:
+        raise SystemExit("maintained priority companies require at least two sources per family: " +
+                         ", ".join(missing))
 
 
 def validate_preset(preset: dict, path: Path) -> None:
@@ -354,7 +493,7 @@ def validate_preset(preset: dict, path: Path) -> None:
         raise SystemExit(f"{path.name} preset contains invalid values")
     patterns = [preset["role_fit"].get("clear_title"), preset["role_fit"].get("excluded_title"),
                 preset["seniority_role_pattern"], *preset["keyword_patterns"].values(),
-                *preset["cv_role_patterns"].values()]
+                *preset["cv_role_patterns"].values(), *preset.get("regulated_role_patterns", [])]
     patterns += [rule.get(key) for rule in preset["education_detail_rules"]
                  for key in ("degree_pattern", "detail_pattern") if isinstance(rule, dict)]
     try:
@@ -376,8 +515,11 @@ def validate_config(cfg: dict) -> None:
     criteria = cfg.get("search_criteria")
     if not isinstance(applicant, dict) or not isinstance(criteria, dict):
         raise SystemExit("config.yaml requires applicant and search_criteria sections")
+    families, _ = role_catalog()
+    validate_priority_companies(cfg.get("priority_companies"), families)
     references = cfg.get("visual_references")
     role_references = cfg.get("cv_references")
+    regulated_patterns = cfg.get("regulated_role_patterns", [])
     if (not isinstance(references, dict) or set(references) != {"cv", "letter"} or
             any(not isinstance(value, str) or not value or Path(value).name != value or
                 Path(value).suffix.lower() != ".pdf" for value in references.values()) or
@@ -385,6 +527,13 @@ def validate_config(cfg: dict) -> None:
             any(not isinstance(value, str) or not value or Path(value).name != value or
                 Path(value).suffix.lower() != ".pdf" for value in role_references.values())):
         raise SystemExit("visual references must contain safe PDF filenames")
+    if not isinstance(regulated_patterns, list) or any(not isinstance(value, str) for value in regulated_patterns):
+        raise SystemExit("regulated role patterns must be strings")
+    try:
+        for pattern in regulated_patterns:
+            re.compile(pattern)
+    except re.error as exc:
+        raise SystemExit("regulated role patterns contain invalid regex") from exc
     if applicant.get("residence_route") not in RESIDENCE_ROUTES:
         raise SystemExit("applicant.residence_route must be student_permit, orientation_year, highly_skilled_migrant, or other")
     if applicant.get("study_status") not in {"enrolled", "graduated"}:
@@ -394,12 +543,25 @@ def validate_config(cfg: dict) -> None:
     for field in ("current_education_level", "highest_completed_education_level"):
         if applicant.get(field) not in EDUCATION_LEVELS:
             raise SystemExit(f"applicant.{field} must be one of: " + ", ".join(EDUCATION_LEVELS))
-    if not cfg.get("study_profiles") or not cfg.get("selected_roles"):
-        raise SystemExit("configuration requires at least one study profile and role")
+    if not cfg.get("study_profiles") or not cfg.get("job_families") or not cfg.get("selected_roles"):
+        raise SystemExit("configuration requires at least one study profile, job family, and role")
     if criteria.get("max_required_education_level") not in EDUCATION_LEVELS:
         raise SystemExit("search_criteria.max_required_education_level must be one of: " + ", ".join(EDUCATION_LEVELS))
-    if not isinstance(criteria.get("max_required_experience_years"), int) or criteria["max_required_experience_years"] < 0:
-        raise SystemExit("search_criteria.max_required_experience_years must be a non-negative integer")
+    max_experience = criteria.get("max_required_experience_years")
+    if max_experience is not None and (type(max_experience) is not int or max_experience < 0):
+        raise SystemExit("search_criteria.max_required_experience_years must be null or a non-negative integer")
+    accepted_seniority = criteria.get("accepted_seniority")
+    if not isinstance(accepted_seniority, list) or not accepted_seniority or set(accepted_seniority) - set(SENIORITY_LEVELS):
+        raise SystemExit("search_criteria.accepted_seniority must contain supported seniority levels")
+    exclusions = criteria.get("seniority_title_exclusions")
+    if not isinstance(exclusions, list) or any(not isinstance(value, str) or not value for value in exclusions):
+        raise SystemExit("search_criteria.seniority_title_exclusions must contain strings")
+    experience_policy = criteria.get("experience_policy")
+    countable = experience_policy.get("countable_types") if isinstance(experience_policy, dict) else None
+    allowed_countable = {"professional_employment", "formal_internship", "academic_employment"}
+    if (not isinstance(countable, list) or "professional_employment" not in countable or
+            set(countable) - allowed_countable):
+        raise SystemExit("search_criteria.experience_policy.countable_types requires professional employment and supports internship/academic employment")
     internships = criteria.get("internships")
     eligibility = criteria.get("eligibility")
     locations = criteria.get("locations")
@@ -425,8 +587,11 @@ def setup_choice(label: str, choices: list[str], current: str, input_fn=input) -
     return value
 
 
-def setup_list(label: str, choices: list[str], current: list[str], input_fn=input) -> list[str]:
+def setup_list(label: str, choices: list[str], current: list[str], input_fn=input,
+               require_explicit: bool = False) -> list[str]:
     answer = input_fn(f"{label}, comma-separated [{', '.join(current)}]: ").strip()
+    if not answer and require_explicit:
+        raise SystemExit(f"{label} requires an explicit selection")
     values = [item.strip() for item in answer.split(",") if item.strip()] if answer else current
     invalid = set(values) - set(choices)
     if invalid or not values:
@@ -435,18 +600,49 @@ def setup_list(label: str, choices: list[str], current: list[str], input_fn=inpu
 
 
 def setup_config(input_fn=input) -> dict:
-    path = ROOT / "config.yaml"
+    PROFILE_ROOT.mkdir(parents=True, exist_ok=True)
+    path = PROFILE_ROOT / "config.yaml"
     current = read_yaml(path) if path.exists() else read_yaml(ROOT / "config.example.yaml")
     applicant = current.get("applicant", {})
     criteria = current.get("search_criteria", {})
     locations = read_yaml(ROOT / "config.defaults.yaml")["search_criteria"]["locations"]["groups"]
     profiles = read_yaml(ROOT / "study_profiles.yaml")["profiles"]
+    families, catalog = role_catalog()
     legacy = LEGACY_PRESETS.get(criteria.get("preset"))
-    current_studies = criteria.get("study_profiles") or ([legacy[0]] if legacy else [next(iter(profiles))])
-    selected_studies = setup_list("Study profiles", list(profiles), current_studies, input_fn)
+    current_studies = criteria.get("study_profiles") or ([legacy[0]] if legacy else [])
+    master = master_cv_path()
+    if master.is_file():
+        master_document = master.read_text()
+        detected = study_profile_suggestions(master_document)
+        for match in programme_matches(master_document):
+            emit(f"RIO programme: {match['excerpt']} | {match['code']} {match['level']} | "
+                 f"sector={match['sector']} | professional_requirements={match['professional_requirements']}",
+                 stream=sys.stderr)
+        for item in detected:
+            excerpts = "; ".join(evidence["excerpt"] for evidence in item["evidence"])
+            emit(f"study-profile suggestion: {item['profile']} | confidence={item['confidence']} | "
+                 f"evidence={excerpts}", stream=sys.stderr)
+        family_detected = job_family_suggestions(master_document)
+        for item in family_detected:
+            excerpts = "; ".join(evidence["excerpt"] for evidence in item["evidence"])
+            emit(f"job-family suggestion: {item['family']} | confidence={item['confidence']} | "
+                 f"evidence={excerpts} | rationale={item['rationale']}", stream=sys.stderr)
+        if any(item["professional_requirements"] for item in programme_matches(master_document)):
+            emit("RIO marks a matched programme with professional requirements; regulated roles remain blocked",
+                 stream=sys.stderr)
+    selected_studies = setup_list("Study profiles", list(profiles), current_studies, input_fn,
+                                  require_explicit=not current_studies)
     recommended = list(dict.fromkeys(role for study in selected_studies for role in profiles[study]["roles"]))
-    current_roles = criteria.get("roles") or (legacy[1] if legacy else recommended)
-    selected_roles = setup_list("Job roles", recommended, [role for role in current_roles if role in recommended] or recommended, input_fn)
+    current_roles = criteria.get("roles") or (legacy[1] if legacy else [])
+    recommended_families = list(dict.fromkeys(catalog[role]["family"] for role in recommended))
+    current_families = criteria.get("job_families") or list(dict.fromkeys(
+        catalog[role]["family"] for role in current_roles if role in catalog))
+    selected_families = setup_list("Job families", list(families), current_families, input_fn,
+                                   require_explicit=not current_families)
+    available_roles = [role for role, definition in catalog.items() if definition["family"] in selected_families]
+    default_roles = [role for role in current_roles if role in available_roles]
+    selected_roles = setup_list("Job roles", available_roles, default_roles, input_fn,
+                                require_explicit=not default_roles)
     yes_no = lambda label, value: setup_choice(label, ["yes", "no"], "yes" if value else "no", input_fn) == "yes"
     result = {
         "schedule": input_fn(f"Schedule [{current.get('schedule', '30 11 * * 1-5')}]: ").strip() or current.get("schedule", "30 11 * * 1-5"),
@@ -462,9 +658,13 @@ def setup_config(input_fn=input) -> dict:
         },
         "search_criteria": {
             "study_profiles": selected_studies,
+            "job_families": selected_families,
             "roles": selected_roles,
             "max_required_education_level": setup_choice("Maximum required education", list(EDUCATION_LEVELS), criteria.get("max_required_education_level", "wo_master"), input_fn),
-            "max_required_experience_years": input_fn(f"Maximum required experience years [{criteria.get('max_required_experience_years', 1)}]: ").strip() or criteria.get("max_required_experience_years", 1),
+            "max_required_experience_years": input_fn(f"Maximum required experience years or none [{criteria.get('max_required_experience_years', 1)}]: ").strip() or criteria.get("max_required_experience_years", 1),
+            "accepted_seniority": setup_list("Accepted seniority", list(SENIORITY_LEVELS), criteria.get("accepted_seniority", ["entry", "junior"]), input_fn),
+            "seniority_title_exclusions": criteria.get("seniority_title_exclusions", []),
+            "experience_policy": criteria.get("experience_policy", {"countable_types": ["professional_employment", "formal_internship", "academic_employment"]}),
             "internships": {key: yes_no(f"Accept {key.replace('_', ' ')} internships", criteria.get("internships", {}).get(key, False)) for key in ("regular", "graduation", "enrollment_required")},
             "schedules": setup_list("Schedules", ["full_time", "part_time"], criteria.get("schedules", ["full_time"]), input_fn),
             "workplaces": setup_list("Workplaces", ["onsite", "hybrid", "remote"], criteria.get("workplaces", ["onsite", "hybrid", "remote"]), input_fn),
@@ -477,25 +677,55 @@ def setup_config(input_fn=input) -> dict:
         },
     }
     try:
-        result["search_criteria"]["max_required_experience_years"] = int(result["search_criteria"]["max_required_experience_years"])
+        raw_experience = result["search_criteria"]["max_required_experience_years"]
+        result["search_criteria"]["max_required_experience_years"] = None if str(raw_experience).lower() in {"none", "null"} else int(raw_experience)
         validate_config(resolved_config(result))
     except ValueError as exc:
         raise SystemExit("Maximum required experience years must be an integer") from exc
     temporary = path.with_suffix(".yaml.tmp")
     temporary.write_text(yaml.safe_dump(result, sort_keys=False, allow_unicode=True))
+    temporary.chmod(0o600)
     os.replace(temporary, path)
-    master = master_cv_path()
     if master.is_file():
         for warning in summary_bank_role_warnings(resolved_config(result), master.read_text()):
             emit("setup warning: " + warning, stream=sys.stderr)
     return result
 
 
+def sqlite_quick_check(conn: sqlite3.Connection) -> str:
+    return str(conn.execute("PRAGMA quick_check").fetchone()[0])
+
+
+def backup_database(conn: sqlite3.Connection) -> Path:
+    destination = DATA / "backups" / f"jobs-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')}.sqlite3"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    backup = sqlite3.connect(destination)
+    try:
+        conn.backup(backup)
+        if sqlite_quick_check(backup) != "ok":
+            raise RuntimeError("database backup failed integrity check")
+    finally:
+        backup.close()
+    return destination
+
+
 def db() -> sqlite3.Connection:
     DATA.mkdir(exist_ok=True)
+    existed = DB_PATH.exists()
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    conn.executescript("""
+    try:
+        current_version = int(conn.execute("PRAGMA user_version").fetchone()[0])
+        if current_version > SCHEMA_VERSION:
+            raise RuntimeError(f"database schema {current_version} is newer than supported {SCHEMA_VERSION}")
+        if current_version == SCHEMA_VERSION:
+            return conn
+        if existed:
+            if sqlite_quick_check(conn) != "ok":
+                raise RuntimeError("database failed integrity check before migration")
+            backup_database(conn)
+        conn.execute("BEGIN IMMEDIATE")
+        schema = """
         CREATE TABLE IF NOT EXISTS sponsors (
             normalized_name TEXT PRIMARY KEY, legal_name TEXT NOT NULL, kvk TEXT,
             fetched_at TEXT NOT NULL
@@ -553,18 +783,21 @@ def db() -> sqlite3.Connection:
             occurred_at TEXT NOT NULL, notes TEXT, feedback TEXT,
             payload TEXT NOT NULL, created_at TEXT NOT NULL
         );
-    """)
-    feedback_columns = {row[1] for row in conn.execute("PRAGMA table_info(feedback)")}
-    for name, sql_type in {
+        """
+        for statement in schema.split(";"):
+            if statement.strip():
+                conn.execute(statement)
+        feedback_columns = {row[1] for row in conn.execute("PRAGMA table_info(feedback)")}
+        for name, sql_type in {
         "attempts": "INTEGER NOT NULL DEFAULT 0",
         "next_retry_at": "TEXT",
         "last_error": "TEXT",
         "processing_at": "TEXT",
-    }.items():
-        if name not in feedback_columns:
-            conn.execute(f"ALTER TABLE feedback ADD COLUMN {name} {sql_type}")
-    job_columns = {row[1] for row in conn.execute("PRAGMA table_info(jobs)")}
-    for name, sql_type in {
+        }.items():
+            if name not in feedback_columns:
+                conn.execute(f"ALTER TABLE feedback ADD COLUMN {name} {sql_type}")
+        job_columns = {row[1] for row in conn.execute("PRAGMA table_info(jobs)")}
+        for name, sql_type in {
         "source_company": "TEXT",
         "discovery_source": "TEXT NOT NULL DEFAULT 'direct'",
         "posted_at": "TEXT",
@@ -575,28 +808,36 @@ def db() -> sqlite3.Connection:
         "prior_status": "TEXT",
         "warnings": "TEXT NOT NULL DEFAULT '[]'",
         "verification_needed": "TEXT NOT NULL DEFAULT '[]'",
-    }.items():
-        if name not in job_columns:
-            conn.execute(f"ALTER TABLE jobs ADD COLUMN {name} {sql_type}")
-    lead_columns = {row[1] for row in conn.execute("PRAGMA table_info(lead_imports)")}
-    for name in ("company", "title"):
-        if name not in lead_columns:
-            conn.execute(f"ALTER TABLE lead_imports ADD COLUMN {name} TEXT")
-    company_columns = {row[1] for row in conn.execute("PRAGMA table_info(companies)")}
-    for name, sql_type in {
+        }.items():
+            if name not in job_columns:
+                conn.execute(f"ALTER TABLE jobs ADD COLUMN {name} {sql_type}")
+        lead_columns = {row[1] for row in conn.execute("PRAGMA table_info(lead_imports)")}
+        for name in ("company", "title"):
+            if name not in lead_columns:
+                conn.execute(f"ALTER TABLE lead_imports ADD COLUMN {name} TEXT")
+        company_columns = {row[1] for row in conn.execute("PRAGMA table_info(companies)")}
+        for name, sql_type in {
         "consecutive_failures": "INTEGER NOT NULL DEFAULT 0",
         "last_error": "TEXT",
         "last_success_at": "TEXT",
         "next_retry_at": "TEXT",
         "last_jobs_found": "INTEGER NOT NULL DEFAULT 0",
         "empty_streak": "INTEGER NOT NULL DEFAULT 0",
-    }.items():
-        if name not in company_columns:
-            conn.execute(f"ALTER TABLE companies ADD COLUMN {name} {sql_type}")
-    scan_columns = {row[1] for row in conn.execute("PRAGMA table_info(scan_runs)")}
-    if "screening_job_ids" not in scan_columns:
-        conn.execute("ALTER TABLE scan_runs ADD COLUMN screening_job_ids TEXT NOT NULL DEFAULT '[]'")
-    return conn
+        }.items():
+            if name not in company_columns:
+                conn.execute(f"ALTER TABLE companies ADD COLUMN {name} {sql_type}")
+        scan_columns = {row[1] for row in conn.execute("PRAGMA table_info(scan_runs)")}
+        if "screening_job_ids" not in scan_columns:
+            conn.execute("ALTER TABLE scan_runs ADD COLUMN screening_job_ids TEXT NOT NULL DEFAULT '[]'")
+        conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
+        if sqlite_quick_check(conn) != "ok":
+            raise RuntimeError("database failed integrity check after migration")
+        conn.commit()
+        return conn
+    except Exception:
+        conn.rollback()
+        conn.close()
+        raise
 
 
 def normalize_company(value: str) -> str:
@@ -763,6 +1004,19 @@ def seed_companies(conn: sqlite3.Connection, cfg: dict) -> None:
             "INSERT OR IGNORE INTO companies(normalized_name,display_name,tier,sponsor) "
             "SELECT normalized_name,legal_name,2,1 FROM sponsors"
         )
+
+
+def priority_source_families(cfg: dict) -> dict[str, list[str]]:
+    return {normalize_company(item["name"]): item.get("families", [])
+            for item in cfg["priority_companies"]}
+
+
+def source_selected_for_profile(normalized_name: str, cfg: dict) -> bool:
+    maintained = priority_source_families(cfg)
+    if normalized_name not in maintained:
+        return True
+    tags = maintained[normalized_name]
+    return not tags or bool(set(tags) & set(cfg["job_families"]))
 
 
 def jsonld_jobs(soup: BeautifulSoup, base_url: str) -> list[dict]:
@@ -1399,6 +1653,21 @@ def has_role_fit(job: dict, cfg: dict) -> bool:
     return role_selection_status(job, cfg) not in {"deselected", "excluded"}
 
 
+def configured_seniority_level(text: str) -> str | None:
+    for level in reversed(SENIORITY_LEVELS):
+        for term in sorted(SENIORITY_TERMS[level], key=len, reverse=True):
+            if re.search(rf"(?<!\w){re.escape(term)}(?!\w)", text, re.I):
+                return level
+    return None
+
+
+def normalized_match_seniority(value: str) -> str:
+    value = value.strip().casefold()
+    if value in {"graduate", "entry-level", "entry level"}:
+        return "entry"
+    return value
+
+
 def filter_job(job: dict, sponsor_names: set[str], cfg: dict, master_cv: str,
                review_anyway: bool = False) -> ScreeningResult:
     title = job["title"].strip()
@@ -1409,12 +1678,22 @@ def filter_job(job: dict, sponsor_names: set[str], cfg: dict, master_cv: str,
     reasons: list[str] = []
     warnings: list[str] = []
     verification: list[str] = []
-    for term in sorted(cfg["seniority_title_exclusions"], key=len, reverse=True):
+    accepted_seniority = set(criteria["accepted_seniority"])
+    title_seniority = configured_seniority_level(title)
+    if title_seniority and title_seniority not in accepted_seniority:
+        reasons.append(f"seniority title excluded: {title_seniority}")
+    explicit_exclusions = [*criteria.get("seniority_title_exclusions", []),
+                           *cfg.get("seniority_title_exclusions", [])]
+    for term in sorted(set(explicit_exclusions), key=len, reverse=True):
         if re.search(rf"(?<!\w){re.escape(term)}(?!\w)", title, re.I):
             reasons.append(f"seniority title excluded: {term}")
     body = f"{job.get('location', '')} {job.get('description', '')}"
     employment = str(job.get("employment_type", ""))
     eligibility = f"{title} {employment} {job.get('description', '')}"
+    regulated = next((pattern for pattern in cfg.get("regulated_role_patterns", [])
+                      if re.search(pattern, title, re.I)), None)
+    if regulated:
+        reasons.append("regulated profession is not supported")
     if eligibility_cfg["reject_explicit_visa_denial"] and VISA_DENIAL_RE.search(eligibility):
         reasons.append("visa sponsorship explicitly unavailable")
     is_internship = bool(INTERNSHIP_RE.search(eligibility))
@@ -1461,17 +1740,18 @@ def filter_job(job: dict, sponsor_names: set[str], cfg: dict, master_cv: str,
     elif role_status == "unclassified":
         verification.append("role title requires fit verification")
     seniority_body = re.search(
-        rf"\b(?:senior|sr\.?|medior|lead|principal|staff)\s+{cfg['seniority_role_pattern']}\b",
-        f"{title} {job.get('description', '')}", re.I)
-    if seniority_body:
+        rf"\b(?:senior|sr\.?|medior|mid[- ]level|lead|principal|staff|head|director)\s+"
+        rf"{cfg['seniority_role_pattern']}\b", job.get("description", ""), re.I)
+    body_level = configured_seniority_level(seniority_body.group(0)) if seniority_body else None
+    if body_level and body_level not in accepted_seniority:
         reasons.append(f"seniority description excluded: {seniority_body.group(0)}")
     experience_body = re.sub(r"\b(?:0|1)\s*(?:[-–]|to)\s*\d+\s*years?", "1 years", body, flags=re.I)
     years = [int(x) for x in YEAR_RE.findall(experience_body)]
     excess = EXCESS_EXPERIENCE_RE.search(experience_body)
     max_years = criteria["max_required_experience_years"]
-    if years and max(years) > max_years:
+    if max_years is not None and years and max(years) > max_years:
         reasons.append(f"minimum experience exceeds configured maximum ({max(years)} years)")
-    elif excess:
+    elif max_years is not None and excess:
         value = next((item for item in excess.groups() if item), None)
         if value and int(value) > max_years:
             reasons.append(f"minimum experience exceeds configured maximum ({value} years)")
@@ -1481,7 +1761,9 @@ def filter_job(job: dict, sponsor_names: set[str], cfg: dict, master_cv: str,
     elif not education:
         verification.append("required education level not stated")
     dutch = required_dutch_level(body)
-    if dutch and DUTCH_LEVELS.index(dutch) > DUTCH_LEVELS.index(applicant["dutch_level"]):
+    if dutch and applicant["dutch_level"] == "unknown":
+        verification.append(f"Dutch level requirement ({dutch}) against applicant level")
+    elif dutch and DUTCH_LEVELS.index(dutch) > DUTCH_LEVELS.index(applicant["dutch_level"]):
         reasons.append(f"Dutch requirement exceeds applicant level ({dutch} required)")
     if SECURITY_RE.search(body) and not eligibility_cfg["accept_security_screening"]:
         reasons.append("nationality, clearance, screening, or export-control restriction")
@@ -1716,7 +1998,8 @@ def apply_cv_section_policy(brief: dict, document: str) -> dict:
     return brief
 
 
-def relevant_experience_assessment(details: dict, document: str, today: date | None = None) -> dict:
+def relevant_experience_assessment(details: dict, document: str, today: date | None = None,
+                                   cfg: dict | None = None) -> dict:
     requirement = details.get("experience_requirement")
     classifications = details.get("experience_roles")
     if not isinstance(requirement, dict) or set(requirement) != {"kind", "minimum_months", "wording"}:
@@ -1728,6 +2011,7 @@ def relevant_experience_assessment(details: dict, document: str, today: date | N
             not isinstance(wording, str) or (kind == "none" and minimum != 0)):
         raise SystemExit("invalid experience requirement")
     roles = professional_experience_roles(document, today)
+    countable_types = set((cfg or config())["search_criteria"]["experience_policy"]["countable_types"])
     by_name = {role["role"]: role for role in roles}
     if not isinstance(classifications, list) or len(classifications) != len(roles):
         raise SystemExit("experience assessment must classify every Professional Experience role")
@@ -1754,6 +2038,8 @@ def relevant_experience_assessment(details: dict, document: str, today: date | N
         if item["count_status"] == "confirmed" and item["experience_type"] not in {
                 "professional_employment", "formal_internship", "academic_employment"}:
             raise SystemExit(f"non-professional experience cannot be confirmed: {item['role']}")
+        if item["count_status"] != "excluded" and item["experience_type"] not in countable_types:
+            raise SystemExit(f"experience type disabled by applicant policy: {item['role']}")
         if item["count_status"] == "confirmed":
             confirmed.update(role["months"])
         if item["count_status"] in {"confirmed", "possible"}:
@@ -1801,7 +2087,7 @@ def record_match(jid: str, result_path: Path) -> None:
         raise SystemExit("match components must sum to score")
     try:
         master_document = master_cv()
-        experience = relevant_experience_assessment(details, master_document)
+        experience = relevant_experience_assessment(details, master_document, cfg=cfg)
         projects = relevant_project_assessment(details, master_document)
     except (OSError, SystemExit):
         conn.close()
@@ -1814,8 +2100,8 @@ def record_match(jid: str, result_path: Path) -> None:
     if accepted and any(field not in details for field in brief_fields):
         conn.close()
         raise SystemExit("match result missing compact brief fields")
-    seniority = str(details.get("seniority", "")).strip().lower()
-    if accepted and seniority not in ACCEPTABLE_MATCH_SENIORITIES:
+    seniority = normalized_match_seniority(str(details.get("seniority", "")))
+    if accepted and seniority not in set(cfg["search_criteria"]["accepted_seniority"]):
         accepted = False
     requirement_kind = experience["requirement"]["kind"]
     if requirement_kind == "mandatory" and experience["status"] == "insufficient":
@@ -1884,7 +2170,7 @@ def master_cv() -> str:
 
 
 def master_cv_path() -> Path:
-    return ROOT / "master_cv.md"
+    return PROFILE_ROOT / "master_cv.md"
 
 
 def source_error_kind(exc: Exception) -> str:
@@ -1935,17 +2221,79 @@ def cleanup_out_of_scope_jobs(conn: sqlite3.Connection) -> int:
 
 
 def source_health() -> None:
-    conn = db()
+    cfg, conn = config(), db()
     rows = [dict(row) for row in conn.execute(
         "SELECT display_name,career_url,consecutive_failures,last_error,last_success_at,next_retry_at,last_jobs_found,empty_streak "
         "FROM companies WHERE career_url IS NOT NULL ORDER BY consecutive_failures DESC,empty_streak DESC,display_name")]
     conn.close()
+    tags = priority_source_families(cfg)
     for row in rows:
         row["health"] = "failing" if row["consecutive_failures"] else "warning" if row["empty_streak"] else "healthy"
+        key = normalize_company(row["display_name"])
+        row["families"] = tags.get(key, [])
+        row["selected_for_profile"] = source_selected_for_profile(key, cfg)
     print(json.dumps(rows, indent=2))
 
 
+def normalized_role_gap_title(title: str) -> str:
+    # ponytail: exact normalized grouping; add semantic clustering only if real gaps split across aliases.
+    terms = sorted({term for values in SENIORITY_TERMS.values() for term in values}, key=len, reverse=True)
+    value = title.casefold()
+    for term in terms:
+        value = re.sub(rf"(?<!\w){re.escape(term)}(?!\w)", " ", value)
+    return " ".join(re.findall(r"[a-z0-9]+", value))
+
+
+def role_gap_report() -> dict:
+    cfg, conn = config(), db()
+    rows = conn.execute(
+        "SELECT id,company,title,description,reasons FROM jobs WHERE archived_at IS NULL "
+        "ORDER BY COALESCE(last_seen_at,discovered_at) DESC"
+    ).fetchall()
+    conn.close()
+    groups: dict[str, list[dict]] = {}
+    blocked = ("regulated profession", "seniority title excluded", "role intentionally deselected",
+               "role family not aligned")
+    for row in rows:
+        job = dict(row)
+        reasons = json.loads(job.get("reasons") or "[]")
+        if role_selection_status(job, cfg) != "unclassified" or any(
+                phrase in reason for phrase in blocked for reason in reasons):
+            continue
+        evidence = relevance_hits(job, cfg)["strong"]
+        if not evidence:
+            continue
+        key = normalized_role_gap_title(job["title"])
+        if key:
+            groups.setdefault(key, []).append({"job_id": job["id"], "company": job["company"],
+                                               "title": job["title"], "evidence": evidence})
+    gaps = []
+    for normalized, items in groups.items():
+        employers = {normalize_company(item["company"]) for item in items}
+        if len(items) >= 3 and len(employers) >= 2:
+            gaps.append({"normalized_title": normalized, "jobs": len(items),
+                         "employers": len(employers), "examples": items[:5]})
+    gaps.sort(key=lambda item: (-item["jobs"], -item["employers"], item["normalized_title"]))
+    return {"advisory_only": True, "threshold": {"jobs": 3, "employers": 2}, "gaps": gaps}
+
+
 def scan(marketplace_results: dict[str, Path] | None = None) -> None:
+    DATA.mkdir(parents=True, exist_ok=True)
+    lock = (DATA / "scan.lock").open("a")
+    try:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise SystemExit(f"scan already running for profile: {PROFILE_ROOT}") from exc
+        _scan(marketplace_results)
+    finally:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+        finally:
+            lock.close()
+
+
+def _scan(marketplace_results: dict[str, Path] | None = None) -> None:
     cfg, conn = config(), db()
     run = conn.execute("INSERT INTO scan_runs(started_at) VALUES (?)", (datetime.now(timezone.utc).isoformat(),)).lastrowid
     found = accepted_count = seniority_rejected = sources_ok = sources_failed = 0
@@ -1957,10 +2305,12 @@ def scan(marketplace_results: dict[str, Path] | None = None) -> None:
         cleaned = cleanup_out_of_scope_jobs(conn)
         sponsors = {r[0] for r in conn.execute("SELECT normalized_name FROM sponsors")}
         cv = master_cv()
-        candidates = conn.execute(
+        all_candidates = conn.execute(
             "SELECT normalized_name,display_name,career_url,next_retry_at FROM companies WHERE sponsor=1 AND career_url IS NOT NULL "
-            "ORDER BY tier,last_scanned_at LIMIT ?", (len(cfg["priority_companies"]) + cfg["tier2_batch_size"],)
+            "ORDER BY tier,last_scanned_at"
         ).fetchall()
+        candidates = [row for row in all_candidates if source_selected_for_profile(row["normalized_name"], cfg)]
+        sources_skipped_family = len(all_candidates) - len(candidates)
         now = datetime.now(timezone.utc).isoformat()
         sources = [row for row in candidates if not row["next_retry_at"] or row["next_retry_at"] <= now]
         sources_deferred = len(candidates) - len(sources)
@@ -2019,6 +2369,8 @@ def scan(marketplace_results: dict[str, Path] | None = None) -> None:
         emit(json.dumps({"scan_run_id": run, "found": found, "new_accepted": accepted_count,
                          "screening_job_ids": screening_job_ids, "sponsor_snapshot": sponsor_snapshot,
                          "seniority_rejected": seniority_rejected, "sources": len(candidates),
+                         "sources_selected": len(candidates),
+                         "sources_skipped_family": sources_skipped_family,
                          "sources_ok": sources_ok, "sources_failed": sources_failed,
                          "sources_deferred": sources_deferred, "failure_kinds": failure_kinds,
                          "marketplaces": marketplace, "cleaned_out_of_scope": cleaned, **availability}))
@@ -2026,6 +2378,8 @@ def scan(marketplace_results: dict[str, Path] | None = None) -> None:
         conn.execute("UPDATE scan_runs SET finished_at=?,error=? WHERE id=?", (datetime.now(timezone.utc).isoformat(), str(exc), run))
         conn.commit()
         raise
+    finally:
+        conn.close()
 
 
 def prune() -> None:
@@ -2336,7 +2690,9 @@ def document_preflight(document: str, document_type: str, brief: dict, cfg: dict
     failures = []
     words = len(document.split())
     if document_type == "cv":
-        canonical = ("summary", "experience", "projects", "education", "skills", "languages")
+        canonical = ("summary", "experience", "projects", "research", "publications", "fieldwork",
+                     "laboratory work", "policy work", "portfolio", "education", "certifications",
+                     "licences", "skills", "languages")
         required = tuple(name.lower() for name in
                          brief.get("generation_constraints", {}).get(
                              "required_cv_sections", ("Summary", "Education", "Skills", "Languages")))
@@ -2350,6 +2706,11 @@ def document_preflight(document: str, document_type: str, brief: dict, cfg: dict
                   if match.group(1).lower() in canonical]
         if actual != [name for name in canonical if name in actual]:
             failures.append("CV sections out of order: expected Summary, Experience, Projects, Education, Skills, Languages")
+        for heading in ("Research", "Publications", "Fieldwork", "Laboratory Work", "Policy Work",
+                        "Portfolio", "Certifications", "Licences"):
+            content = "\n".join(section_markdown(document, heading).splitlines()[1:]).strip()
+            if re.search(rf"(?im)^##\s+{re.escape(heading)}\s*$", document) and not content:
+                failures.append(f"CV {heading} section must contain evidence or be omitted")
         source_counts = brief.get("source_item_counts", {})
         for heading in ("Experience", "Projects"):
             section = section_markdown(document, heading)
@@ -2746,14 +3107,26 @@ def cv_reference(title: str, cfg: dict | None = None) -> Path:
     settings = cfg or config()
     filename = (settings.get("cv_references", {}).get(cv_role(title, settings)) or
                 settings["visual_references"]["cv"])
-    return ROOT / "references" / filename if filename else None
+    if not filename:
+        return None
+    local = PROFILE_ROOT / "references" / filename
+    shared = ROOT / "references" / filename
+    if local.is_file():
+        return local
+    if shared.is_file():
+        return shared
+    if filename == "cv-data-scientist.pdf":
+        return ROOT / "references" / "cv-reference.pdf"
+    return shared
 
 
 def document_reference(document_type: str, title: str = "", cfg: dict | None = None) -> Path:
     settings = cfg or config()
     if document_type == "cv":
         return cv_reference(title, settings)
-    return ROOT / "references" / settings["visual_references"][document_type]
+    filename = settings["visual_references"][document_type]
+    local = PROFILE_ROOT / "references" / filename
+    return local if local.is_file() else ROOT / "references" / filename
 
 
 def make_pdf_comparison(generated: Path, reference: Path, destination: Path,
@@ -3205,10 +3578,53 @@ def print_next_actions() -> None:
     print(json.dumps(next_actions(), indent=2))
 
 
+def database_status() -> dict:
+    status = {"path": str(DB_PATH), "exists": DB_PATH.is_file(), "schema_version": None,
+              "quick_check": "missing", "latest_backup": None}
+    backups = sorted((DATA / "backups").glob("jobs-*.sqlite3")) if (DATA / "backups").is_dir() else []
+    status["latest_backup"] = str(backups[-1]) if backups else None
+    if not DB_PATH.is_file():
+        return status
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        status["schema_version"] = int(conn.execute("PRAGMA user_version").fetchone()[0])
+        status["quick_check"] = sqlite_quick_check(conn)
+    except sqlite3.DatabaseError as exc:
+        status["quick_check"] = f"error: {exc}"
+    finally:
+        if conn is not None:
+            conn.close()
+    return status
+
+
+def setup_status() -> dict:
+    path = PROFILE_ROOT / "config.yaml"
+    if not path.is_file():
+        return {"complete": False, "message": "config.yaml is missing; run init-profile or setup"}
+    try:
+        criteria = read_yaml(path).get("search_criteria", {})
+    except SystemExit as exc:
+        return {"complete": False, "message": str(exc)}
+    complete = bool(criteria.get("preset") or
+                    all(criteria.get(key) for key in ("study_profiles", "roles")))
+    return {"complete": complete,
+            "message": "ready" if complete else f"run: python jobflow.py --profile {PROFILE_ROOT} setup"}
+
+
 def doctor_report() -> dict:
-    actions = next_actions()
+    database = database_status()
+    actions = next_actions() if database["quick_check"] in {"ok", "missing"} else {
+        "counts": {}, "source_attention": []}
+    if database["quick_check"] in {"ok", "missing"}:
+        database = database_status()
     return {
+        "profile": {"path": str(PROFILE_ROOT),
+                    "private_permissions": not bool(PROFILE_ROOT.stat().st_mode & 0o077)
+                    if PROFILE_ROOT.exists() else False},
         "preflight": preflight_status(),
+        "setup": setup_status(),
+        "database": database,
         "master_cv": {"path": str(master_cv_path()), "exists": master_cv_path().is_file()},
         "codex_cli": bool(os.environ.get("CODEX_BIN") or shutil.which("codex")),
         "queues": actions["counts"],
@@ -3308,6 +3724,376 @@ def summary_bank_role_warnings(cfg: dict, document: str) -> list[str]:
     return warnings
 
 
+RESEARCH_UNIVERSITIES = {
+    "Technische Universiteit Eindhoven": ("Eindhoven University of Technology", "tue"),
+    "Universiteit van Amsterdam": ("University of Amsterdam", "first_three"),
+    "Technische Universiteit Delft": ("Delft University of Technology", "first_three"),
+    "Universiteit Utrecht": ("Utrecht University", "first_three"),
+    "Rijksuniversiteit Groningen": ("University of Groningen", "other"),
+    "Vrije Universiteit Amsterdam": ("Vrije Universiteit Amsterdam", "other"),
+    "Universiteit Leiden": ("Leiden University", "other"),
+    "Radboud Universiteit Nijmegen": ("Radboud University", "other"),
+    "Universiteit Maastricht": ("Maastricht University", "other"),
+    "Erasmus Universiteit Rotterdam": ("Erasmus University Rotterdam", "other"),
+    "Tilburg University": ("Tilburg University", "other"),
+    "Universiteit Twente": ("University of Twente", "other"),
+    "Wageningen University": ("Wageningen University", "other"),
+    "Open Universiteit": ("Open University", "other"),
+}
+
+
+def reduce_wo_programmes(raw: bytes, snapshot_date: date) -> tuple[dict, dict[str, list[dict]]]:
+    rows = csv.DictReader(raw.decode("utf-8-sig").splitlines())
+    programmes: dict[tuple[str, str], dict] = {}
+    registrations: dict[str, dict[tuple[str, str], dict]] = {}
+    for row in rows:
+        if row.get("OPLEIDINGSEENHEID_SOORT") != "OPLEIDING" or row.get("NIVEAU") not in {"WO-BA", "WO-MA"}:
+            continue
+        end = row.get("INSTROOM_EINDDATUM", "").strip()
+        if end and end < snapshot_date.isoformat():
+            continue
+        code, level = row.get("ERKENDEOPLEIDINGSCODE", "").strip(), row["NIVEAU"]
+        sector = row.get("ONDERDEEL", "").strip()
+        if not code or sector not in SECTOR_PROFILES:
+            continue
+        item = programmes.setdefault((code, level), {
+            "code": code, "level": level, "sector": sector, "names": set(),
+            "professional_requirements": False,
+        })
+        row_names = {row[field].strip() for field in (
+            "OPLEIDINGSEENHEID_NAAM", "OPLEIDINGSEENHEID_INTERNATIONALE_NAAM")
+            if row.get(field, "").strip()}
+        item["names"].update(row_names)
+        requirement = row.get("BEROEPSEISEN", "").strip()
+        row_requires_profession = bool(requirement and requirement != "GEEN_BEROEPSEISEN")
+        item["professional_requirements"] |= row_requires_profession
+        institution = row.get("ONDERWIJSBESTUUR_NAAM", "").strip()
+        if institution in RESEARCH_UNIVERSITIES:
+            registration = registrations.setdefault(institution, {}).setdefault((code, level), {
+                "code": code, "level": level, "names": set(), "professional_requirements": False,
+            })
+            registration["names"].update(row_names)
+            registration["professional_requirements"] |= row_requires_profession
+    reduced = [{**item, "names": sorted(item["names"], key=str.casefold)}
+               for item in programmes.values() if item["names"]]
+    reduced.sort(key=lambda item: (item["code"], item["level"]))
+    catalog = {
+        "source": "DUO RIO Overzicht Erkenningen ho",
+        "source_date": snapshot_date.isoformat(),
+        "source_sha256": hashlib.sha256(raw).hexdigest(),
+        "programmes": reduced,
+    }
+    rendered_registrations = {
+        institution: sorted(({**item, "names": sorted(item["names"], key=str.casefold)}
+                             for item in items.values()), key=lambda item: (item["code"], item["level"]))
+        for institution, items in registrations.items()
+    }
+    return catalog, rendered_registrations
+
+
+def build_wo_programme_catalog(source: Path, destination: Path = WO_CATALOG_PATH,
+                               as_of: date | None = None) -> dict:
+    """Reduce DUO's recognition CSV to an offline, institution-neutral WO catalogue."""
+    result, _ = reduce_wo_programmes(source.read_bytes(), as_of or date.today())
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+    return result
+
+
+def programme_fixture_outputs(catalog: dict, registrations: dict[str, list[dict]],
+                              fixture_root: Path) -> dict[Path, dict]:
+    missing = set(RESEARCH_UNIVERSITIES) - set(registrations)
+    if missing:
+        raise RuntimeError("RIO source is missing research universities: " + ", ".join(sorted(missing)))
+    current_tue_path = fixture_root / "tue_programmes.json"
+    current_tue = json.loads(current_tue_path.read_text()) if current_tue_path.is_file() else {"programmes": []}
+    curated = {(item["code"], item["level"]): item for item in current_tue.get("programmes", [])}
+    tue = []
+    for item in registrations["Technische Universiteit Eindhoven"]:
+        old = curated.get((item["code"], item["level"]))
+        if not old or not old.get("profiles") or not old.get("families"):
+            raise RuntimeError(f"TU/e programme {item['code']} {item['level']} needs curated profiles and families")
+        tue.append({"code": item["code"], "level": item["level"], "names": item["names"],
+                    "profiles": old["profiles"], "families": old["families"]})
+
+    def grouped(kind: str) -> dict:
+        universities = []
+        for institution, (label, group) in RESEARCH_UNIVERSITIES.items():
+            if group == kind:
+                programmes = [{"code": item["code"], "level": item["level"], "names": item["names"]}
+                              for item in registrations[institution]]
+                universities.append({"institution": institution, "label": label, "programmes": programmes})
+        return {"source_date": catalog["source_date"], "source_sha256": catalog["source_sha256"],
+                "universities": universities}
+
+    return {
+        current_tue_path: {"institution": "Eindhoven University of Technology",
+                           "source_date": catalog["source_date"],
+                           "source_sha256": catalog["source_sha256"], "programmes": tue},
+        fixture_root / "university_programmes.json": grouped("first_three"),
+        fixture_root / "other_research_universities.json": grouped("other"),
+    }
+
+
+def validate_programme_outputs(catalog: dict, fixtures: dict[Path, dict]) -> None:
+    keys = [(item["code"], item["level"]) for item in catalog["programmes"]]
+    if len(keys) != len(set(keys)) or any(item["sector"] not in SECTOR_PROFILES or not item["names"] or
+                                         not isinstance(item.get("professional_requirements"), bool)
+                                         for item in catalog["programmes"]):
+        raise RuntimeError("catalogue completeness, uniqueness, or sector validation failed")
+    catalog_keys = set(keys)
+    institutions = set()
+    for path, fixture in fixtures.items():
+        groups = ([{"institution": fixture["institution"], "programmes": fixture["programmes"]}]
+                  if path.name == "tue_programmes.json" else fixture["universities"])
+        if fixture["source_date"] != catalog["source_date"] or fixture["source_sha256"] != catalog["source_sha256"]:
+            raise RuntimeError("fixture source date or digest does not match catalogue")
+        for group in groups:
+            institutions.add(group["institution"])
+            group_keys = [(item["code"], item["level"]) for item in group["programmes"]]
+            if (len(group_keys) != len(set(group_keys)) or not set(group_keys) <= catalog_keys or
+                    any(item["level"] not in {"WO-BA", "WO-MA"} or not item["names"]
+                        for item in group["programmes"])):
+                raise RuntimeError(f"invalid university fixture: {path.name}")
+    if len(institutions) != 14:
+        raise RuntimeError(f"expected 14 research universities, found {len(institutions)}")
+    families, _ = role_catalog()
+    if any(not any(re.search(pattern, name, re.I) for family in families.values()
+                   for pattern in family.get("programme_patterns", []) for name in item["names"])
+           and item["sector"] not in SECTOR_FAMILY_FALLBACKS for item in catalog["programmes"]):
+        raise RuntimeError("a catalogue programme lacks explicit or sector family coverage")
+
+
+def refresh_programme_catalog(source: Path, as_of: date, check: bool = False,
+                              catalog_path: Path = WO_CATALOG_PATH,
+                              fixture_root: Path = ROOT / "tests" / "fixtures") -> dict:
+    raw = source.read_bytes()
+    catalog, registrations = reduce_wo_programmes(raw, as_of)
+    fixtures = programme_fixture_outputs(catalog, registrations, fixture_root)
+    validate_programme_outputs(catalog, fixtures)
+    outputs = {catalog_path: catalog, **fixtures}
+    rendered = {path: json.dumps(value, ensure_ascii=False, indent=2) + "\n"
+                for path, value in outputs.items()}
+    changed = [str(path) for path, text in rendered.items()
+               if not path.is_file() or path.read_text() != text]
+    if check:
+        return {"programmes": len(catalog["programmes"]), "changed": changed, "check": not changed}
+    originals = {path: path.read_bytes() if path.is_file() else None for path in outputs}
+    staged = {}
+    try:
+        for path, text in rendered.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            temporary = path.with_name(path.name + ".tmp")
+            temporary.write_text(text)
+            staged[path] = temporary
+        for path, temporary in staged.items():
+            os.replace(temporary, path)
+    except Exception:
+        for path, content in originals.items():
+            if content is None:
+                path.unlink(missing_ok=True)
+            else:
+                temporary = path.with_name(path.name + ".rollback")
+                temporary.write_bytes(content)
+                os.replace(temporary, path)
+        raise
+    return {"programmes": len(catalog["programmes"]), "changed": changed, "check": True}
+
+
+def wo_programme_catalog(path: Path = WO_CATALOG_PATH) -> dict:
+    try:
+        value = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"WO programme catalogue is missing or invalid: {path}") from exc
+    if (not isinstance(value, dict) or not isinstance(value.get("programmes"), list) or
+            any(not isinstance(item, dict) or not item.get("code") or item.get("level") not in {"WO-BA", "WO-MA"} or
+                item.get("sector") not in SECTOR_PROFILES or not isinstance(item.get("names"), list) or not item["names"]
+                or not isinstance(item.get("professional_requirements"), bool)
+                for item in value["programmes"])):
+        raise SystemExit("WO programme catalogue has invalid entries")
+    return value
+
+
+def normalized_degree_text(value: str) -> str:
+    value = clean_markdown_text(value).replace("&", " and ")
+    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode().casefold()
+    return " ".join(re.findall(r"[a-z0-9]+", value))
+
+
+def education_headings(document: str) -> list[str]:
+    match = re.search(r"(?ims)^##\s+Education\s*$\n(.*?)(?=^##\s+|\Z)", document)
+    return [line.strip() for line in re.findall(r"(?m)^###\s+(.+?)\s*$", match.group(1))] if match else []
+
+
+def programme_matches(document: str, catalogue: dict | None = None) -> list[dict]:
+    catalogue = catalogue or wo_programme_catalog()
+    aliases: dict[str, list[tuple[str, dict]]] = {}
+    for programme in catalogue["programmes"]:
+        for name in programme["names"]:
+            normalized = normalized_degree_text(name)
+            if normalized:
+                aliases.setdefault(normalized, []).append((name, programme))
+                aliases.setdefault(re.sub(r"\s+joint degree$", "", normalized), []).append((name, programme))
+    matches = []
+    for excerpt in education_headings(document):
+        degree_part = re.split(r"\s+[—–|]\s+", excerpt, maxsplit=1)[0]
+        heading = normalized_degree_text(degree_part)
+        expected_level = ("WO-MA" if re.match(r"(?:msc|ma|llm|master)\b", heading) else
+                          "WO-BA" if re.match(r"(?:bsc|ba|bachelor)\b", heading) else None)
+        heading = re.sub(r"^(?:msc|bsc|ma|ba|llm|master(?: of science| of arts)?|"
+                         r"bachelor(?: of science| of arts)?)(?: in| of)?\s+", "", heading)
+        for name, programme in aliases.get(heading, []):
+            if expected_level and programme["level"] != expected_level:
+                continue
+            matches.append({"excerpt": excerpt, "name": name, "code": programme["code"],
+                            "level": programme["level"], "sector": programme["sector"],
+                            "names": programme["names"],
+                            "professional_requirements": programme["professional_requirements"]})
+    return list({(item["excerpt"], item["code"], item["level"]): item for item in matches}.values())
+
+
+def study_profile_suggestions(document: str) -> list[dict]:
+    profiles = read_yaml(ROOT / "study_profiles.yaml")["profiles"]
+
+    def section_lines(pattern: str, headings_only: bool = False) -> list[str]:
+        match = re.search(rf"(?ims)^##\s+(?:{pattern})\s*$\n(.*?)(?=^##\s+|\Z)", document)
+        if not match:
+            return []
+        if headings_only:
+            return [line.strip() for line in re.findall(r"(?m)^###\s+(.+?)\s*$", match.group(1))]
+        return [line.strip() for line in match.group(1).splitlines() if line.strip()]
+
+    degree_lines = section_lines("Education", headings_only=True)
+    summary_lines = section_lines("Professional Summary Bank", headings_only=True)
+    evidence_lines = [*section_lines("Professional Experience", headings_only=True),
+                      *section_lines("Complete Project Bank|Projects", headings_only=True)]
+    suggestions = []
+    rio_matches = programme_matches(document)
+    for profile_id, profile in profiles.items():
+        evidence = []
+        for programme in rio_matches:
+            if SECTOR_PROFILES[programme["sector"]] == profile_id or any(
+                    re.search(pattern, name, re.I)
+                    for pattern in profile.get("degree_patterns", []) for name in programme["names"]):
+                evidence.append({"source": "rio_programme", "excerpt": programme["excerpt"],
+                                 "programme": programme["name"], "code": programme["code"],
+                                 "sector": programme["sector"]})
+        for source, patterns, lines in (("degree", profile.get("degree_patterns", []), degree_lines),
+                                        ("summary", profile.get("summary_patterns", []), summary_lines),
+                                        ("experience_or_project", profile.get("degree_patterns", []), evidence_lines)):
+            for pattern in patterns:
+                match = next((line for line in lines if re.search(pattern, line, re.I)), None)
+                if match:
+                    evidence.append({"source": source, "excerpt": match})
+        if evidence:
+            evidence = list({(item["source"], item["excerpt"]): item for item in evidence}.values())
+            suggestions.append({"profile": profile_id, "label": profile["label"],
+                                "confidence": "high" if any(item["source"] in {"degree", "rio_programme"}
+                                                            for item in evidence) else "medium",
+                                "evidence": evidence})
+    return suggestions
+
+
+def job_family_suggestions(document: str) -> list[dict]:
+    families, roles = role_catalog()
+    matches = programme_matches(document)
+    suggestions = {}
+    confidence_rank = {"high": 0, "medium": 1, "low": 2}
+
+    def add(family_id: str, confidence: str, evidence: dict, rationale: str) -> None:
+        item = suggestions.setdefault(family_id, {"family": family_id, "label": families[family_id]["label"],
+                                                   "confidence": confidence, "evidence": [], "rationale": rationale})
+        if confidence_rank[confidence] < confidence_rank[item["confidence"]]:
+            item["confidence"] = confidence
+            item["rationale"] = rationale
+        if evidence not in item["evidence"]:
+            item["evidence"].append(evidence)
+
+    for programme in matches:
+        matched = False
+        for family_id, family in families.items():
+            patterns = family.get("programme_patterns", [])
+            exact = any(re.search(pattern, name, re.I)
+                        for pattern in patterns for name in programme["names"])
+            if exact:
+                matched = True
+                add(family_id, "high",
+                    {"source": "rio_programme", "excerpt": programme["excerpt"], "programme": programme["name"],
+                     "code": programme["code"], "sector": programme["sector"]},
+                    "Suggested from an exact RIO programme match.")
+        if not matched:
+            family_id = SECTOR_FAMILY_FALLBACKS[programme["sector"]]
+            add(family_id, "low",
+                {"source": "rio_sector", "excerpt": programme["excerpt"], "programme": programme["name"],
+                 "code": programme["code"], "sector": programme["sector"]},
+                "Fallback from the programme's official RIO sector; user confirmation is required.")
+    matched_excerpts = {item["excerpt"] for item in matches}
+    for excerpt in education_headings(document):
+        if excerpt in matched_excerpts:
+            continue
+        degree = re.split(r"\s+[—–|]\s+", excerpt, maxsplit=1)[0]
+        normalized = normalized_degree_text(degree)
+        for family_id, family in families.items():
+            if any(re.search(pattern, degree, re.I) or re.search(pattern, normalized, re.I)
+                   for pattern in family.get("programme_patterns", [])):
+                add(family_id, "high", {"source": "degree", "excerpt": excerpt},
+                    "Suggested from an explicit degree-name rule.")
+    for title in professional_summary_bank_titles(document):
+        for definition in roles.values():
+            if re.search(definition["title_pattern"], title, re.I):
+                add(definition["family"], "high", {"source": "summary", "excerpt": title},
+                    "Suggested from a supported Professional Summary Bank heading.")
+    return sorted(suggestions.values(), key=lambda item: (confidence_rank[item["confidence"]], item["label"]))
+
+
+def suggest_roles(document: str | None = None, cfg: dict | None = None) -> dict:
+    document = document if document is not None else master_cv()
+    settings = cfg or config()
+    profiles = read_yaml(ROOT / "study_profiles.yaml")["profiles"]
+    families, catalog = role_catalog()
+    detected = study_profile_suggestions(document)
+    family_items = {item["family"]: item for item in job_family_suggestions(document)}
+    profile_ids = set(settings["study_profiles"]) | {item["profile"] for item in detected}
+    evidence_by_role: dict[str, list[dict]] = {}
+    for profile_id in profile_ids:
+        profile = profiles[profile_id]
+        profile_evidence = next((item["evidence"] for item in detected if item["profile"] == profile_id), [])
+        fallback = {"source": "confirmed_profile", "excerpt": profile["label"]}
+        for role in profile["roles"]:
+            evidence_by_role.setdefault(role, []).extend(profile_evidence or [fallback])
+    for title in professional_summary_bank_titles(document):
+        for role, definition in catalog.items():
+            if re.search(definition["title_pattern"], title, re.I):
+                evidence_by_role.setdefault(role, []).append({"source": "role_summary", "excerpt": title})
+    if DB_PATH.is_file():
+        with sqlite3.connect(DB_PATH) as conn:
+            rows = conn.execute("SELECT title FROM jobs WHERE status IN ('accepted','delivered','needs_review')").fetchall()
+        for (title,) in rows:
+            for role, definition in catalog.items():
+                if re.search(definition["title_pattern"], title, re.I):
+                    evidence_by_role.setdefault(role, []).append({"source": "accepted_job", "excerpt": title})
+    suggestions = []
+    for role, evidence in evidence_by_role.items():
+        unique = list({(item["source"], item["excerpt"]): item for item in evidence}.values())
+        sources = {item["source"] for item in unique}
+        family_id = catalog[role]["family"]
+        if family_id not in family_items and sources & {"role_summary", "accepted_job"}:
+            family_items[family_id] = {"family": family_id, "label": families[family_id]["label"],
+                                       "confidence": "high" if "role_summary" in sources else "medium",
+                                       "evidence": [item for item in unique if item["source"] in {"role_summary", "accepted_job"}],
+                                       "rationale": "Suggested from summary headings or previously accepted jobs."}
+        suggestions.append({"role": role, "label": catalog[role]["label"], "family": family_id,
+                            "confidence": "high" if "role_summary" in sources else "medium",
+                            "evidence": unique,
+                            "rationale": "Suggested from confirmed or detected study evidence, summary headings, or accepted jobs.",
+                            "confirmed": role in settings["selected_roles"]})
+    return {"programme_matches": programme_matches(document),
+            "detected_profiles": detected, "confirmed_profiles": settings["study_profiles"],
+            "family_suggestions": sorted(family_items.values(), key=lambda item: item["label"]),
+            "confirmed_families": settings["job_families"],
+            "suggestions": sorted(suggestions, key=lambda item: (not item["confirmed"], item["label"]))}
+
+
 def master_cv_audit(document: str | None = None, cfg: dict | None = None) -> dict:
     path = master_cv_path()
     if document is None:
@@ -3350,7 +4136,11 @@ def master_cv_audit(document: str | None = None, cfg: dict | None = None) -> dic
                ("Professional Experience", "Professional Experience"),
                ("Complete Project Bank", "Complete Project Bank|Projects"),
                ("Education", "Education"), ("Languages", "Languages"),
-               ("Application Profile", "Application Profile"))
+               ("Application Profile", "Application Profile"),
+               ("Publications", "Publications"), ("Research", "Research"),
+               ("Fieldwork", "Fieldwork"), ("Laboratory Work", "Laboratory Work"),
+               ("Policy Work", "Policy Work"), ("Portfolio", "Portfolio"),
+               ("Certifications", "Certifications"), ("Licences", "Licences"))
     for name, pattern in aliases:
         match = re.search(rf"(?ims)^##\s+(?:{pattern})\s*$\n(.*?)(?=^##\s+|\Z)", document)
         sections.append({"name": name, "present": bool(match),
@@ -4253,10 +5043,62 @@ def reexec_venv_python() -> None:
         os.execv(str(venv_python), [str(venv_python), *sys.argv])
 
 
+def init_profile(path: Path) -> dict:
+    destination = path.expanduser().resolve()
+    destination.mkdir(parents=True, exist_ok=True, mode=0o700)
+    destination.chmod(0o700)
+    created = []
+    for source_name, target_name in (("config.example.yaml", "config.yaml"),
+                                     ("master_cv.example.md", "master_cv.md"),
+                                     (".env.example", ".env")):
+        target = destination / target_name
+        if not target.exists():
+            shutil.copy2(ROOT / source_name, target)
+            target.chmod(0o600)
+            created.append(target_name)
+    return {"profile": str(destination), "created": created, "setup_required": True,
+            "next_command": f"python jobflow.py --profile {destination} setup"}
+
+
+def privacy_audit(markers_path: Path) -> dict:
+    try:
+        markers = [line.strip() for line in markers_path.read_text().splitlines() if line.strip()]
+    except OSError as exc:
+        raise SystemExit(f"cannot read privacy markers: {exc}") from exc
+    if not markers or len(markers) > 100:
+        raise SystemExit("privacy marker file must contain 1-100 nonempty lines")
+    tracked = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, check=True,
+                             capture_output=True).stdout.decode().split("\0")
+    tracked = [name for name in tracked if name]
+    forbidden_files = sorted(set(tracked) & {"master_cv.md", "config.yaml", ".env"})
+    matches = []
+    for name in tracked:
+        try:
+            text = (ROOT / name).read_text(errors="ignore")
+        except OSError:
+            continue
+        for index, marker in enumerate(markers, 1):
+            if marker.casefold() in text.casefold():
+                matches.append({"file": name, "marker": index})
+    return {"passed": not forbidden_files and not matches, "tracked_private_files": forbidden_files,
+            "matches": matches, "files_checked": len(tracked), "markers_checked": len(markers)}
+
+
 def main() -> None:
     reexec_venv_python()
     parser = argparse.ArgumentParser()
+    parser.add_argument("--profile", type=Path, default=Path(os.environ.get("JOBFLOW_PROFILE", ROOT)),
+                        help="isolated profile directory (default: repository root)")
     sub = parser.add_subparsers(dest="command", required=True)
+    init = sub.add_parser("init-profile")
+    init.add_argument("path", type=Path)
+    catalogue = sub.add_parser("refresh-programme-catalog")
+    catalogue.add_argument("source_csv", type=Path)
+    catalogue.add_argument("--as-of", type=date.fromisoformat, default=date.today())
+    catalogue.add_argument("--check", action="store_true")
+    sub.add_parser("suggest-roles")
+    privacy = sub.add_parser("privacy-audit")
+    privacy.add_argument("--markers-file", required=True, type=Path)
     sub.add_parser("refresh-sponsors")
     sub.add_parser("setup")
     scan_parser = sub.add_parser("scan")
@@ -4289,6 +5131,7 @@ def main() -> None:
     shadow.add_argument("job_id")
     sub.add_parser("shadow-report")
     sub.add_parser("source-health")
+    sub.add_parser("role-gap-report")
     sub.add_parser("preflight")
     sub.add_parser("doctor")
     sub.add_parser("next")
@@ -4322,7 +5165,23 @@ def main() -> None:
     outcome.add_argument("json_path", type=Path)
     sub.add_parser("outcome-report")
     args = parser.parse_args()
-    if args.command == "setup":
+    set_profile_root(args.profile)
+    if args.command == "init-profile":
+        print(json.dumps(init_profile(args.path), indent=2))
+    elif args.command == "refresh-programme-catalog":
+        result = refresh_programme_catalog(args.source_csv, args.as_of, args.check)
+        print(json.dumps({**result, "source_date": args.as_of.isoformat(),
+                          "destination": str(WO_CATALOG_PATH)}, indent=2))
+        if args.check and not result["check"]:
+            raise SystemExit("programme catalogue or university fixtures have drifted")
+    elif args.command == "suggest-roles":
+        print(json.dumps(suggest_roles(), indent=2))
+    elif args.command == "privacy-audit":
+        result = privacy_audit(args.markers_file)
+        print(json.dumps(result, indent=2))
+        if not result["passed"]:
+            raise SystemExit("privacy audit failed")
+    elif args.command == "setup":
         setup_config()
         print("config.yaml updated")
     elif args.command == "refresh-sponsors":
@@ -4354,6 +5213,8 @@ def main() -> None:
         shadow_report()
     elif args.command == "source-health":
         source_health()
+    elif args.command == "role-gap-report":
+        print(json.dumps(role_gap_report(), indent=2))
     elif args.command == "preflight":
         environment_preflight()
     elif args.command == "doctor":

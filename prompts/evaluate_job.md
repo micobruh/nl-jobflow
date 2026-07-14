@@ -4,6 +4,8 @@ Evaluate `JOB_DESCRIPTION` against untouched `MASTER_CV` and `APPLICANT_PROFILE`
 
 Score 0–100: required skills 30; responsibility/evidence 25; seniority/experience 15; education/domain 10; supported ATS overlap 15; practical constraints 5. Missing mandatory qualification may cap score at 49.
 
+Seniority: entry, junior, medior, senior, or lead; treat graduate as entry.
+
 Evaluate experience semantically from vacancy duties, never from a title allowlist. Classify every `###` role under `Professional Experience` exactly once; use `experience_roles: []` when the section is missing/empty. Return exact headings/evidence and:
 
 - `experience_requirement`: exact vacancy `wording`, `minimum_months`, and `kind` (`mandatory`, `preferred`, `ambiguous`, `none`; use zero months for none).
@@ -13,7 +15,7 @@ Only directly relevant duties count. Confirm genuine relevant employment. Confir
 
 Classify every `###` `Complete Project Bank` item in `project_assessment`: exact `project`, `relevance` (`direct`, `supporting`, `unrelated`), nonempty exact `evidence`, `rationale`; missing/empty uses `[]`. Judge evidence, not title stereotypes.
 
-Extract evidence once for document generation. Rank compact arrays: ≤10 responsibilities, ≤15 ATS keywords, vacancy-relevant exact evidence only. Each `evidence_map` item: `{"requirement":"...","evidence":"exact master-CV excerpt"}`.
+Extract evidence once. Rank arrays: ≤10 responsibilities, ≤15 ATS keywords, relevant exact evidence only. Each `evidence_map` item: `{"requirement":"...","evidence":"exact master-CV excerpt"}`.
 
 Return strict JSON only:
 
@@ -21,4 +23,4 @@ Return strict JSON only:
 {"score":0,"components":{"required_skills":0,"responsibilities":0,"seniority_experience":0,"education_domain":0,"ats_overlap":0,"practical_constraints":0},"seniority":"entry","experience_requirement":{"kind":"none","minimum_months":0,"wording":""},"experience_roles":[],"project_assessment":[],"responsibility_list":[],"required_skill_list":[],"preferred_skill_list":[],"ats_keywords":[],"application_questions":[],"evidence_map":[],"supported_matches":[],"missing_requirements":[],"dealbreakers":[],"ats_gaps":[],"job_summary":"Two concise sentences.","recommendation":"reject"}
 ```
 
-Components must sum to `score`. `reject` below 50; `proceed` at 50+. Be blunt and evidence-based.
+Components must sum to `score`. `reject` below 50; `proceed` at 50+.
