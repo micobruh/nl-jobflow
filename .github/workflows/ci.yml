@@ -21,4 +21,11 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - run: python -m playwright install --with-deps chromium
       - run: python -m unittest discover -s tests -q
+      - name: Smoke-test private profile
+        run: |
+          python jobflow.py init-profile "${RUNNER_TEMP}/nl-jobflow-smoke"
+          JOBFLOW_PROFILE="${RUNNER_TEMP}/nl-jobflow-smoke" python jobflow.py doctor > "${RUNNER_TEMP}/doctor.json"
+          test ! -e "${RUNNER_TEMP}/nl-jobflow-smoke/data/jobs.sqlite3"
+          test "$(stat -c %a "${RUNNER_TEMP}/nl-jobflow-smoke")" = 700
+          test "$(stat -c %a "${RUNNER_TEMP}/nl-jobflow-smoke/master_cv.md")" = 600
       - run: git diff --check

@@ -218,7 +218,8 @@ class JobFlowTest(unittest.TestCase):
                      mock.patch.object(jobflow.shutil, "which", return_value="/bin/codex"):
                     doctor = jobflow.doctor_report()
                 self.assertTrue(doctor["setup"]["complete"])
-                self.assertEqual(doctor["database"]["quick_check"], "ok")
+                self.assertEqual(doctor["database"]["quick_check"], "missing")
+                self.assertFalse(doctor["database"]["exists"])
         finally:
             jobflow.set_profile_root(original)
 
@@ -2162,6 +2163,16 @@ class JobFlowTest(unittest.TestCase):
         self.assertIn("Review-only and local", master_reviewer)
         self.assertIn("rewrite pattern with placeholders", master_reviewer)
         self.assertIn("Do not load external skills", master_reviewer)
+        untrusted_prompts = (general_cv, cv, letter, outreach, evaluate, match, writer, reviewer,
+                             master_reviewer, pasted,
+                             (prompts / "discover_marketplaces_with_plugins.md").read_text())
+        for prompt_text in untrusted_prompts:
+            lowered = prompt_text.lower()
+            self.assertIn("untrusted data", lowered)
+            self.assertIn("secrets", lowered)
+            self.assertRegex(lowered, r"contact|apply")
+            self.assertIn("candidate data", lowered)
+            self.assertIn("safety", lowered)
         for prompt_text in (cv, letter, outreach, evaluate, match, writer, reviewer, pasted, telegram_summary):
             self.assertNotRegex(prompt_text, r"(?m)^Skills:")
         self.assertIn("do not load external skills", writer.lower())
@@ -2206,8 +2217,8 @@ class JobFlowTest(unittest.TestCase):
         standalone_prompts = {marketplace_prompt, master_review_prompt}
         runtime_prompts = [Path(__file__).parents[1] / "AUTOMATION.md",
                            *(path for path in prompts.glob("*.md") if path not in standalone_prompts)]
-        self.assertLessEqual(sum(path.stat().st_size for path in runtime_prompts), 24_000)
-        self.assertLessEqual(marketplace_prompt.stat().st_size, 1_500)
+        self.assertLessEqual(sum(path.stat().st_size for path in runtime_prompts), 27_000)
+        self.assertLessEqual(marketplace_prompt.stat().st_size, 1_700)
         self.assertLessEqual(master_review_prompt.stat().st_size, 1_800)
         json.loads((Path(__file__).parents[1] / "agent_brief.schema.json").read_text())
         json.loads((Path(__file__).parents[1] / "agent_run.schema.json").read_text())
@@ -3345,6 +3356,26 @@ City | Aug 2026 – Dec 2026
             self.assertTrue(payload["master_cv"]["exists"])
         jobflow.DATA, jobflow.ARTIFACTS, jobflow.DB_PATH = old
 
+    def test_doctor_reports_private_files_without_creating_database(self):
+        original = jobflow.PROFILE_ROOT
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                profile = Path(folder) / "profile"
+                jobflow.init_profile(profile)
+                jobflow.set_profile_root(profile)
+                (profile / "config.yaml").chmod(0o644)
+                with mock.patch.object(jobflow, "preflight_status", return_value={}):
+                    payload = jobflow.doctor_report()
+                self.assertFalse(payload["database"]["exists"])
+                self.assertFalse(jobflow.DB_PATH.exists())
+                self.assertEqual(payload["queues"]["screening_needs_match"], 0)
+                self.assertEqual(payload["profile"]["mode"], "0700")
+                self.assertFalse(payload["profile"]["private_files"]["config.yaml"]["private"])
+                self.assertTrue(payload["profile"]["private_files"]["master_cv.md"]["private"])
+                self.assertIn("config.yaml", " ".join(payload["profile"]["privacy_warnings"]))
+        finally:
+            jobflow.set_profile_root(original)
+
     def test_libreoffice_executable_uses_path_then_platform_locations(self):
         with mock.patch.object(jobflow.shutil, "which", side_effect=lambda name: "/bin/soffice" if name == "soffice" else None):
             self.assertEqual(jobflow.libreoffice_executable(), "/bin/soffice")
@@ -3958,12 +3989,33 @@ City | Aug 2026 – Dec 2026
         self.assertIn("config.example.yaml", tracked)
 
     def test_privacy_audit_uses_fictional_external_markers(self):
+        example = jobflow.ROOT / ".privacy-markers.example"
+        self.assertTrue(example.is_file())
+        self.assertIn("Alex Example", example.read_text())
+        self.assertIn(".privacy-markers.example", subprocess.check_output(
+            ["git", "ls-files"], cwd=jobflow.ROOT, text=True).splitlines())
         with tempfile.TemporaryDirectory() as folder:
             markers = Path(folder) / "markers.txt"
-            markers.write_text(f"untracked-candidate-{Path(folder).name}\nuntracked-employer-{Path(folder).name}\n")
+            markers.write_text(f"# comments are ignored\nuntracked-candidate-{Path(folder).name}\n"
+                               f"untracked-employer-{Path(folder).name}\n")
             result = jobflow.privacy_audit(markers)
         self.assertTrue(result["passed"])
         self.assertEqual(result["markers_checked"], 2)
+
+    def test_public_beta_onboarding_and_maintenance_files(self):
+        readme = (jobflow.ROOT / "README.md").read_text()
+        self.assertIn("https://github.com/micobruh/nl-jobflow.git", readme)
+        self.assertNotIn("YOUR-USER", readme)
+        self.assertLess(readme.index("init-profile"), readme.index("cp config.example.yaml"))
+        self.assertIn("## Support matrix", readme)
+        self.assertIn("Windows | Unsupported", readme)
+        self.assertIn("GitHub private vulnerability reporting", (jobflow.ROOT / "SECURITY.md").read_text())
+        self.assertIn("fictional", (jobflow.ROOT / "CONTRIBUTING.md").read_text().lower())
+        dependabot = yaml.safe_load((jobflow.ROOT / ".github" / "dependabot.yml").read_text())
+        self.assertEqual({item["package-ecosystem"] for item in dependabot["updates"]},
+                         {"pip", "github-actions"})
+        issue = yaml.safe_load((jobflow.ROOT / ".github" / "ISSUE_TEMPLATE" / "bug_report.yml").read_text())
+        self.assertIn("Privacy confirmation", json.dumps(issue))
 
     def test_all_wo_sector_profiles_are_detectable_from_fictional_degrees(self):
         examples = {
