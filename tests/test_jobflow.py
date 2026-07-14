@@ -1429,6 +1429,20 @@ class JobFlowTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "not from indeed.com"):
                 jobflow.marketplace_jobs_from_file("indeed", path, 10)
 
+    def test_agent_marketplace_results_accept_normalized_codex_indeed_result(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "indeed.json"
+            path.write_text(json.dumps([{
+                "title": "Data Scientist", "company": "Example Tech", "location": "Amsterdam",
+                "description": "Build and monitor production machine-learning systems.",
+                "url": "https://to.indeed.com/example", "employment_type": "Full-time",
+                "posted_at": "July 14, 2026",
+            }]))
+            jobs = jobflow.marketplace_jobs_from_file("indeed", path, 10)
+        self.assertEqual(jobs[0]["url"], "https://to.indeed.com/example")
+        self.assertEqual(jobs[0]["employment_type"], "Full-time")
+        self.assertEqual(jobs[0]["posted_at"], "July 14, 2026")
+
     def test_fetch_retries_timeout_and_server_errors(self):
         response = mock.Mock(status_code=200, text="x " * 400)
         with mock.patch.object(jobflow.requests, "get", side_effect=[requests.Timeout(), response]) as get, \
@@ -2294,8 +2308,14 @@ class JobFlowTest(unittest.TestCase):
         marketplace_prompt = prompts / "discover_marketplaces_with_plugins.md"
         marketplace_text = marketplace_prompt.read_text()
         self.assertNotRegex((automation + marketplace_text).lower(), r"\b(codex|claude)\b")
-        self.assertIn("tools callable in the current agent environment", automation)
-        self.assertIn("read-only job-search tool", marketplace_text)
+        self.assertIn("lazily discoverable tools in the current agent environment", automation)
+        self.assertIn("lazily discoverable tools", marketplace_text)
+        self.assertIn("search itself supplies full descriptions", marketplace_text)
+        self.assertIn("one location per call", marketplace_text)
+        self.assertIn("within `max_age_hours`", marketplace_text)
+        self.assertIn("`posted_date` to `posted_at`", marketplace_text)
+        self.assertIn("`job_type` to `employment_type`", marketplace_text)
+        self.assertIn("Never use resume/profile", marketplace_text)
         master_review_prompt = prompts / "review_master_cv.md"
         standalone_prompts = {marketplace_prompt, master_review_prompt}
         runtime_prompts = [Path(__file__).parents[1] / "AUTOMATION.md",

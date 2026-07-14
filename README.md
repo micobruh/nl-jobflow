@@ -178,6 +178,34 @@ Marketplace discovery remains conditional because it needs read-only search, ful
 retrieval, network access, and sometimes connector authentication. Deterministic employer discovery
 still works without those capabilities.
 
+### Indeed plugin/MCP setup
+
+Indeed-backed discovery is optional. The host agent uses only read-only job search and job details,
+normalizes complete listings into a temporary JSON file, and passes that file through the same
+deterministic screening pipeline as other sources. It does not use an Indeed resume or profile and
+never applies, submits, messages, or modifies an account.
+
+**Codex:** In ChatGPT desktop, open **Plugins** from Codex, install Indeed, connect your Indeed
+account when prompted, and start a new thread. In Codex CLI, use `/plugins` to install or enable the
+plugin, then start a new session. Confirm Indeed is installed and its search tool is callable before
+running `/find-jobs` or `/full-run`. Do not add a guessed Indeed URL with `codex mcp add`: Indeed
+does not publish a general-purpose MCP endpoint, and its ChatGPT integration is distributed as the
+[Indeed app](https://support.indeed.com/hc/en-us/articles/43197872743565-About-the-Indeed-App-on-ChatGPT).
+
+**Claude:** In Claude.ai or Claude Desktop, open **Search & Tools**, choose **Add connectors**, add
+Indeed, and authenticate. In Claude Code, run `/mcp` to verify the connector before starting the
+workflow. Claude Code inherits Claude.ai connectors only when authenticated with a Claude.ai
+subscription; they are not loaded for API-key, Bedrock, or Vertex sessions. See
+[Indeed's MCP guide](https://docs.indeed.com/mcp) and
+[Claude Code MCP configuration](https://code.claude.com/docs/en/mcp).
+
+**Cursor:** Cursor supports project MCP configuration in `.cursor/mcp.json` and verification with
+`cursor-agent mcp list`, `cursor-agent mcp list-tools <name>`, and
+`cursor-agent mcp login <name>`. Indeed is not currently supported through this route because its
+published remote MCP is limited to Claude Connector and no public server URL is documented. Do not
+invent one; revisit this when Indeed publishes a general endpoint or Cursor connector. See
+[Cursor MCP support](https://docs.cursor.com/context/model-context-protocol).
+
 ### Document-provider support
 
 | Capability | Codex CLI | Claude Code CLI | Cursor Agent CLI | Other providers |
@@ -209,6 +237,10 @@ installed and authenticated Codex, Claude Code, or Cursor Agent CLI.
 | Setup or permissions are unsafe | Run `python jobflow.py doctor`; it reports incomplete setup and private file modes without changing them. |
 | Telegram is unavailable | Leave it disabled or set both variables in the profile `.env`; generation still works locally. |
 | Scan cannot reach sources | Grant network access for `scan`/`preflight` and inspect `source-health`; maintained sources can change without notice. |
+| Installed marketplace plugin is missing | Start a new thread/session, verify the plugin is enabled and authenticated, and check workspace-admin app restrictions. |
+| Claude Code does not show Indeed in `/mcp` | Confirm `/status` uses Claude.ai subscription authentication rather than an API key, Bedrock, or Vertex, then reconnect Indeed. |
+| Marketplace tools return no full description | The agent result is intentionally omitted and the deterministic HTTP/browser fallback runs. |
+| Cursor cannot connect to Indeed | No public Indeed MCP endpoint is documented for Cursor; keep the fallback enabled. |
 | Document agent is unavailable | Install and authenticate the selected CLI, or set `JOBFLOW_AGENT_BIN`; `/doctor` reports the resolved provider and binary. |
 
 ## Configuration
