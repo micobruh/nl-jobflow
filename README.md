@@ -294,7 +294,9 @@ remains the CLI's local default.
 - `current_education_level` and `highest_completed_education_level`: `mbo`, `hbo_associate`, `hbo_bachelor`, `wo_bachelor`, `hbo_master`, `wo_master`, or `phd`.
 - `graduation_date`: used as context for manual immigration checks; the program does not calculate permit eligibility from it.
 - `dutch_level`: `unknown`, `none`, `A1`, `A2`, `B1`, `B2`, or `C1+`.
-  `unknown` defers Dutch requirements for verification; other values enforce filtering.
+  `unknown` defers Dutch requirements for verification; other values enforce filtering. Explicit
+  CEFR wording is authoritative; fluent/native/excellent or full professional proficiency means
+  `C1+`, while ordinary professional/working proficiency or unqualified required Dutch means `B2`.
 - `work_authorization_notes`: factual context supplied to the reviewer. Do not put secrets here.
 
 ### Search criteria
@@ -302,7 +304,8 @@ remains the CLI's local default.
 - `study_profiles`: select one or more maintained Dutch higher-education sector or specialist profiles. Every profile has its own discipline preset.
 - `job_families`: confirmed employment families suggested from explicit programme-name rules, summary headings, and accepted jobs. Exact programme and source-evidence matches are high confidence; an otherwise-unmapped exact RIO programme receives one low-confidence official-sector fallback that still requires confirmation.
 - `roles`: choose roles belonging to the confirmed families. Suggestions never edit configuration automatically.
-- `max_required_education_level`: rejects vacancies explicitly requiring a higher level.
+- `max_required_education_level`: rejects vacancies whose lowest hard-required education level is
+  higher; alternatives use the lowest accepted level, while a sole mandatory PhD remains `phd`.
 - `max_required_experience_years`: rejects higher explicit minimums; `null` disables the ceiling.
 - `accepted_seniority`: selects maintained seniority levels; optional
   `seniority_title_exclusions` add exact exclusions.

@@ -148,16 +148,6 @@ SECURITY_RE = re.compile(
     r"must be (?:a|an) [\w -]+ citizen|dutch nationals? only|export[- ]control(?:led)?|"
     r"verklaring van geen bezwaar|vgb|aivd screening|nato clearance)\b", re.I,
 )
-DUTCH_RE = re.compile(
-    r"\b(?:fluent|professional|advanced|native|excellent|full working proficiency)\s+(?:in\s+)?dutch\b|"
-    r"\bdutch\s+(?:at\s+)?(?:b2|c1|c2|fluent|professional|advanced|native|required|mandatory)\b|"
-    r"\bdutch\s*:\s*(?:minimum\s+)?b2\s+required\b|"
-    r"\bfluency in dutch\b|\bdutch\s+language\s+fluency\b|\bdutch and english mandatory\b|"
-    r"\blocal language\s*\([^)]*dutch[^)]*\)\s+is required\b|"
-    r"\b(?:english,\s+and\s+dutch|dutch,\s+and\s+english)\b|"
-    r"\b(?:vloeiend|uitstekende|goede)\s+(?:in\s+)?(?:mondelinge en schriftelijke\s+)?(?:beheersing van\s+)?(?:het\s+)?nederlands(?:e taal)?\b|"
-    r"\bbeheersing van de nederlandse taal\b|\bnederlandse taal(?:\s+in\s+woord)?\b", re.I,
-)
 YEAR_RE = re.compile(
     r"(?:at least|min(?:imum)?(?: of)?|requires?|with)?\s*(\d+)\s*(?:\+|[-–]\s*\d+)?\s*years?"
     r"(?:\s+of)?\s+(?:relevant\s+|professional\s+|work(?:ing)?\s+)?experience", re.I,
@@ -1702,33 +1692,99 @@ def job_in_selected_locations(job: dict, cfg: dict) -> bool:
     return any(re.search(rf"(?<!\w){re.escape(term)}(?!\w)", text) for term in accepted_location_terms(cfg))
 
 
+HARD_REQUIREMENT_RE = re.compile(r"\b(?:required|mandatory|must|minimum|at least|need(?:ed)? to|accepted)\b", re.I)
+SOFT_REQUIREMENT_RE = re.compile(
+    r"\b(?:preferred|optional|advantage(?:ous)?|a plus|nice to have|desirable)\b", re.I)
+NEGATED_REQUIREMENT_RE = re.compile(
+    r"\b(?:not required|not mandatory|need not|do not need|does not need|without (?:a |the )?need)\b|"
+    r"\bno\b[^.;\n]{0,60}\b(?:required|requirement|mandatory)\b", re.I)
+
+
+def active_requirement_clauses(text: str) -> list[str]:
+    clauses = [value.strip() for value in re.split(r"[;\n]+|(?<=[.!?])\s+", text) if value.strip()]
+    return [value for value in clauses if not NEGATED_REQUIREMENT_RE.search(value) and not (
+        SOFT_REQUIREMENT_RE.search(value) and not HARD_REQUIREMENT_RE.search(value))]
+
+
 def required_education_level(text: str) -> str | None:
-    checks = (
-        ("phd", r"\b(?:ph\.?d|doctorate|doctoral degree)\b"),
+    levels = []
+    explicit = (
+        ("hbo_master", r"\bhbo\s*(?:[/–—-]|or|of)\s*wo\s+(?:master(?:'?s)?|msc|m\.sc\.)\b"),
+        ("hbo_bachelor", r"\bhbo\s*(?:[/–—-]|or|of)\s*wo\s+(?:bachelor(?:'?s)?|bsc|b\.sc\.)\b"),
         ("hbo_associate", r"\b(?:associate'?s? degree|hbo[- ]?ad)\b"),
-        ("hbo_master", r"\bhbo\s*(?:[/–—-]|or|of)\s*wo\s+(?:master'?s?|msc|m\.sc\.)\b"),
-        ("hbo_bachelor", r"\bhbo\s*(?:[/–—-]|or|of)\s*wo\b"),
-        ("wo_master", r"\bwo\s+(?:master'?s?|msc|m\.sc\.)\b"),
-        ("hbo_master", r"\b(?:hbo\s+(?:master'?s?|msc|m\.sc\.)|master(?:'?s)? degree|msc|m\.sc\.)\b"),
-        ("wo_bachelor", r"\bwo\s+(?:bachelor'?s?|bsc|b\.sc\.)\b"),
-        ("hbo_bachelor", r"\b(?:hbo\s+(?:bachelor'?s?|bsc|b\.sc\.)|university of applied sciences|bachelor(?:'?s)? degree|bsc|b\.sc\.)\b"),
-        ("wo_bachelor", r"\bwo(?:\s+(?:degree|diploma|werk[- ]? en denkniveau|work and thinking level))?\b"),
-        ("hbo_bachelor", r"\bhbo(?:\s+(?:degree|diploma|werk[- ]? en denkniveau|work and thinking level))?\b"),
-        ("mbo", r"\bmbo\b"),
+        ("wo_master", r"\bwo\s+(?:master(?:'?s)?|msc|m\.sc\.)\b"),
+        ("hbo_master", r"\bhbo\s+(?:master(?:'?s)?|msc|m\.sc\.)\b"),
+        ("wo_bachelor", r"\bwo\s+(?:bachelor(?:'?s)?|bsc|b\.sc\.)\b"),
+        ("hbo_bachelor", r"\bhbo\s+(?:bachelor(?:'?s)?|bsc|b\.sc\.)\b"),
     )
-    return next((level for level, pattern in checks if re.search(pattern, text, re.I)), None)
+    for clause in active_requirement_clauses(text):
+        remaining = clause
+        for level, pattern in explicit:
+            if re.search(pattern, remaining, re.I):
+                levels.append(level)
+                remaining = re.sub(pattern, " ", remaining, flags=re.I)
+        if re.search(r"\b(?:bachelor(?:'?s)?(?: degree)?|bsc|b\.sc\.)\b", remaining, re.I):
+            levels.append("hbo_bachelor")
+        if re.search(r"\b(?:master(?:'?s)?(?: degree)?|msc|m\.sc\.)\b", remaining, re.I):
+            levels.append("hbo_master")
+        equivalent_phd = re.search(r"\b(?:ph\.?d|doctorate|doctoral degree)\s+or\s+equivalent experience\b",
+                                   remaining, re.I)
+        if not equivalent_phd and re.search(r"\b(?:ph\.?d|doctorate|doctoral degree)\b", remaining, re.I):
+            levels.append("phd")
+        hard = HARD_REQUIREMENT_RE.search(clause)
+        combined = r"\bhbo\s*(?:[/–—-]|or|of)\s*wo\b"
+        if re.search(combined, remaining, re.I):
+            levels.append("hbo_bachelor")
+            remaining = re.sub(combined, " ", remaining, flags=re.I)
+        context = (r"\s+(?:degree|diploma|level|niveau|or higher|of hoger|"
+                   r"werk[- ]? en denkniveau|work and thinking level)\b")
+        if (re.search(rf"\bwo(?:{context})", remaining, re.I) or
+                re.fullmatch(r"\W*wo\W*", remaining, re.I) or hard and re.search(r"\bwo\b", remaining, re.I)):
+            levels.append("wo_bachelor")
+        if (re.search(rf"\bhbo(?:{context})", remaining, re.I) or
+                re.fullmatch(r"\W*hbo\W*", remaining, re.I) or hard and re.search(r"\bhbo\b", remaining, re.I)):
+            levels.append("hbo_bachelor")
+        if re.search(r"\bmbo\b", remaining, re.I):
+            levels.append("mbo")
+    return min(levels, key=EDUCATION_LEVELS.index) if levels else None
 
 
 def required_dutch_level(text: str) -> str | None:
-    explicit = re.search(r"\bdutch\s*(?:level|at|:)?\s*(A1|A2|B1|B2|C1|C2)\b", text, re.I)
-    if explicit:
-        value = explicit.group(1).upper()
-        return "C1+" if value in {"C1", "C2"} else value
-    if DUTCH_RE.search(text):
-        return "C1+" if re.search(r"fluent|native|excellent|vloeiend|uitstekende", text, re.I) else "B2"
-    if re.search(r"\bdutch\s+(?:is\s+)?(?:required|mandatory)\b|\brequired[^.]{0,40}\bdutch\b", text, re.I):
-        return "B2"
-    return None
+    levels = []
+    for clause in active_requirement_clauses(text):
+        if (re.search(r"\b(?:dutch\s+(?:(?:and/)?or|of)|(?:english|german|french)\s+"
+                      r"(?:(?:and/)?or|of)\s+dutch)\b", clause, re.I) or
+                re.search(r"\bdutch\b[^,.;\n]{0,30}\b(?:preferred|optional|advantage(?:ous)?|a plus)\b",
+                          clause, re.I)):
+            continue
+        explicit = re.search(
+            r"\bdutch\b[^.;\n]{0,30}\b(A1|A2|B1|B2|C1|C2)\b|"
+            r"\b(A1|A2|B1|B2|C1|C2)\b[^.;\n]{0,30}\bdutch\b", clause, re.I)
+        if explicit:
+            value = next(group for group in explicit.groups() if group).upper()
+            levels.append("C1+" if value in {"C1", "C2"} else value)
+        c1 = re.search(
+            r"\b(?:fluent|native|near[- ]native|excellent)\s+(?:in\s+)?dutch\b|"
+            r"\bdutch(?: language)?\b[^.;\n]{0,20}\b(?:fluency|fluent|native|near[- ]native|excellent)\b|"
+            r"\bfull\s+(?:working|professional)\s+proficiency\s+in\s+dutch\b|"
+            r"\bfluency\s+in\s+dutch\b|\b(?:vloeiend|uitstekende)\b[^.;\n]{0,40}\bnederlands\b",
+            clause, re.I)
+        if c1:
+            levels.append("C1+")
+        b2 = re.search(
+            r"\b(?:professional|advanced)\s+dutch\b|"
+            r"(?<!full )\b(?:professional\s+working|working|professional)\s+proficiency\s+in\s+dutch\b|"
+            r"\bgood command of dutch\b|\bgoede\b[^.;\n]{0,40}\bnederlands\b", clause, re.I)
+        b2 = b2 or re.search(r"\bbeheersing van (?:de|het) nederlandse taal\b|"
+                             r"\bnederlandse taal(?:\s+in\s+woord)?\b", clause, re.I)
+        if b2:
+            levels.append("B2")
+        if not explicit and not c1 and not b2 and re.search(
+                r"\bdutch\b[^.;\n]{0,40}\b(?:required|mandatory)\b|"
+                r"\b(?:required|mandatory)\b[^.;\n]{0,40}\bdutch\b|"
+                r"\bdutch and english mandatory\b", clause, re.I):
+            levels.append("B2")
+    return min(levels, key=DUTCH_LEVELS.index) if levels else None
 
 
 @dataclass(frozen=True)
@@ -1841,8 +1897,9 @@ def filter_job(job: dict, sponsor_names: set[str], cfg: dict, master_cv: str,
     if is_internship and ((is_graduation and not internships["graduation"]) or
                           (not is_graduation and not internships["regular"])):
         reasons.append("graduation internship not accepted" if is_graduation else "internship role not accepted")
-    if ENROLLED_RE.search(eligibility) and (applicant["study_status"] != "enrolled" or
-                                            not internships["enrollment_required"]):
+    active_eligibility = " ".join(active_requirement_clauses(eligibility))
+    if ENROLLED_RE.search(active_eligibility) and (applicant["study_status"] != "enrolled" or
+                                                   not internships["enrollment_required"]):
         reasons.append("current school or university enrollment required")
     if is_internship and not reasons:
         verification.append("internship agreement, programme, permit route, and enrollment conditions")
@@ -1885,7 +1942,8 @@ def filter_job(job: dict, sponsor_names: set[str], cfg: dict, master_cv: str,
     body_level = configured_seniority_level(seniority_body.group(0)) if seniority_body else None
     if body_level and body_level not in accepted_seniority:
         reasons.append(f"seniority description excluded: {seniority_body.group(0)}")
-    experience_body = re.sub(r"\b(?:0|1)\s*(?:[-–]|to)\s*\d+\s*years?", "1 years", body, flags=re.I)
+    experience_body = re.sub(r"\b(?:0|1)\s*(?:[-–]|to)\s*\d+\s*years?", "1 years",
+                             " ".join(active_requirement_clauses(body)), flags=re.I)
     years = [int(x) for x in YEAR_RE.findall(experience_body)]
     excess = EXCESS_EXPERIENCE_RE.search(experience_body)
     max_years = criteria["max_required_experience_years"]

@@ -288,6 +288,9 @@ class JobFlowTest(unittest.TestCase):
             "Associate's degree required": "hbo_associate",
             "HBO-AD diploma required": "hbo_associate",
             "HBO degree required": "hbo_bachelor",
+            "HBO": "hbo_bachelor",
+            "HBO level": "hbo_bachelor",
+            "WO niveau": "wo_bachelor",
             "WO degree required": "wo_bachelor",
             "HBO/WO work and thinking level": "hbo_bachelor",
             "hbo/wo werk- en denkniveau": "hbo_bachelor",
@@ -295,11 +298,19 @@ class JobFlowTest(unittest.TestCase):
             "WO Master required": "wo_master",
             "Bachelor's degree required": "hbo_bachelor",
             "Master's degree required": "hbo_master",
+            "Bachelor's or Master's degree required": "hbo_bachelor",
+            "HBO, bachelor, or master accepted": "hbo_bachelor",
+            "Master or PhD required": "hbo_master",
+            "WO Master or PhD required": "wo_master",
+            "PhD required": "phd",
+            "Bachelor preferred, Master required": "hbo_bachelor",
         }
         for wording, expected in cases.items():
             with self.subTest(wording=wording):
                 self.assertEqual(jobflow.required_education_level(wording), expected)
         self.assertIsNone(jobflow.required_education_level("Relevant education is preferred"))
+        self.assertIsNone(jobflow.required_education_level("HBO is not required; experience is sufficient"))
+        self.assertIsNone(jobflow.required_education_level("PhD or equivalent experience required"))
 
         cfg = copy.deepcopy(self.cfg)
         cfg["applicant"]["current_education_level"] = "hbo_associate"
@@ -316,6 +327,76 @@ class JobFlowTest(unittest.TestCase):
             self.sponsors, cfg, self.cv)
         self.assertIn("required education exceeds configured maximum (hbo_bachelor)",
                       bachelor.rejection_reasons)
+
+    def test_requirement_clauses_prevent_false_education_experience_and_enrollment_rejections(self):
+        cfg = copy.deepcopy(self.cfg)
+        cfg["search_criteria"]["max_required_education_level"] = "hbo_bachelor"
+        accepted = jobflow.filter_job(self.job(
+            description="Python ML role. Bachelor's or Master's degree required."),
+            self.sponsors, cfg, self.cv)
+        self.assertFalse(any("required education exceeds" in reason
+                             for reason in accepted.rejection_reasons))
+        phd = jobflow.filter_job(self.job(description="Python ML role. PhD required."),
+                                 self.sponsors, cfg, self.cv)
+        self.assertIn("required education exceeds configured maximum (phd)", phd.rejection_reasons)
+
+        cfg["search_criteria"]["max_required_experience_years"] = 1
+        preferred = jobflow.filter_job(self.job(
+            description="Python ML role. 2 years experience preferred, but not required."),
+            self.sponsors, cfg, self.cv)
+        self.assertFalse(any("experience exceeds" in reason for reason in preferred.rejection_reasons))
+        mandatory = jobflow.filter_job(self.job(
+            description="Python ML role. 2 years experience required."),
+            self.sponsors, cfg, self.cv)
+        self.assertTrue(any("experience exceeds" in reason for reason in mandatory.rejection_reasons))
+
+        negated = jobflow.filter_job(self.job(
+            description="Python ML role. You do not need to be enrolled."),
+            self.sponsors, cfg, self.cv)
+        self.assertNotIn("current school or university enrollment required", negated.rejection_reasons)
+        required = jobflow.filter_job(self.job(
+            description="Python ML role. You need to be enrolled at a university."),
+            self.sponsors, cfg, self.cv)
+        self.assertIn("current school or university enrollment required", required.rejection_reasons)
+
+    def test_dutch_requirement_uses_cefr_fluency_and_optional_wording(self):
+        cases = {
+            "Dutch A2 required": "A2",
+            "Dutch B2 required": "B2",
+            "Dutch C1 required": "C1+",
+            "Dutch C2 required": "C1+",
+            "Fluent Dutch": "C1+",
+            "Native Dutch required": "C1+",
+            "Excellent Dutch communication": "C1+",
+            "Full working proficiency in Dutch": "C1+",
+            "Full professional proficiency in Dutch": "C1+",
+            "Dutch language fluency": "C1+",
+            "Professional Dutch required": "B2",
+            "Working proficiency in Dutch": "B2",
+            "Professional working proficiency in Dutch": "B2",
+            "Good command of Dutch": "B2",
+            "Beheersing van de Nederlandse taal": "B2",
+            "Dutch is mandatory": "B2",
+        }
+        for wording, expected in cases.items():
+            with self.subTest(wording=wording):
+                self.assertEqual(jobflow.required_dutch_level(wording), expected)
+        for wording in ("Dutch preferred", "Dutch is a plus", "Dutch is advantageous",
+                        "Dutch B2 preferred but not required", "Dutch or German required",
+                        "Dutch is a plus, English is required"):
+            with self.subTest(optional=wording):
+                self.assertIsNone(jobflow.required_dutch_level(wording))
+
+        cfg = copy.deepcopy(self.cfg)
+        cfg["applicant"]["dutch_level"] = "B2"
+        fluent = jobflow.filter_job(self.job(description="Python ML role. Fluent Dutch required."),
+                                    self.sponsors, cfg, self.cv)
+        self.assertIn("Dutch requirement exceeds applicant level (C1+ required)",
+                      fluent.rejection_reasons)
+        professional = jobflow.filter_job(self.job(
+            description="Python ML role. Professional Dutch required."), self.sponsors, cfg, self.cv)
+        self.assertFalse(any("Dutch requirement exceeds" in reason
+                             for reason in professional.rejection_reasons))
 
     def test_internship_and_student_permit_rules_are_separate(self):
         cfg = copy.deepcopy(self.cfg)
