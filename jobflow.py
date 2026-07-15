@@ -235,7 +235,9 @@ LEGACY_PRESETS = {
                                                         "frontend_engineer", "full_stack_engineer"]),
 }
 
-WO_CATALOG_PATH = ROOT / "catalogs" / "wo_programmes.json"
+PROGRAMME_LEVELS = {"HBO-AD", "HBO-BA", "HBO-MA", "WO-BA", "WO-MA"}
+PROGRAMME_CATALOG_SOURCE = "DUO RIO Overzicht Erkenningen ho"
+PROGRAMME_CATALOG_PATH = ROOT / "catalogs" / "higher_education_programmes.json"
 SECTOR_PROFILES = {
     "ECONOMIE": "economics_business",
     "GEDRAG_EN_MAATSCHAPPIJ": "social_behavioural_sciences",
@@ -406,6 +408,12 @@ def resolved_config(user: dict, override: dict | None = None) -> dict:
     value = deep_merge(defaults, preset_config)
     value = deep_merge(value, user)
     value = deep_merge(value, override)
+    value["regulated_role_patterns"] = list(dict.fromkeys([
+        *defaults.get("regulated_role_patterns", []),
+        *preset_config.get("regulated_role_patterns", []),
+        *user.get("regulated_role_patterns", []),
+        *override.get("regulated_role_patterns", []),
+    ]))
     validate_config(value)
     return value
 
@@ -551,7 +559,8 @@ def run_document_agent(prompt: str, schema_path: Path, *, cfg: dict | None = Non
     return payload
 
 
-EDUCATION_LEVELS = ("mbo", "hbo_bachelor", "wo_bachelor", "hbo_master", "wo_master", "phd")
+EDUCATION_LEVELS = ("mbo", "hbo_associate", "hbo_bachelor", "wo_bachelor",
+                    "hbo_master", "wo_master", "phd")
 DUTCH_LEVELS = ("unknown", "none", "A1", "A2", "B1", "B2", "C1+")
 RESIDENCE_ROUTES = {"student_permit", "orientation_year", "highly_skilled_migrant", "other"}
 
@@ -1696,10 +1705,15 @@ def job_in_selected_locations(job: dict, cfg: dict) -> bool:
 def required_education_level(text: str) -> str | None:
     checks = (
         ("phd", r"\b(?:ph\.?d|doctorate|doctoral degree)\b"),
-        ("wo_master", r"\b(?:master'?s degree|msc|m\.sc\.|wo master)\b"),
-        ("hbo_master", r"\bhbo master\b"),
-        ("wo_bachelor", r"\b(?:wo bachelor|bachelor'?s degree|bsc|b\.sc\.)\b"),
-        ("hbo_bachelor", r"\b(?:hbo|university of applied sciences)\b"),
+        ("hbo_associate", r"\b(?:associate'?s? degree|hbo[- ]?ad)\b"),
+        ("hbo_master", r"\bhbo\s*(?:[/–—-]|or|of)\s*wo\s+(?:master'?s?|msc|m\.sc\.)\b"),
+        ("hbo_bachelor", r"\bhbo\s*(?:[/–—-]|or|of)\s*wo\b"),
+        ("wo_master", r"\bwo\s+(?:master'?s?|msc|m\.sc\.)\b"),
+        ("hbo_master", r"\b(?:hbo\s+(?:master'?s?|msc|m\.sc\.)|master(?:'?s)? degree|msc|m\.sc\.)\b"),
+        ("wo_bachelor", r"\bwo\s+(?:bachelor'?s?|bsc|b\.sc\.)\b"),
+        ("hbo_bachelor", r"\b(?:hbo\s+(?:bachelor'?s?|bsc|b\.sc\.)|university of applied sciences|bachelor(?:'?s)? degree|bsc|b\.sc\.)\b"),
+        ("wo_bachelor", r"\bwo(?:\s+(?:degree|diploma|werk[- ]? en denkniveau|work and thinking level))?\b"),
+        ("hbo_bachelor", r"\bhbo(?:\s+(?:degree|diploma|werk[- ]? en denkniveau|work and thinking level))?\b"),
         ("mbo", r"\bmbo\b"),
     )
     return next((level for level, pattern in checks if re.search(pattern, text, re.I)), None)
@@ -2433,6 +2447,18 @@ def _scan(marketplace_results: dict[str, Path] | None = None) -> None:
         cleaned = cleanup_out_of_scope_jobs(conn)
         sponsors = {r[0] for r in conn.execute("SELECT normalized_name FROM sponsors")}
         cv = master_cv()
+        selected_families = set(cfg["job_families"])
+        source_tags = priority_source_families(cfg)
+        family_scan = {family: {"sources_selected": 0, "sources_ok": 0, "jobs_found": 0,
+                                "sources_deferred": 0, "sources_skipped_sponsor": 0,
+                                "sources_skipped_capability": 0}
+                       for family in cfg["job_families"]}
+        for item in cfg["priority_companies"]:
+            matched = selected_families & set(item.get("families", []))
+            for family in matched:
+                field = "sources_selected" if sponsor_matches(item["name"], sponsors, cfg) else \
+                    "sources_skipped_sponsor"
+                family_scan[family][field] += 1
         all_candidates = conn.execute(
             "SELECT normalized_name,display_name,career_url,next_retry_at FROM companies WHERE sponsor=1 AND career_url IS NOT NULL "
             "ORDER BY tier,last_scanned_at"
@@ -2446,6 +2472,8 @@ def _scan(marketplace_results: dict[str, Path] | None = None) -> None:
         for row in candidates:
             if row["next_retry_at"] and row["next_retry_at"] > now:
                 emit(f"deferred: {row['display_name']} until {row['next_retry_at']}")
+                for family in selected_families & set(source_tags.get(row["normalized_name"], [])):
+                    family_scan[family]["sources_deferred"] += 1
         for index, row in enumerate(sources, 1):
             emit(f"[{index}/{len(sources)}] {row['display_name']}: scanning")
             try:
@@ -2465,16 +2493,24 @@ def _scan(marketplace_results: dict[str, Path] | None = None) -> None:
                     mark_source_misses(conn, row["normalized_name"], seen_urls)
                 mark_source_success(conn, row["normalized_name"], len(jobs))
                 sources_ok += 1
+                for family in selected_families & set(source_tags.get(row["normalized_name"], [])):
+                    family_scan[family]["sources_ok"] += 1
+                    family_scan[family]["jobs_found"] += len(jobs)
                 emit(f"[{index}/{len(sources)}] {row['display_name']}: {len(jobs)} jobs")
             except Exception as exc:
                 kind = mark_source_failure(conn, row["normalized_name"], exc)
                 failure_kinds[kind] = failure_kinds.get(kind, 0) + 1
                 sources_failed += 1
+                for family in selected_families & set(source_tags.get(row["normalized_name"], [])):
+                    family_scan[family]["sources_skipped_capability"] += 1
                 emit(f"[{index}/{len(sources)}] {row['display_name']}: failed [{kind}]: {exc}",
                      stream=sys.stderr)
             finally:
                 conn.execute("UPDATE companies SET last_scanned_at=? WHERE display_name=?", (datetime.now(timezone.utc).isoformat(), row["display_name"]))
         marketplace = discover_marketplaces(conn, cfg, sponsors, cv, marketplace_results)
+        for values in family_scan.values():
+            values["marketplace_found"] = marketplace["found"]
+            values["marketplace_screening"] = marketplace["screening"]
         found += marketplace["found"]
         accepted_count += marketplace["screening"]
         screening_job_ids.extend(marketplace["screening_job_ids"])
@@ -2501,6 +2537,7 @@ def _scan(marketplace_results: dict[str, Path] | None = None) -> None:
                          "sources_skipped_family": sources_skipped_family,
                          "sources_ok": sources_ok, "sources_failed": sources_failed,
                          "sources_deferred": sources_deferred, "failure_kinds": failure_kinds,
+                         "families": family_scan,
                          "marketplaces": marketplace, "cleaned_out_of_scope": cleaned, **availability}))
     except Exception as exc:
         conn.execute("UPDATE scan_runs SET finished_at=?,error=? WHERE id=?", (datetime.now(timezone.utc).isoformat(), str(exc), run))
@@ -3836,12 +3873,12 @@ RESEARCH_UNIVERSITIES = {
 }
 
 
-def reduce_wo_programmes(raw: bytes, snapshot_date: date) -> tuple[dict, dict[str, list[dict]]]:
+def reduce_programmes(raw: bytes, snapshot_date: date) -> tuple[dict, dict[str, list[dict]]]:
     rows = csv.DictReader(raw.decode("utf-8-sig").splitlines())
     programmes: dict[tuple[str, str], dict] = {}
     registrations: dict[str, dict[tuple[str, str], dict]] = {}
     for row in rows:
-        if row.get("OPLEIDINGSEENHEID_SOORT") != "OPLEIDING" or row.get("NIVEAU") not in {"WO-BA", "WO-MA"}:
+        if row.get("OPLEIDINGSEENHEID_SOORT") != "OPLEIDING" or row.get("NIVEAU") not in PROGRAMME_LEVELS:
             continue
         end = row.get("INSTROOM_EINDDATUM", "").strip()
         if end and end < snapshot_date.isoformat():
@@ -3861,7 +3898,8 @@ def reduce_wo_programmes(raw: bytes, snapshot_date: date) -> tuple[dict, dict[st
         requirement = row.get("BEROEPSEISEN", "").strip()
         row_requires_profession = bool(requirement and requirement != "GEEN_BEROEPSEISEN")
         item["professional_requirements"] |= row_requires_profession
-        institution = row.get("ONDERWIJSBESTUUR_NAAM", "").strip()
+        institution = (row.get("INSTELLINGSNAAM", "").strip() or
+                       row.get("ONDERWIJSBESTUUR_NAAM", "").strip())
         if institution in RESEARCH_UNIVERSITIES:
             registration = registrations.setdefault(institution, {}).setdefault((code, level), {
                 "code": code, "level": level, "names": set(), "professional_requirements": False,
@@ -3872,7 +3910,7 @@ def reduce_wo_programmes(raw: bytes, snapshot_date: date) -> tuple[dict, dict[st
                for item in programmes.values() if item["names"]]
     reduced.sort(key=lambda item: (item["code"], item["level"]))
     catalog = {
-        "source": "DUO RIO Overzicht Erkenningen ho",
+        "source": PROGRAMME_CATALOG_SOURCE,
         "source_date": snapshot_date.isoformat(),
         "source_sha256": hashlib.sha256(raw).hexdigest(),
         "programmes": reduced,
@@ -3921,11 +3959,9 @@ def programme_fixture_outputs(catalog: dict, registrations: dict[str, list[dict]
 
 
 def validate_programme_outputs(catalog: dict, fixtures: dict[Path, dict]) -> None:
-    keys = [(item["code"], item["level"]) for item in catalog["programmes"]]
-    if len(keys) != len(set(keys)) or any(item["sector"] not in SECTOR_PROFILES or not item["names"] or
-                                         not isinstance(item.get("professional_requirements"), bool)
-                                         for item in catalog["programmes"]):
+    if not valid_programme_catalog(catalog):
         raise RuntimeError("catalogue completeness, uniqueness, or sector validation failed")
+    keys = [(item["code"], item["level"]) for item in catalog["programmes"]]
     catalog_keys = set(keys)
     institutions = set()
     for path, fixture in fixtures.items():
@@ -3950,10 +3986,10 @@ def validate_programme_outputs(catalog: dict, fixtures: dict[Path, dict]) -> Non
 
 
 def refresh_programme_catalog(source: Path, as_of: date, check: bool = False,
-                              catalog_path: Path = WO_CATALOG_PATH,
+                              catalog_path: Path = PROGRAMME_CATALOG_PATH,
                               fixture_root: Path = ROOT / "tests" / "fixtures") -> dict:
     raw = source.read_bytes()
-    catalog, registrations = reduce_wo_programmes(raw, as_of)
+    catalog, registrations = reduce_programmes(raw, as_of)
     fixtures = programme_fixture_outputs(catalog, registrations, fixture_root)
     validate_programme_outputs(catalog, fixtures)
     outputs = {catalog_path: catalog, **fixtures}
@@ -3991,17 +4027,35 @@ def refresh_programme_catalog(source: Path, as_of: date, check: bool = False,
     return {"programmes": len(catalog["programmes"]), "changed": changed, "check": True}
 
 
-def wo_programme_catalog(path: Path = WO_CATALOG_PATH) -> dict:
+def valid_programme_catalog(value: object) -> bool:
+    if (not isinstance(value, dict) or value.get("source") != PROGRAMME_CATALOG_SOURCE or
+            not isinstance(value.get("source_date"), str) or
+            not re.fullmatch(r"[0-9a-f]{64}", str(value.get("source_sha256", ""))) or
+            not isinstance(value.get("programmes"), list)):
+        return False
+    try:
+        if date.fromisoformat(value["source_date"]).isoformat() != value["source_date"]:
+            return False
+    except ValueError:
+        return False
+    programmes = value["programmes"]
+    if any(not isinstance(item, dict) or not isinstance(item.get("code"), str) or not item["code"] or
+           item.get("level") not in PROGRAMME_LEVELS or item.get("sector") not in SECTOR_PROFILES or
+           not isinstance(item.get("names"), list) or not item["names"] or
+           any(not isinstance(name, str) or not name for name in item["names"]) or
+           not isinstance(item.get("professional_requirements"), bool) for item in programmes):
+        return False
+    keys = [(item["code"], item["level"]) for item in programmes]
+    return len(keys) == len(set(keys)) and {item["level"] for item in programmes} == PROGRAMME_LEVELS
+
+
+def programme_catalog(path: Path = PROGRAMME_CATALOG_PATH) -> dict:
     try:
         value = json.loads(path.read_text())
     except (OSError, json.JSONDecodeError) as exc:
-        raise SystemExit(f"WO programme catalogue is missing or invalid: {path}") from exc
-    if (not isinstance(value, dict) or not isinstance(value.get("programmes"), list) or
-            any(not isinstance(item, dict) or not item.get("code") or item.get("level") not in {"WO-BA", "WO-MA"} or
-                item.get("sector") not in SECTOR_PROFILES or not isinstance(item.get("names"), list) or not item["names"]
-                or not isinstance(item.get("professional_requirements"), bool)
-                for item in value["programmes"])):
-        raise SystemExit("WO programme catalogue has invalid entries")
+        raise SystemExit(f"higher-education programme catalogue is missing or invalid: {path}") from exc
+    if not valid_programme_catalog(value):
+        raise SystemExit("higher-education programme catalogue has invalid entries")
     return value
 
 
@@ -4016,8 +4070,33 @@ def education_headings(document: str) -> list[str]:
     return [line.strip() for line in re.findall(r"(?m)^###\s+(.+?)\s*$", match.group(1))] if match else []
 
 
+def degree_heading_parts(value: str) -> tuple[set[str] | None, str]:
+    heading = normalized_degree_text(value)
+    bachelor = r"(?:bsc|ba|bachelor(?: of science| of arts)?)"
+    master = r"(?:msc|ma|llm|master(?: of science| of arts)?)"
+    prefixes = (
+        (r"(?:associate s degree|associate degree|hbo ad|ad)", {"HBO-AD"}),
+        (rf"hbo wo {master}", {"HBO-MA", "WO-MA"}),
+        (rf"hbo wo {bachelor}", {"HBO-BA", "WO-BA"}),
+        (r"hbo wo", {"HBO-BA", "HBO-MA", "WO-BA", "WO-MA"}),
+        (rf"hbo {master}", {"HBO-MA"}),
+        (rf"hbo {bachelor}", {"HBO-BA"}),
+        (rf"wo {master}", {"WO-MA"}),
+        (rf"wo {bachelor}", {"WO-BA"}),
+        (r"hbo", {"HBO-AD", "HBO-BA", "HBO-MA"}),
+        (r"wo", {"WO-BA", "WO-MA"}),
+        (master, {"HBO-MA", "WO-MA"}),
+        (bachelor, {"HBO-BA", "WO-BA"}),
+    )
+    for prefix, levels in prefixes:
+        match = re.match(rf"{prefix}\b", heading)
+        if match:
+            return levels, re.sub(r"^(?:in|of)\b\s*", "", heading[match.end():].strip())
+    return None, heading
+
+
 def programme_matches(document: str, catalogue: dict | None = None) -> list[dict]:
-    catalogue = catalogue or wo_programme_catalog()
+    catalogue = catalogue or programme_catalog()
     aliases: dict[str, list[tuple[str, dict]]] = {}
     for programme in catalogue["programmes"]:
         for name in programme["names"]:
@@ -4028,13 +4107,9 @@ def programme_matches(document: str, catalogue: dict | None = None) -> list[dict
     matches = []
     for excerpt in education_headings(document):
         degree_part = re.split(r"\s+[—–|]\s+", excerpt, maxsplit=1)[0]
-        heading = normalized_degree_text(degree_part)
-        expected_level = ("WO-MA" if re.match(r"(?:msc|ma|llm|master)\b", heading) else
-                          "WO-BA" if re.match(r"(?:bsc|ba|bachelor)\b", heading) else None)
-        heading = re.sub(r"^(?:msc|bsc|ma|ba|llm|master(?: of science| of arts)?|"
-                         r"bachelor(?: of science| of arts)?)(?: in| of)?\s+", "", heading)
+        expected_levels, heading = degree_heading_parts(degree_part)
         for name, programme in aliases.get(heading, []):
-            if expected_level and programme["level"] != expected_level:
+            if expected_levels and programme["level"] not in expected_levels:
                 continue
             matches.append({"excerpt": excerpt, "name": name, "code": programme["code"],
                             "level": programme["level"], "sector": programme["sector"],
@@ -5354,7 +5429,7 @@ def main() -> None:
     elif args.command == "refresh-programme-catalog":
         result = refresh_programme_catalog(args.source_csv, args.as_of, args.check)
         print(json.dumps({**result, "source_date": args.as_of.isoformat(),
-                          "destination": str(WO_CATALOG_PATH)}, indent=2))
+                          "destination": str(PROGRAMME_CATALOG_PATH)}, indent=2))
         if args.check and not result["check"]:
             raise SystemExit("programme catalogue or university fixtures have drifted")
     elif args.command == "suggest-roles":

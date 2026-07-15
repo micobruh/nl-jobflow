@@ -282,6 +282,41 @@ class JobFlowTest(unittest.TestCase):
                 self.assertFalse(result.eligible)
                 self.assertTrue(any(expected in reason for reason in result.rejection_reasons), result.rejection_reasons)
 
+    def test_hbo_associate_education_level_validates_and_orders_requirements(self):
+        cases = {
+            "Associate Degree required": "hbo_associate",
+            "Associate's degree required": "hbo_associate",
+            "HBO-AD diploma required": "hbo_associate",
+            "HBO degree required": "hbo_bachelor",
+            "WO degree required": "wo_bachelor",
+            "HBO/WO work and thinking level": "hbo_bachelor",
+            "hbo/wo werk- en denkniveau": "hbo_bachelor",
+            "HBO Master's degree required": "hbo_master",
+            "WO Master required": "wo_master",
+            "Bachelor's degree required": "hbo_bachelor",
+            "Master's degree required": "hbo_master",
+        }
+        for wording, expected in cases.items():
+            with self.subTest(wording=wording):
+                self.assertEqual(jobflow.required_education_level(wording), expected)
+        self.assertIsNone(jobflow.required_education_level("Relevant education is preferred"))
+
+        cfg = copy.deepcopy(self.cfg)
+        cfg["applicant"]["current_education_level"] = "hbo_associate"
+        cfg["applicant"]["highest_completed_education_level"] = "hbo_associate"
+        cfg["search_criteria"]["max_required_education_level"] = "hbo_associate"
+        jobflow.validate_config(cfg)
+        associate = jobflow.filter_job(
+            self.job(description="Python ML role. Associate Degree required."),
+            self.sponsors, cfg, self.cv)
+        self.assertFalse(any("required education exceeds" in reason
+                             for reason in associate.rejection_reasons))
+        bachelor = jobflow.filter_job(
+            self.job(description="Python ML role. Bachelor's degree required."),
+            self.sponsors, cfg, self.cv)
+        self.assertIn("required education exceeds configured maximum (hbo_bachelor)",
+                      bachelor.rejection_reasons)
+
     def test_internship_and_student_permit_rules_are_separate(self):
         cfg = copy.deepcopy(self.cfg)
         regular = self.job(title="Data Science Internship")
@@ -516,14 +551,14 @@ class JobFlowTest(unittest.TestCase):
 
     def test_all_current_tue_programmes_have_curated_profiles_and_families(self):
         fixture = json.loads((jobflow.ROOT / "tests" / "fixtures" / "tue_programmes.json").read_text())
-        catalogue = jobflow.wo_programme_catalog()
+        catalogue = jobflow.programme_catalog()
         self.assertEqual(fixture["source_date"], catalogue["source_date"])
         self.assertEqual(fixture["source_sha256"], catalogue["source_sha256"])
         self.assertEqual(len(fixture["programmes"]), 38)
         self.assertEqual(sum(item["level"] == "WO-BA" for item in fixture["programmes"]), 14)
         self.assertEqual(sum(item["level"] == "WO-MA" for item in fixture["programmes"]), 24)
         self.assertEqual(len({(item["level"], item["names"][-1])
-                              for item in fixture["programmes"]}), 37)
+                              for item in fixture["programmes"]}), 38)
 
         catalogue_keys = {(item["code"], item["level"]) for item in catalogue["programmes"]}
         for programme in fixture["programmes"]:
@@ -542,7 +577,7 @@ class JobFlowTest(unittest.TestCase):
                     self.assertEqual(families, set(programme["families"]))
 
         mechanical = [item for item in fixture["programmes"]
-                      if item["level"] == "WO-BA" and item["names"][-1] == "Mechanical Engineering"]
+                      if item["level"] == "WO-BA" and "Mechanical Engineering" in item["names"]]
         self.assertEqual({item["code"] for item in mechanical}, {"50439", "56966"})
         self.assertEqual(mechanical[0]["families"], mechanical[1]["families"])
         punctuation = jobflow.programme_matches(
@@ -563,7 +598,7 @@ class JobFlowTest(unittest.TestCase):
     def test_uva_delft_and_utrecht_programme_alias_coverage(self):
         fixture = json.loads(
             (jobflow.ROOT / "tests" / "fixtures" / "university_programmes.json").read_text())
-        catalogue = jobflow.wo_programme_catalog()
+        catalogue = jobflow.programme_catalog()
         self.assertEqual(fixture["source_date"], catalogue["source_date"])
         self.assertEqual(fixture["source_sha256"], catalogue["source_sha256"])
         expected = {
@@ -600,7 +635,7 @@ class JobFlowTest(unittest.TestCase):
     def test_other_research_university_fixture_quality_and_aliases(self):
         fixture = json.loads(
             (jobflow.ROOT / "tests" / "fixtures" / "other_research_universities.json").read_text())
-        catalogue = jobflow.wo_programme_catalog()
+        catalogue = jobflow.programme_catalog()
         self.assertEqual(fixture["source_date"], catalogue["source_date"])
         self.assertEqual(fixture["source_sha256"], catalogue["source_sha256"])
         expected = {
@@ -661,9 +696,10 @@ class JobFlowTest(unittest.TestCase):
         self.assertEqual((len(institutions), registration_count, alias_count), (14, 1234, 1838))
 
     def test_every_catalogue_programme_has_explicit_or_sector_family(self):
-        catalogue = jobflow.wo_programme_catalog()
+        catalogue = jobflow.programme_catalog()
         families, _ = jobflow.role_catalog()
-        self.assertEqual(len(catalogue["programmes"]), 744)
+        self.assertEqual(len(catalogue["programmes"]), 1284)
+        self.assertEqual({item["level"] for item in catalogue["programmes"]}, jobflow.PROGRAMME_LEVELS)
         self.assertEqual(set(jobflow.SECTOR_FAMILY_FALLBACKS), set(jobflow.SECTOR_PROFILES))
         self.assertTrue(set(jobflow.SECTOR_FAMILY_FALLBACKS.values()) <= set(families))
         self.assertNotIn("customer_business_support", jobflow.SECTOR_FAMILY_FALLBACKS.values())
@@ -674,6 +710,136 @@ class JobFlowTest(unittest.TestCase):
                            for name in programme["names"])
             with self.subTest(code=programme["code"], level=programme["level"]):
                 self.assertTrue(explicit or programme["sector"] in jobflow.SECTOR_FAMILY_FALLBACKS)
+
+    def test_hbo_programmes_match_levels_profiles_and_families(self):
+        def document(heading):
+            return ("## Professional Summary Bank\n\n### Unmapped Future Role\n\nSupported.\n\n"
+                    f"## Education\n\n### {heading} — Fictional University\n")
+
+        physiotherapy = document("HBO Bachelor Physiotherapy")
+        matches = jobflow.programme_matches(physiotherapy)
+        self.assertIn(("34570", "HBO-BA"), {(item["code"], item["level"]) for item in matches})
+        self.assertTrue(all(item["professional_requirements"] for item in matches))
+        self.assertIn("health_life_sciences",
+                      {item["profile"] for item in jobflow.study_profile_suggestions(physiotherapy)})
+        self.assertIn("health_clinical_operations",
+                      {item["family"] for item in jobflow.job_family_suggestions(physiotherapy)})
+
+        cases = {
+            "HBO Bachelor Physiotherapy": ({"health_life_sciences"}, {"health_clinical_operations"}),
+            "HBO Bachelor Nursing": ({"health_life_sciences"}, {"health_clinical_operations"}),
+            "HBO Bachelor Occupational Therapy": ({"health_life_sciences"}, {"health_clinical_operations"}),
+            "HBO Bachelor Social Work": ({"social_behavioural_sciences"},
+                                          {"legal_compliance_policy", "project_programme_consulting"}),
+            "HBO Bachelor Applied Psychology": ({"social_behavioural_sciences"}, {"people_hr_organisation"}),
+            "HBO Bachelor Teacher Education in Physical Education": ({"education_research"}, {"education_knowledge"}),
+            "HBO Bachelor HBO-ICT": ({"computer_science"}, {"technology_data_digital"}),
+            "HBO Bachelor Communication and Multimedia Design": ({"language_culture"},
+                                                                   {"arts_culture_media", "product_design"}),
+            "HBO Bachelor Creative Business": ({"language_culture"},
+                                                 {"arts_culture_media", "sales_marketing_communications"}),
+            "HBO Bachelor Built Environment": ({"engineering_technology"},
+                                                 {"engineering_science", "project_programme_consulting"}),
+            "HBO Bachelor Logistics Management": ({"economics_business"},
+                                                    {"supply_chain_operations", "project_programme_consulting"}),
+            "HBO Bachelor Hospitality Management": ({"economics_business"},
+                                                      {"customer_business_support", "project_programme_consulting"}),
+            "HBO Bachelor Accountancy": ({"economics_business"}, {"finance_accounting_risk"}),
+            "HBO Bachelor Commerciële Economie": ({"economics_business"},
+                                                    {"sales_marketing_communications"}),
+        }
+        for heading, (profiles, families) in cases.items():
+            value = document(heading)
+            with self.subTest(heading=heading):
+                self.assertTrue(jobflow.programme_matches(value), heading)
+                self.assertTrue(profiles <= {item["profile"] for item in jobflow.study_profile_suggestions(value)})
+                suggested = {item["family"] for item in jobflow.job_family_suggestions(value)}
+                self.assertTrue(families <= suggested, suggested)
+                if "Built Environment" in heading:
+                    self.assertNotIn("sustainability_environment", suggested)
+                if "Social Work" in heading:
+                    self.assertNotIn("health_clinical_operations", suggested)
+
+        for heading, profile, family in (
+                ("HBO Bachelor Pabo", "education_research", "education_knowledge"),
+                ("HBO Bachelor Commercial Economics", "economics_business", "sales_marketing_communications")):
+            value = document(heading)
+            with self.subTest(common_vocabulary=heading):
+                self.assertIn(profile, {item["profile"] for item in jobflow.study_profile_suggestions(value)})
+                self.assertIn(family, {item["family"] for item in jobflow.job_family_suggestions(value)})
+
+        associate = jobflow.programme_matches(document("Associate Degree Social Work"))
+        self.assertTrue(associate)
+        self.assertEqual({item["level"] for item in associate}, {"HBO-AD"})
+
+    def test_programme_heading_level_markers_disambiguate_hbo_and_wo(self):
+        catalogue = {"programmes": [
+            {"code": "30001", "level": "HBO-BA", "sector": "TECHNIEK",
+             "names": ["Shared Studies"], "professional_requirements": False},
+            {"code": "50001", "level": "WO-BA", "sector": "TECHNIEK",
+             "names": ["Shared Studies"], "professional_requirements": False},
+            {"code": "40001", "level": "HBO-MA", "sector": "TECHNIEK",
+             "names": ["Shared Studies"], "professional_requirements": False},
+            {"code": "60001", "level": "WO-MA", "sector": "TECHNIEK",
+             "names": ["Shared Studies"], "professional_requirements": False},
+            {"code": "80001", "level": "HBO-AD", "sector": "TECHNIEK",
+             "names": ["Applied Engineering"], "professional_requirements": False},
+        ]}
+
+        def levels(heading):
+            document = f"## Education\n\n### {heading} — Fictional University\n"
+            return {item["level"] for item in jobflow.programme_matches(document, catalogue)}
+
+        cases = {
+            "BSc Shared Studies": {"HBO-BA", "WO-BA"},
+            "MA Shared Studies": {"HBO-MA", "WO-MA"},
+            "HBO Bachelor Shared Studies": {"HBO-BA"},
+            "HBO BSc Shared Studies": {"HBO-BA"},
+            "WO Bachelor Shared Studies": {"WO-BA"},
+            "WO MSc Shared Studies": {"WO-MA"},
+            "HBO Shared Studies": {"HBO-BA", "HBO-MA"},
+            "WO Shared Studies": {"WO-BA", "WO-MA"},
+            "HBO/WO Shared Studies": {"HBO-BA", "HBO-MA", "WO-BA", "WO-MA"},
+            "Associate Degree Applied Engineering": {"HBO-AD"},
+            "Associate's Degree Applied Engineering": {"HBO-AD"},
+            "HBO-AD Applied Engineering": {"HBO-AD"},
+            "AD Applied Engineering": {"HBO-AD"},
+            "HBO-PM Shared Studies": set(),
+            "Certificate Shared Studies": set(),
+        }
+        for heading, expected in cases.items():
+            with self.subTest(heading=heading):
+                self.assertEqual(levels(heading), expected)
+
+    def test_programme_catalogue_loader_enforces_provenance_and_completeness(self):
+        valid = {
+            "source": "DUO RIO Overzicht Erkenningen ho",
+            "source_date": "2026-07-15",
+            "source_sha256": "a" * 64,
+            "programmes": [
+                {"code": str(index), "level": level, "sector": "TECHNIEK",
+                 "names": [f"Programme {index}"], "professional_requirements": False}
+                for index, level in enumerate(sorted(jobflow.PROGRAMME_LEVELS), 1)
+            ],
+        }
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "catalog.json"
+            path.write_text(json.dumps(valid))
+            self.assertEqual(jobflow.programme_catalog(path), valid)
+            invalid = {
+                "missing source": {**valid, "source": ""},
+                "bad date": {**valid, "source_date": "15-07-2026"},
+                "bad digest": {**valid, "source_sha256": "not-a-digest"},
+                "missing level": {**valid, "programmes": valid["programmes"][:-1]},
+                "duplicate key": {**valid, "programmes": [*valid["programmes"], valid["programmes"][0]]},
+                "unsupported level": {**valid, "programmes": [
+                    *valid["programmes"][:-1], {**valid["programmes"][-1], "level": "HBO-PM"}]},
+            }
+            for label, value in invalid.items():
+                path.write_text(json.dumps(value))
+                with self.subTest(label=label), self.assertRaisesRegex(
+                        SystemExit, "higher-education programme catalogue has invalid entries"):
+                    jobflow.programme_catalog(path)
 
     def test_curated_university_programmes_have_exact_families(self):
         expected = {
@@ -738,7 +904,6 @@ class JobFlowTest(unittest.TestCase):
             ("BSc", "Medicine"): "health_clinical_operations",
             ("BSc", "Marine Sciences"): "sustainability_environment",
             ("BSc", "Biology"): "research_development",
-            ("BSc", "Lerarenopleiding Open Universiteit"): "education_knowledge",
             ("MSc", "Aansprakelijkheid en verzekering"): "legal_compliance_policy",
             ("BSc", "Liberal Arts and Sciences"): "project_programme_consulting",
             ("BSc", "History"): "research_development",
@@ -771,7 +936,12 @@ class JobFlowTest(unittest.TestCase):
         self.assertTrue(medicine)
         self.assertTrue(all(item["professional_requirements"] for item in medicine))
 
-    def test_programme_catalog_reducer_deduplicates_current_wo_programmes(self):
+        teacher = jobflow.job_family_suggestions(
+            document("BSc", "Lerarenopleiding Open Universiteit"))
+        self.assertEqual(teacher[0]["family"], "education_knowledge")
+        self.assertEqual(teacher[0]["confidence"], "high")
+
+    def test_programme_catalog_reducer_accepts_supported_higher_education_levels(self):
         fields = ["ONDERWIJSBESTUUR_NAAM", "OPLEIDINGSEENHEID_SOORT", "NIVEAU",
                   "INSTROOM_EINDDATUM", "ERKENDEOPLEIDINGSCODE", "ONDERDEEL",
                   "OPLEIDINGSEENHEID_NAAM", "OPLEIDINGSEENHEID_INTERNATIONALE_NAAM",
@@ -785,15 +955,26 @@ class JobFlowTest(unittest.TestCase):
              "Historische Analyse", "Historical Analysis", "GEEN_BEROEPSEISEN"],
             ["Fictional Board D", "OPLEIDING", "HBO-BA", "", "90003", "TECHNIEK",
              "Toegepaste Techniek", "Applied Engineering", "GEEN_BEROEPSEISEN"],
+            ["Fictional Board E", "OPLEIDING", "HBO-AD", "", "90004", "TECHNIEK",
+             "Toegepaste Techniek AD", "Applied Engineering AD", "GEEN_BEROEPSEISEN"],
+            ["Fictional Board F", "OPLEIDING", "HBO-MA", "", "90005", "TECHNIEK",
+             "Toegepaste Techniek Master", "Applied Engineering Master", "GEEN_BEROEPSEISEN"],
+            ["Fictional Board G", "OPLEIDING", "HBO-PM", "", "90006", "TECHNIEK",
+             "Postinitiële Techniek", "Post-initial Engineering", "GEEN_BEROEPSEISEN"],
+            ["Fictional Board H", "OPLEIDING", "HBO-O", "", "90007", "TECHNIEK",
+             "Ongedeelde Techniek", "Undivided Engineering", "GEEN_BEROEPSEISEN"],
+            ["Fictional Board I", "OPLEIDING", "MBO-4", "", "90008", "TECHNIEK",
+             "Middelbare Techniek", "Vocational Engineering", "GEEN_BEROEPSEISEN"],
         ]
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / "rio.csv"
             source.write_text("\n".join([",".join(fields), *[",".join(row) for row in rows]]) + "\n")
-            first, _ = jobflow.reduce_wo_programmes(source.read_bytes(), jobflow.date(2026, 7, 13))
-            second, _ = jobflow.reduce_wo_programmes(source.read_bytes(), jobflow.date(2026, 7, 13))
+            first, _ = jobflow.reduce_programmes(source.read_bytes(), jobflow.date(2026, 7, 13))
+            second, _ = jobflow.reduce_programmes(source.read_bytes(), jobflow.date(2026, 7, 13))
             self.assertEqual(first, second)
             self.assertEqual([(item["code"], item["level"]) for item in first["programmes"]],
-                             [("90001", "WO-MA")])
+                             [("90001", "WO-MA"), ("90003", "HBO-BA"),
+                              ("90004", "HBO-AD"), ("90005", "HBO-MA")])
 
     def test_atomic_programme_refresh_and_check_use_one_digest(self):
         fields = ["ONDERWIJSBESTUUR_NAAM", "OPLEIDINGSEENHEID_SOORT", "NIVEAU",
@@ -807,6 +988,10 @@ class JobFlowTest(unittest.TestCase):
             writer.writerow([institution, "OPLEIDING", "WO-MA", "", str(91000 + index), "TECHNIEK",
                              f"Fictieve Opleiding {index}", f"Fictional Programme {index}",
                              "BEROEPSEIS" if index == 0 else "GEEN_BEROEPSEISEN"])
+        for index, level in enumerate(("HBO-AD", "HBO-BA", "HBO-MA", "WO-BA"), 1):
+            writer.writerow(["Fictional Institution", "OPLEIDING", level, "", str(92000 + index),
+                             "TECHNIEK", f"Fictieve Aanvulling {index}",
+                             f"Fictional Supplement {index}", "GEEN_BEROEPSEISEN"])
         original = output.getvalue()
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -820,7 +1005,7 @@ class JobFlowTest(unittest.TestCase):
             }))
             refreshed = jobflow.refresh_programme_catalog(
                 source, jobflow.date(2026, 7, 13), catalog_path=catalog, fixture_root=fixtures)
-            self.assertEqual(refreshed["programmes"], 14)
+            self.assertEqual(refreshed["programmes"], 18)
             self.assertTrue(refreshed["check"])
             check = jobflow.refresh_programme_catalog(
                 source, jobflow.date(2026, 7, 13), True, catalog, fixtures)
@@ -992,6 +1177,33 @@ class JobFlowTest(unittest.TestCase):
         self.assertTrue(all(sum(family in item["families"] for item in self.cfg["priority_companies"]) >= 2
                             for family in families))
         self.assertEqual(urls["Heineken"], "https://careers.theheinekencompany.com/Job-Listing?field_location_country_code_1[]=NL")
+        self.assertEqual(urls["Catawiki"], "https://job-boards.greenhouse.io/catawiki")
+        self.assertTrue(all(url.startswith("https://") for url in urls.values()))
+
+    def test_arts_family_programmes_roles_and_sources(self):
+        for degree in ("Arts and Culture", "Media Studies", "Art History", "Heritage Studies",
+                       "Musicology", "Theatre Studies", "Conservation and Restoration of Cultural Heritage"):
+            document = ("## Professional Summary Bank\n\n### Unmapped Future Role\n\nSupported.\n\n"
+                        f"## Education\n\n### MSc {degree} — Fictional University\n")
+            with self.subTest(degree=degree):
+                self.assertIn("arts_culture_media",
+                              {item["family"] for item in jobflow.job_family_suggestions(document)})
+        unrelated = ("## Professional Summary Bank\n\n### Unmapped Future Role\n\nSupported.\n\n"
+                     "## Education\n\n### MSc Computer Science — Fictional University\n")
+        self.assertNotIn("arts_culture_media",
+                         {item["family"] for item in jobflow.job_family_suggestions(unrelated)})
+
+        user = valid_user_config()
+        user["search_criteria"].update({
+            "job_families": ["arts_culture_media"],
+            "roles": ["curatorial_assistant", "heritage_collections_officer",
+                      "cultural_programme_coordinator", "media_cultural_researcher"],
+        })
+        cfg = jobflow.resolved_config(user)
+        self.assertIn("Curatorial Assistant", cfg["marketplace_discovery"]["queries"])
+        self.assertTrue(jobflow.source_selected_for_profile(jobflow.normalize_company("IDFA"), cfg))
+        self.assertTrue(jobflow.source_selected_for_profile(jobflow.normalize_company("Catawiki"), cfg))
+        self.assertFalse(jobflow.source_selected_for_profile(jobflow.normalize_company("NXP"), cfg))
 
     def test_confirmed_families_scope_maintained_but_not_custom_sources(self):
         cfg = copy.deepcopy(self.cfg)
@@ -1045,6 +1257,12 @@ class JobFlowTest(unittest.TestCase):
                 discover.assert_called_once()
                 self.assertEqual(summary["sources_selected"], 2)
                 self.assertEqual(summary["sources_skipped_family"], 1)
+                self.assertEqual(summary["families"]["technology_data_digital"], {
+                    "sources_selected": 1, "sources_ok": 1, "jobs_found": 1,
+                    "sources_deferred": 0, "sources_skipped_sponsor": 0,
+                    "sources_skipped_capability": 0, "marketplace_found": 1,
+                    "marketplace_screening": 1,
+                })
                 self.assertIn("market-job", summary["screening_job_ids"])
                 with jobflow.db() as conn:
                     states = {row["display_name"]: row["last_scanned_at"] for row in conn.execute(
@@ -4230,6 +4448,15 @@ City | Aug 2026 – Dec 2026
                       "## Professional Experience\n\n## Complete Project Bank",
                       "missing work-bank heading as zero evidence"):
             self.assertIn(value, readme)
+        for value in ("HBO Associate Degree, HBO bachelor/master, and WO bachelor/master",
+                      "`hbo_associate`", "HBO Bachelor Physiotherapy",
+                      "Generic bachelor/master headings may match both HBO and WO",
+                      "https://onderwijsdata.duo.nl/datasets/overzicht-erkenningen-ho",
+                      "https://www.bigregister.nl/registratie/nederlands-diploma-registreren/wet--en-regelgeving"):
+            self.assertIn(value, readme)
+        self.assertTrue((jobflow.ROOT / "catalogs" /
+                         "higher_education_programmes.json").is_file())
+        self.assertFalse((jobflow.ROOT / "catalogs" / "wo_programmes.json").exists())
         template = (jobflow.ROOT / "master_cv.example.md").read_text()
         self.assertIn("Keep Professional Experience and Complete Project Bank empty", template)
         self.assertIn("delete only optional source sections", template)
@@ -4292,9 +4519,22 @@ City | Aug 2026 – Dec 2026
         user["search_criteria"]["job_families"] = ["research_development"]
         user["search_criteria"]["roles"] = ["researcher"]
         cfg = jobflow.resolved_config(user)
-        result = jobflow.filter_job(self.job(title="Medical Doctor", description="Research and evaluation."),
-                                    self.sponsors, cfg, self.cv)
-        self.assertIn("regulated profession is not supported", result.rejection_reasons)
+        for title in ("Medical Doctor", "Physiotherapist", "Ergotherapeut", "Speech Therapist",
+                      "Dietitian", "Dental Hygienist"):
+            result = jobflow.filter_job(self.job(title=title, description="Research and evaluation."),
+                                        self.sponsors, cfg, self.cv)
+            with self.subTest(title=title):
+                self.assertIn("regulated profession is not supported", result.rejection_reasons)
+
+        user["search_criteria"]["job_families"] = ["health_clinical_operations"]
+        user["search_criteria"]["roles"] = ["clinical_research_coordinator"]
+        cfg = jobflow.resolved_config(user)
+        adjacent = jobflow.filter_job(self.job(
+            title="Clinical Research Coordinator",
+            description="Clinical research and study coordination with protocol documentation."),
+            self.sponsors, cfg, self.cv)
+        self.assertNotIn("regulated profession is not supported", adjacent.rejection_reasons)
+        self.assertTrue(adjacent.eligible, adjacent.rejection_reasons)
 
         brief = {"source_item_counts": {"experience": 0, "projects": 0},
                  "generation_constraints": {"required_cv_sections": ["Summary", "Education", "Skills", "Languages"],

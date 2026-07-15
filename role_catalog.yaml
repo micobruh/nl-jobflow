@@ -1,19 +1,19 @@
 families:
   engineering_science:
     label: Engineering and Science
-    programme_patterns: ["engineering|techniek|physics|chemistry|mathematics|geophysics|architecture|automotive|systems and control|nuclear fusion|robotics|quantum information science|geomatics|marine technology|molecular science|mathematical sciences|chemical sciences"]
+    programme_patterns: ["engineering|techniek|physics|chemistry|mathematics|geophysics|architecture|built environment|automotive|systems and control|nuclear fusion|robotics|quantum information science|geomatics|marine technology|molecular science|mathematical sciences|chemical sciences"]
   technology_data_digital:
     label: Technology, Data and Digital
-    programme_patterns: ["computer science|computing science|artificial intelligence|data science|cybersecurity|software|embedded systems|medical informatics|information science|information studies|business analytics|computational science|bioinformatics|quantum information science|geomatics|security and network engineering|business information technology"]
+    programme_patterns: ["computer science|computing science|artificial intelligence|data science|cybersecurity|software|embedded systems|medical informatics|information science|information studies|business analytics|computational science|bioinformatics|quantum information science|geomatics|security and network engineering|business information technology|hbo-ict|information and communication technology"]
   product_design:
     label: Product and Design
-    programme_patterns: ["industrial design|integrated product design|design for interaction|strategic product design|business information|psychology (?:and|&) technology|human[- ]technology interaction"]
+    programme_patterns: ["industrial design|integrated product design|design for interaction|strategic product design|business information|psychology (?:and|&) technology|human[- ]technology interaction|communication and multimedia design"]
   research_development:
     label: Research and Development
     programme_patterns: ["research|biomedical|biomolecular|neuroscience|bio-pharmaceutical|computational social science|computational science|mathematics|mathematical sciences|physics|medical engineering|nuclear fusion|nanobiology|psychobiology|molecular (?:and biophysical )?life sciences?|life science and technology|molecular science and technology|biological sciences?|biosciences|bioinformatics|forensic science|pharmacy|robotics|quantum information science|clinical technology|technical medicine"]
   health_clinical_operations:
     label: Health and Clinical Operations
-    programme_patterns: ["clinical research|clinical sciences|clinical technology|epidemiology|health sciences|biomedical sciences|biomedical engineering|medical engineering|technical medicine|medical informatics|bioinformatics|nanobiology|molecular (?:and biophysical )?life sciences?|life science and technology|pharmacy|food and health"]
+    programme_patterns: ["clinical research|clinical sciences|clinical technology|epidemiology|health sciences|biomedical sciences|biomedical engineering|medical engineering|technical medicine|medical informatics|bioinformatics|nanobiology|molecular (?:and biophysical )?life sciences?|life science and technology|pharmacy|food and health|physiotherapy|fysiotherapie|nursing|verpleegkunde|occupational therapy|ergotherapie|speech therapy|logopedie|nutrition and dietetics|voeding en di[eë]tetiek|midwifery|verloskunde|skin therapy|huidtherapie|podiatry|podotherapie|medical imaging|oral hygiene|mondzorgkunde"]
   quality_regulatory:
     label: Quality and Regulatory
     programme_patterns: ["quality|regulatory|toxicology|bio-pharmaceutical|food safety|pharmacy"]
@@ -28,25 +28,28 @@ families:
     programme_patterns: ["finance|account|actuarial|econometrics|risk|fiscal economics|financial mathematics"]
   sales_marketing_communications:
     label: Sales, Marketing and Communications
-    programme_patterns: ["marketing|communication science|international business|business administration"]
+    programme_patterns: ["marketing|communication science|international business|business administration|commercial economics|commerci[eë]le economie|creative business"]
   people_hr_organisation:
     label: People, HR and Organisation
-    programme_patterns: ["human resource|work and organizational psychology|culture, organization and management"]
+    programme_patterns: ["human resource|work and organizational psychology|culture, organization and management|applied psychology|toegepaste psychologie"]
   legal_compliance_policy:
     label: Legal, Compliance and Policy
-    programme_patterns: ["law|recht|governance|public administration|bestuurskunde|policy|criminology"]
+    programme_patterns: ["law|recht|governance|public administration|bestuurskunde|policy|criminology|social work|sociaal werk"]
   project_programme_consulting:
     label: Project, Programme and Consulting
-    programme_patterns: ["management|innovation|complex systems|construction management|data science in business and entrepreneurship|computational social science"]
+    programme_patterns: ["management|innovation|complex systems|construction management|built environment|social work|sociaal werk|data science in business and entrepreneurship|computational social science"]
   sustainability_environment:
     label: Sustainability and Environment
-    programme_patterns: ["sustainab|environment|climate|ecology|earth|food and health|future planet|energy science"]
+    programme_patterns: ["sustainab|(?<!built )environment|climate|ecology|earth|food and health|future planet|energy science"]
   education_knowledge:
     label: Education and Knowledge
-    programme_patterns: ["education|educatie|pedagog|learning sciences"]
+    programme_patterns: ["education|educatie|pedagog|learning sciences|pabo|teacher education|lerarenopleiding"]
+  arts_culture_media:
+    label: Arts, Culture and Media
+    programme_patterns: ["arts?(?:,| and) culture|arts, literature and media|media (?:and culture|studies)|art history|heritage studies|conservation and restoration of cultural heritage|musicology|theatre studies|film and literary studies|media, art, design and architecture|creative business|fine art|communication and multimedia design"]
   customer_business_support:
     label: Customer and Business Support
-    programme_patterns: []
+    programme_patterns: ["hospitality|hotel management"]
 
 roles:
   data_scientist:
@@ -218,6 +221,42 @@ roles:
     title_pattern: "\\bcommunications? (?:advisor|adviser|officer|specialist)\\b"
     strong: [communication strategy, content development, public engagement, knowledge translation]
     weak: [writing, editing, stakeholder, research]
+    cv_role: knowledge-work
+    prompt: prompts/presets/general_knowledge_work.md
+  curatorial_assistant:
+    family: arts_culture_media
+    label: Curatorial Assistant
+    queries: [Curatorial Assistant, Assistant Curator]
+    title_pattern: "\\b(?:curatorial assistant|assistant curator)\\b"
+    strong: [curatorial research, exhibition development, collection interpretation, art history]
+    weak: [research, writing, documentation, stakeholder]
+    cv_role: knowledge-work
+    prompt: prompts/presets/general_knowledge_work.md
+  heritage_collections_officer:
+    family: arts_culture_media
+    label: Heritage and Collections Officer
+    queries: [Heritage Officer, Collections Assistant]
+    title_pattern: "\\b(?:heritage|collections?) (?:assistant|officer|coordinator|specialist)\\b"
+    strong: [cultural heritage, collections management, collection research, heritage policy]
+    weak: [cataloguing, documentation, research, conservation]
+    cv_role: knowledge-work
+    prompt: prompts/presets/general_knowledge_work.md
+  cultural_programme_coordinator:
+    family: arts_culture_media
+    label: Cultural Programme Coordinator
+    queries: [Cultural Programme Coordinator, Arts Programme Assistant]
+    title_pattern: "\\b(?:arts?|cultural|museum|festival) (?:programme |program )?(?:assistant|coordinator|officer|producer)\\b"
+    strong: [cultural programming, arts administration, museum programmes, festival production]
+    weak: [planning, events, communication, stakeholder]
+    cv_role: knowledge-work
+    prompt: prompts/presets/general_knowledge_work.md
+  media_cultural_researcher:
+    family: arts_culture_media
+    label: Media and Cultural Researcher
+    queries: [Media Researcher, Cultural Researcher]
+    title_pattern: "\\b(?:media|cultural|arts?) (?:researcher|research assistant|research officer)\\b"
+    strong: [media research, cultural research, audience research, cultural analysis]
+    weak: [research methods, writing, analysis, reporting]
     cv_role: knowledge-work
     prompt: prompts/presets/general_knowledge_work.md
   laboratory_analyst:

@@ -1,6 +1,6 @@
 {
-  "source_date": "2026-07-13",
-  "source_sha256": "03870871d61c8c6047f17469dbc0078907d6cb9c2a1a8c2a2c3a4cb69bd0cb78",
+  "source_date": "2026-07-15",
+  "source_sha256": "520a722d9d3dd58a37ba3e9353111f13f4e7b58ba4915277238b486f0dca6d14",
   "universities": [
     {
       "institution": "Rijksuniversiteit Groningen",
@@ -17,8 +17,8 @@
           "code": "50205",
           "level": "WO-BA",
           "names": [
-            "Sterrenkunde",
-            "Astronomy"
+            "Astronomy",
+            "Sterrenkunde"
           ]
         },
         {
@@ -47,8 +47,8 @@
           "code": "50479",
           "level": "WO-BA",
           "names": [
-            "Nederlandse Talen en Culturen",
-            "Dutch Languages and Cultures"
+            "Dutch Languages and Cultures",
+            "Nederlandse Talen en Culturen"
           ]
         },
         {
@@ -62,16 +62,16 @@
           "code": "50627",
           "level": "WO-BA",
           "names": [
-            "Internationale Betrekkingen en Internationale Organisatie",
-            "International Relations and International Organization"
+            "International Relations and International Organization",
+            "Internationale Betrekkingen en Internationale Organisatie"
           ]
         },
         {
           "code": "50629",
           "level": "WO-BA",
           "names": [
-            "Kunsten, Cultuur en Media",
-            "Arts, Culture and Media"
+            "Arts, Culture and Media",
+            "Kunsten, Cultuur en Media"
           ]
         },
         {
@@ -86,8 +86,8 @@
           "code": "50700",
           "level": "WO-BA",
           "names": [
-            "Rechtsgeleerdheid",
-            "Dutch Law"
+            "Dutch Law",
+            "Rechtsgeleerdheid"
           ]
         },
         {
@@ -110,8 +110,8 @@
           "code": "50950",
           "level": "WO-BA",
           "names": [
-            "Economie en Bedrijfseconomie",
-            "Economics and Business Economics"
+            "Economics and Business Economics",
+            "Economie en Bedrijfseconomie"
           ]
         },
         {
@@ -132,8 +132,8 @@
           "code": "56003",
           "level": "WO-BA",
           "names": [
-            "Griekse en Latijnse Taal en Cultuur",
-            "Classics"
+            "Classics",
+            "Griekse en Latijnse Taal en Cultuur"
           ]
         },
         {
@@ -179,8 +179,8 @@
           "code": "56124",
           "level": "WO-BA",
           "names": [
-            "Europese Talen en Culturen",
-            "European Languages and Cultures"
+            "European Languages and Cultures",
+            "Europese Talen en Culturen"
           ]
         },
         {
@@ -202,8 +202,8 @@
           "code": "56226",
           "level": "WO-BA",
           "names": [
-            "Biomedische Technologie",
-            "Biomedical Engineering"
+            "Biomedical Engineering",
+            "Biomedische Technologie"
           ]
         },
         {
@@ -225,8 +225,8 @@
           "code": "56560",
           "level": "WO-BA",
           "names": [
-            "Tandheelkunde",
-            "Dentistry"
+            "Dentistry",
+            "Tandheelkunde"
           ]
         },
         {
@@ -249,40 +249,40 @@
           "code": "56607",
           "level": "WO-BA",
           "names": [
-            "Pedagogische Wetenschappen",
-            "Pedagogical Sciences"
+            "Pedagogical Sciences",
+            "Pedagogische Wetenschappen"
           ]
         },
         {
           "code": "56703",
           "level": "WO-BA",
           "names": [
-            "Archeologie",
-            "Archaeology"
+            "Archaeology",
+            "Archeologie"
           ]
         },
         {
           "code": "56803",
           "level": "WO-BA",
           "names": [
-            "Taalwetenschap",
-            "Linguistics"
+            "Linguistics",
+            "Taalwetenschap"
           ]
         },
         {
           "code": "56804",
           "level": "WO-BA",
           "names": [
-            "Nederlandse Taal en Cultuur",
-            "Dutch Language and Culture"
+            "Dutch Language and Culture",
+            "Nederlandse Taal en Cultuur"
           ]
         },
         {
           "code": "56824",
           "level": "WO-BA",
           "names": [
-            "Kunstgeschiedenis",
-            "Art History"
+            "Art History",
+            "Kunstgeschiedenis"
           ]
         },
         {
@@ -304,8 +304,8 @@
           "code": "56833",
           "level": "WO-BA",
           "names": [
-            "Econometrie en Operationele Research",
-            "Econometrics and Operations Research"
+            "Econometrics and Operations Research",
+            "Econometrie en Operationele Research"
           ]
         },
         {
@@ -320,8 +320,8 @@
           "code": "56857",
           "level": "WO-BA",
           "names": [
-            "Scheikunde",
-            "Chemistry"
+            "Chemistry",
+            "Scheikunde"
           ]
         },
         {
@@ -344,56 +344,56 @@
           "code": "56960",
           "level": "WO-BA",
           "names": [
-            "Scheikundige Technologie",
-            "Chemical Engineering"
+            "Chemical Engineering",
+            "Scheikundige Technologie"
           ]
         },
         {
           "code": "56962",
           "level": "WO-BA",
           "names": [
-            "Technische Natuurkunde",
-            "Applied Physics"
+            "Applied Physics",
+            "Technische Natuurkunde"
           ]
         },
         {
           "code": "56965",
           "level": "WO-BA",
           "names": [
-            "Technische Wiskunde",
-            "Applied Mathematics"
+            "Applied Mathematics",
+            "Technische Wiskunde"
           ]
         },
         {
           "code": "56978",
           "level": "WO-BA",
           "names": [
-            "Informatica",
-            "Computing Science"
+            "Computing Science",
+            "Informatica"
           ]
         },
         {
           "code": "56980",
           "level": "WO-BA",
           "names": [
-            "Wiskunde",
-            "Mathematics"
+            "Mathematics",
+            "Wiskunde"
           ]
         },
         {
           "code": "56981",
           "level": "WO-BA",
           "names": [
-            "Kunstmatige Intelligentie",
-            "Artificial Intelligence"
+            "Artificial Intelligence",
+            "Kunstmatige Intelligentie"
           ]
         },
         {
           "code": "56994",
           "level": "WO-BA",
           "names": [
-            "Technische Bedrijfskunde",
-            "Industrial Engineering & Management"
+            "Industrial Engineering & Management",
+            "Technische Bedrijfskunde"
           ]
         },
         {
@@ -443,8 +443,8 @@
           "code": "60087",
           "level": "WO-MA",
           "names": [
-            "Kunst- & cultuurwetenschappen",
-            "Arts & Culture"
+            "Arts & Culture",
+            "Kunst- & cultuurwetenschappen"
           ]
         },
         {
@@ -458,8 +458,8 @@
           "code": "60099",
           "level": "WO-MA",
           "names": [
-            "Onderwijswetenschappen",
-            "Educational Sciences"
+            "Educational Sciences",
+            "Onderwijswetenschappen"
           ]
         },
         {
@@ -474,8 +474,8 @@
           "code": "60133",
           "level": "WO-MA",
           "names": [
-            "Archeologie (research)",
-            "Archaeology (research)"
+            "Archaeology (research)",
+            "Archeologie (research)"
           ]
         },
         {
@@ -589,8 +589,8 @@
           "code": "60606",
           "level": "WO-MA",
           "names": [
-            "Rechtswetenschappelijk Onderzoek (research)",
-            "Legal Research (research)"
+            "Legal Research (research)",
+            "Rechtswetenschappelijk Onderzoek (research)"
           ]
         },
         {
@@ -781,16 +781,16 @@
           "code": "60734",
           "level": "WO-MA",
           "names": [
-            "Internationale betrekkingen",
-            "International Relations"
+            "International Relations",
+            "Internationale betrekkingen"
           ]
         },
         {
           "code": "60805",
           "level": "WO-MA",
           "names": [
-            "Archeologie",
-            "Archaeology"
+            "Archaeology",
+            "Archeologie"
           ]
         },
         {
@@ -805,40 +805,40 @@
           "code": "60815",
           "level": "WO-MA",
           "names": [
-            "Taalwetenschappen",
-            "Linguistics"
+            "Linguistics",
+            "Taalwetenschappen"
           ]
         },
         {
           "code": "60817",
           "level": "WO-MA",
           "names": [
-            "Taalwetenschappen (research)",
-            "Linguistics (research)"
+            "Linguistics (research)",
+            "Taalwetenschappen (research)"
           ]
         },
         {
           "code": "60819",
           "level": "WO-MA",
           "names": [
-            "Internationale Betrekkingen",
-            "International Relations"
+            "International Relations",
+            "Internationale Betrekkingen"
           ]
         },
         {
           "code": "60820",
           "level": "WO-MA",
           "names": [
-            "Internationale Betrekkingen (research)",
-            "International Relations (research)"
+            "International Relations (research)",
+            "Internationale Betrekkingen (research)"
           ]
         },
         {
           "code": "60821",
           "level": "WO-MA",
           "names": [
-            "Oudheidstudies",
-            "Classics & Ancient Civilizations"
+            "Classics & Ancient Civilizations",
+            "Oudheidstudies"
           ]
         },
         {
@@ -877,16 +877,16 @@
           "code": "60829",
           "level": "WO-MA",
           "names": [
-            "Kunst- & cultuurwetenschappen (research)",
-            "Arts & Culture (research)"
+            "Arts & Culture (research)",
+            "Kunst- & cultuurwetenschappen (research)"
           ]
         },
         {
           "code": "60831",
           "level": "WO-MA",
           "names": [
-            "Mediastudies",
-            "Media Studies"
+            "Media Studies",
+            "Mediastudies"
           ]
         },
         {
@@ -909,16 +909,16 @@
           "code": "60847",
           "level": "WO-MA",
           "names": [
-            "Europese Studies",
-            "European Studies"
+            "European Studies",
+            "Europese Studies"
           ]
         },
         {
           "code": "60849",
           "level": "WO-MA",
           "names": [
-            "Neerlandistiek",
-            "Dutch Studies"
+            "Dutch Studies",
+            "Neerlandistiek"
           ]
         },
         {
@@ -990,16 +990,16 @@
           "code": "66451",
           "level": "WO-MA",
           "names": [
-            "Nederlands Recht",
-            "Dutch Law"
+            "Dutch Law",
+            "Nederlands Recht"
           ]
         },
         {
           "code": "66461",
           "level": "WO-MA",
           "names": [
-            "Recht en Bestuur",
-            "Law and Public Administration"
+            "Law and Public Administration",
+            "Recht en Bestuur"
           ]
         },
         {
@@ -1014,8 +1014,8 @@
           "code": "66588",
           "level": "WO-MA",
           "names": [
-            "Tandheelkunde",
-            "Dentistry"
+            "Dentistry",
+            "Tandheelkunde"
           ]
         },
         {
@@ -1030,8 +1030,8 @@
           "code": "66607",
           "level": "WO-MA",
           "names": [
-            "Pedagogische Wetenschappen",
-            "Pedagogical Sciences"
+            "Pedagogical Sciences",
+            "Pedagogische Wetenschappen"
           ]
         },
         {
@@ -1061,8 +1061,8 @@
           "code": "66828",
           "level": "WO-MA",
           "names": [
-            "Notarieel Recht",
-            "Notarial Law"
+            "Notarial Law",
+            "Notarieel Recht"
           ]
         },
         {
@@ -1134,8 +1134,8 @@
           "code": "68534",
           "level": "WO-MA",
           "names": [
-            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen",
-            "Language Teaching in Secondary Education"
+            "Language Teaching in Secondary Education",
+            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen"
           ]
         },
         {
@@ -1179,8 +1179,8 @@
           "code": "50035",
           "level": "WO-BA",
           "names": [
-            "Culturele Antropologie en Ontwikkelingssociologie",
-            "Cultural Anthropology and Development Sociology"
+            "Cultural Anthropology and Development Sociology",
+            "Culturele Antropologie en Ontwikkelingssociologie"
           ]
         },
         {
@@ -1225,16 +1225,16 @@
           "code": "50700",
           "level": "WO-BA",
           "names": [
-            "Rechtsgeleerdheid",
-            "Law"
+            "Law",
+            "Rechtsgeleerdheid"
           ]
         },
         {
           "code": "50800",
           "level": "WO-BA",
           "names": [
-            "Medische Natuurwetenschappen",
-            "Medical Natural Sciences"
+            "Medical Natural Sciences",
+            "Medische Natuurwetenschappen"
           ]
         },
         {
@@ -1248,8 +1248,8 @@
           "code": "50950",
           "level": "WO-BA",
           "names": [
-            "Economie en Bedrijfseconomie",
-            "Economics and Business Economics"
+            "Economics and Business Economics",
+            "Economie en Bedrijfseconomie"
           ]
         },
         {
@@ -1277,8 +1277,8 @@
           "code": "55012",
           "level": "WO-BA",
           "names": [
-            "Scheikunde (joint degree)",
-            "Chemistry (joint degree)"
+            "Chemistry (joint degree)",
+            "Scheikunde (joint degree)"
           ]
         },
         {
@@ -1293,24 +1293,24 @@
           "code": "55822",
           "level": "WO-BA",
           "names": [
-            "Media, Kunst, Design en Architectuur",
-            "Media, Art, Design and Architecture"
+            "Media, Art, Design and Architecture",
+            "Media, Kunst, Design en Architectuur"
           ]
         },
         {
           "code": "55823",
           "level": "WO-BA",
           "names": [
-            "Literatuur en Samenleving",
-            "Literature and Society"
+            "Literature and Society",
+            "Literatuur en Samenleving"
           ]
         },
         {
           "code": "56003",
           "level": "WO-BA",
           "names": [
-            "Griekse en Latijnse Taal en Cultuur",
-            "Greek and Latin Languages and Cultures"
+            "Greek and Latin Languages and Cultures",
+            "Griekse en Latijnse Taal en Cultuur"
           ]
         },
         {
@@ -1357,8 +1357,8 @@
           "code": "56560",
           "level": "WO-BA",
           "names": [
-            "Tandheelkunde",
-            "Dentistry"
+            "Dentistry",
+            "Tandheelkunde"
           ]
         },
         {
@@ -1381,16 +1381,16 @@
           "code": "56606",
           "level": "WO-BA",
           "names": [
-            "Politicologie",
-            "Political Science"
+            "Political Science",
+            "Politicologie"
           ]
         },
         {
           "code": "56607",
           "level": "WO-BA",
           "names": [
-            "Pedagogische Wetenschappen",
-            "Pedagogical Sciences"
+            "Pedagogical Sciences",
+            "Pedagogische Wetenschappen"
           ]
         },
         {
@@ -1405,16 +1405,16 @@
           "code": "56703",
           "level": "WO-BA",
           "names": [
-            "Archeologie",
-            "Archaeology"
+            "Archaeology",
+            "Archeologie"
           ]
         },
         {
           "code": "56704",
           "level": "WO-BA",
           "names": [
-            "Oudheidwetenschappen",
-            "Ancient Studies"
+            "Ancient Studies",
+            "Oudheidwetenschappen"
           ]
         },
         {
@@ -1429,16 +1429,16 @@
           "code": "56828",
           "level": "WO-BA",
           "names": [
-            "Notarieel Recht",
-            "Notarial Law"
+            "Notarial Law",
+            "Notarieel Recht"
           ]
         },
         {
           "code": "56833",
           "level": "WO-BA",
           "names": [
-            "Econometrie en Operationele Research",
-            "Econometrics and Operations Research"
+            "Econometrics and Operations Research",
+            "Econometrie en Operationele Research"
           ]
         },
         {
@@ -1491,8 +1491,8 @@
           "code": "56990",
           "level": "WO-BA",
           "names": [
-            "Biomedische Wetenschappen",
-            "Biomedical Sciences"
+            "Biomedical Sciences",
+            "Biomedische Wetenschappen"
           ]
         },
         {
@@ -1527,8 +1527,8 @@
           "code": "60039",
           "level": "WO-MA",
           "names": [
-            "Oudheidstudies (research)",
-            "Classics & Ancient Civilizations (research)"
+            "Classics & Ancient Civilizations (research)",
+            "Oudheidstudies (research)"
           ]
         },
         {
@@ -1599,16 +1599,16 @@
           "code": "60084",
           "level": "WO-MA",
           "names": [
-            "Rechtsgeleerdheid",
-            "Law"
+            "Law",
+            "Rechtsgeleerdheid"
           ]
         },
         {
           "code": "60087",
           "level": "WO-MA",
           "names": [
-            "Kunst- & cultuurwetenschappen",
-            "Arts & Culture"
+            "Arts & Culture",
+            "Kunst- & cultuurwetenschappen"
           ]
         },
         {
@@ -1644,8 +1644,8 @@
           "code": "60408",
           "level": "WO-MA",
           "names": [
-            "Ondernemingsrecht",
-            "Corporate Law"
+            "Corporate Law",
+            "Ondernemingsrecht"
           ]
         },
         {
@@ -1722,8 +1722,8 @@
           "code": "60805",
           "level": "WO-MA",
           "names": [
-            "Archeologie",
-            "Archaeology"
+            "Archaeology",
+            "Archeologie"
           ]
         },
         {
@@ -1773,16 +1773,16 @@
           "code": "60815",
           "level": "WO-MA",
           "names": [
-            "Taalwetenschappen",
-            "Linguistics"
+            "Linguistics",
+            "Taalwetenschappen"
           ]
         },
         {
           "code": "60821",
           "level": "WO-MA",
           "names": [
-            "Oudheidstudies",
-            "Classics & Ancient Civilizations"
+            "Classics & Ancient Civilizations",
+            "Oudheidstudies"
           ]
         },
         {
@@ -1821,8 +1821,8 @@
           "code": "60836",
           "level": "WO-MA",
           "names": [
-            "Erfgoedstudies",
-            "Curating Art and Cultures"
+            "Curating Art and Cultures",
+            "Erfgoedstudies"
           ]
         },
         {
@@ -1959,8 +1959,8 @@
           "code": "66588",
           "level": "WO-MA",
           "names": [
-            "Tandheelkunde",
-            "Dentistry"
+            "Dentistry",
+            "Tandheelkunde"
           ]
         },
         {
@@ -1975,8 +1975,8 @@
           "code": "66607",
           "level": "WO-MA",
           "names": [
-            "Pedagogische Wetenschappen",
-            "Pedagogical Sciences"
+            "Pedagogical Sciences",
+            "Pedagogische Wetenschappen"
           ]
         },
         {
@@ -2022,8 +2022,8 @@
           "code": "66828",
           "level": "WO-MA",
           "names": [
-            "Notarieel Recht",
-            "Notarial Law"
+            "Notarial Law",
+            "Notarieel Recht"
           ]
         },
         {
@@ -2116,8 +2116,8 @@
           "code": "68534",
           "level": "WO-MA",
           "names": [
-            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen",
-            "Language Teaching in Secondary Education"
+            "Language Teaching in Secondary Education",
+            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen"
           ]
         },
         {
@@ -2174,16 +2174,16 @@
           "code": "50035",
           "level": "WO-BA",
           "names": [
-            "Culturele Antropologie en Ontwikkelingssociologie",
-            "Cultural Anthropology and Development Sociology"
+            "Cultural Anthropology and Development Sociology",
+            "Culturele Antropologie en Ontwikkelingssociologie"
           ]
         },
         {
           "code": "50205",
           "level": "WO-BA",
           "names": [
-            "Sterrenkunde",
-            "Astronomy"
+            "Astronomy",
+            "Sterrenkunde"
           ]
         },
         {
@@ -2212,8 +2212,8 @@
           "code": "50414",
           "level": "WO-BA",
           "names": [
-            "Film- en Literatuurwetenschap",
-            "Film and Literary Studies"
+            "Film and Literary Studies",
+            "Film- en Literatuurwetenschap"
           ]
         },
         {
@@ -2241,8 +2241,8 @@
           "code": "50855",
           "level": "WO-BA",
           "names": [
-            "Russische Studies",
-            "Russian Studies"
+            "Russian Studies",
+            "Russische Studies"
           ]
         },
         {
@@ -2257,16 +2257,16 @@
           "code": "50996",
           "level": "WO-BA",
           "names": [
-            "Economie & Samenleving",
-            "Economics & Society"
+            "Economics & Society",
+            "Economie & Samenleving"
           ]
         },
         {
           "code": "55007",
           "level": "WO-BA",
           "names": [
-            "Klinische Technologie (joint degree)",
-            "Clinical Technology (joint degree)"
+            "Clinical Technology (joint degree)",
+            "Klinische Technologie (joint degree)"
           ]
         },
         {
@@ -2287,8 +2287,8 @@
           "code": "56003",
           "level": "WO-BA",
           "names": [
-            "Griekse en Latijnse Taal en Cultuur",
-            "Classics"
+            "Classics",
+            "Griekse en Latijnse Taal en Cultuur"
           ]
         },
         {
@@ -2311,8 +2311,8 @@
           "code": "56055",
           "level": "WO-BA",
           "names": [
-            "Nederlandkunde/Dutch Studies",
-            "Dutch Studies"
+            "Dutch Studies",
+            "Nederlandkunde/Dutch Studies"
           ]
         },
         {
@@ -2334,16 +2334,16 @@
           "code": "56099",
           "level": "WO-BA",
           "names": [
-            "Zuid- en Zuidoost-Aziëstudies",
-            "South and Southeast Asian Studies"
+            "South and Southeast Asian Studies",
+            "Zuid- en Zuidoost-Aziëstudies"
           ]
         },
         {
           "code": "56123",
           "level": "WO-BA",
           "names": [
-            "Oude Nabije Oosten-studies",
-            "Ancient Near Eastern Studies"
+            "Ancient Near Eastern Studies",
+            "Oude Nabije Oosten-studies"
           ]
         },
         {
@@ -2373,16 +2373,16 @@
           "code": "56606",
           "level": "WO-BA",
           "names": [
-            "Politicologie",
-            "Political Science"
+            "Political Science",
+            "Politicologie"
           ]
         },
         {
           "code": "56607",
           "level": "WO-BA",
           "names": [
-            "Pedagogische Wetenschappen",
-            "Pedagogical Sciences"
+            "Pedagogical Sciences",
+            "Pedagogische Wetenschappen"
           ]
         },
         {
@@ -2397,24 +2397,24 @@
           "code": "56703",
           "level": "WO-BA",
           "names": [
-            "Archeologie",
-            "Archaeology"
+            "Archaeology",
+            "Archeologie"
           ]
         },
         {
           "code": "56803",
           "level": "WO-BA",
           "names": [
-            "Taalwetenschap",
-            "Linguistics"
+            "Linguistics",
+            "Taalwetenschap"
           ]
         },
         {
           "code": "56804",
           "level": "WO-BA",
           "names": [
-            "Nederlandse Taal en Cultuur",
-            "Dutch Language and Culture"
+            "Dutch Language and Culture",
+            "Nederlandse Taal en Cultuur"
           ]
         },
         {
@@ -2457,16 +2457,16 @@
           "code": "56819",
           "level": "WO-BA",
           "names": [
-            "Japanstudies",
-            "Japanese Studies"
+            "Japanese Studies",
+            "Japanstudies"
           ]
         },
         {
           "code": "56820",
           "level": "WO-BA",
           "names": [
-            "Koreastudies",
-            "Korean Studies"
+            "Korean Studies",
+            "Koreastudies"
           ]
         },
         {
@@ -2495,8 +2495,8 @@
           "code": "56828",
           "level": "WO-BA",
           "names": [
-            "Notarieel Recht",
-            "Notarial Law"
+            "Notarial Law",
+            "Notarieel Recht"
           ]
         },
         {
@@ -2511,16 +2511,16 @@
           "code": "56978",
           "level": "WO-BA",
           "names": [
-            "Informatica",
-            "Computer Science"
+            "Computer Science",
+            "Informatica"
           ]
         },
         {
           "code": "56980",
           "level": "WO-BA",
           "names": [
-            "Wiskunde",
-            "Mathematics"
+            "Mathematics",
+            "Wiskunde"
           ]
         },
         {
@@ -2569,8 +2569,8 @@
           "code": "60039",
           "level": "WO-MA",
           "names": [
-            "Oudheidstudies (research)",
-            "Classics & Ancient Civilizations (research)"
+            "Classics & Ancient Civilizations (research)",
+            "Oudheidstudies (research)"
           ]
         },
         {
@@ -2584,16 +2584,16 @@
           "code": "60087",
           "level": "WO-MA",
           "names": [
-            "Kunst- & cultuurwetenschappen",
-            "Arts & Culture"
+            "Arts & Culture",
+            "Kunst- & cultuurwetenschappen"
           ]
         },
         {
           "code": "60133",
           "level": "WO-MA",
           "names": [
-            "Archeologie (research)",
-            "Archaeology (research)"
+            "Archaeology (research)",
+            "Archeologie (research)"
           ]
         },
         {
@@ -2728,8 +2728,8 @@
           "code": "60734",
           "level": "WO-MA",
           "names": [
-            "Internationale betrekkingen",
-            "International Relations"
+            "International Relations",
+            "Internationale betrekkingen"
           ]
         },
         {
@@ -2743,8 +2743,8 @@
           "code": "60805",
           "level": "WO-MA",
           "names": [
-            "Archeologie",
-            "Archaeology"
+            "Archaeology",
+            "Archeologie"
           ]
         },
         {
@@ -2759,24 +2759,24 @@
           "code": "60815",
           "level": "WO-MA",
           "names": [
-            "Taalwetenschappen",
-            "Linguistics"
+            "Linguistics",
+            "Taalwetenschappen"
           ]
         },
         {
           "code": "60817",
           "level": "WO-MA",
           "names": [
-            "Taalwetenschappen (research)",
-            "Linguistics (research)"
+            "Linguistics (research)",
+            "Taalwetenschappen (research)"
           ]
         },
         {
           "code": "60821",
           "level": "WO-MA",
           "names": [
-            "Oudheidstudies",
-            "Classics & Ancient Civilizations"
+            "Classics & Ancient Civilizations",
+            "Oudheidstudies"
           ]
         },
         {
@@ -2799,48 +2799,48 @@
           "code": "60830",
           "level": "WO-MA",
           "names": [
-            "Mediastudies",
-            "Media Studies"
+            "Media Studies",
+            "Mediastudies"
           ]
         },
         {
           "code": "60837",
           "level": "WO-MA",
           "names": [
-            "Afrika Studies",
-            "African Studies"
+            "African Studies",
+            "Afrika Studies"
           ]
         },
         {
           "code": "60838",
           "level": "WO-MA",
           "names": [
-            "Afrika Studies (research)",
-            "African Studies (research)"
+            "African Studies (research)",
+            "Afrika Studies (research)"
           ]
         },
         {
           "code": "60839",
           "level": "WO-MA",
           "names": [
-            "Azië Studies",
-            "Asian Studies"
+            "Asian Studies",
+            "Azië Studies"
           ]
         },
         {
           "code": "60840",
           "level": "WO-MA",
           "names": [
-            "Azië Studies",
-            "Asian Studies"
+            "Asian Studies",
+            "Azië Studies"
           ]
         },
         {
           "code": "60841",
           "level": "WO-MA",
           "names": [
-            "Azië Studies (research)",
-            "Asian Studies (research)"
+            "Asian Studies (research)",
+            "Azië Studies (research)"
           ]
         },
         {
@@ -2879,16 +2879,16 @@
           "code": "60848",
           "level": "WO-MA",
           "names": [
-            "Russische en Euraziatische Studies",
-            "Russian and Eurasian Studies"
+            "Russian and Eurasian Studies",
+            "Russische en Euraziatische Studies"
           ]
         },
         {
           "code": "60849",
           "level": "WO-MA",
           "names": [
-            "Neerlandistiek",
-            "Dutch Studies"
+            "Dutch Studies",
+            "Neerlandistiek"
           ]
         },
         {
@@ -3076,8 +3076,8 @@
           "code": "68534",
           "level": "WO-MA",
           "names": [
-            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen",
-            "Language Teaching in Secondary Education"
+            "Language Teaching in Secondary Education",
+            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen"
           ]
         },
         {
@@ -3113,8 +3113,8 @@
           "code": "50035",
           "level": "WO-BA",
           "names": [
-            "Culturele Antropologie en Ontwikkelingssociologie",
-            "Cultural Anthropology and Development Sociology"
+            "Cultural Anthropology and Development Sociology",
+            "Culturele Antropologie en Ontwikkelingssociologie"
           ]
         },
         {
@@ -3136,8 +3136,8 @@
           "code": "50700",
           "level": "WO-BA",
           "names": [
-            "Rechtsgeleerdheid",
-            "Law"
+            "Law",
+            "Rechtsgeleerdheid"
           ]
         },
         {
@@ -3152,16 +3152,16 @@
           "code": "50950",
           "level": "WO-BA",
           "names": [
-            "Economie en Bedrijfseconomie",
-            "Economics and Business Economics"
+            "Economics and Business Economics",
+            "Economie en Bedrijfseconomie"
           ]
         },
         {
           "code": "56003",
           "level": "WO-BA",
           "names": [
-            "Griekse en Latijnse Taal en Cultuur",
-            "Classics"
+            "Classics",
+            "Griekse en Latijnse Taal en Cultuur"
           ]
         },
         {
@@ -3208,8 +3208,8 @@
           "code": "56560",
           "level": "WO-BA",
           "names": [
-            "Tandheelkunde",
-            "Dentistry"
+            "Dentistry",
+            "Tandheelkunde"
           ]
         },
         {
@@ -3232,16 +3232,16 @@
           "code": "56606",
           "level": "WO-BA",
           "names": [
-            "Politicologie",
-            "Political Science"
+            "Political Science",
+            "Politicologie"
           ]
         },
         {
           "code": "56607",
           "level": "WO-BA",
           "names": [
-            "Pedagogische Wetenschappen",
-            "Pedagogical Sciences"
+            "Pedagogical Sciences",
+            "Pedagogische Wetenschappen"
           ]
         },
         {
@@ -3264,16 +3264,16 @@
           "code": "56803",
           "level": "WO-BA",
           "names": [
-            "Taalwetenschap",
-            "Linguistics"
+            "Linguistics",
+            "Taalwetenschap"
           ]
         },
         {
           "code": "56804",
           "level": "WO-BA",
           "names": [
-            "Nederlandse Taal en Cultuur",
-            "Dutch Language and Culture"
+            "Dutch Language and Culture",
+            "Nederlandse Taal en Cultuur"
           ]
         },
         {
@@ -3296,8 +3296,8 @@
           "code": "56824",
           "level": "WO-BA",
           "names": [
-            "Kunstgeschiedenis",
-            "Art History"
+            "Art History",
+            "Kunstgeschiedenis"
           ]
         },
         {
@@ -3312,8 +3312,8 @@
           "code": "56828",
           "level": "WO-BA",
           "names": [
-            "Notarieel Recht",
-            "Notarial Law"
+            "Notarial Law",
+            "Notarieel Recht"
           ]
         },
         {
@@ -3356,8 +3356,8 @@
           "code": "56980",
           "level": "WO-BA",
           "names": [
-            "Wiskunde",
-            "Mathematics"
+            "Mathematics",
+            "Wiskunde"
           ]
         },
         {
@@ -3372,8 +3372,8 @@
           "code": "56990",
           "level": "WO-BA",
           "names": [
-            "Biomedische Wetenschappen",
-            "Biomedical Sciences"
+            "Biomedical Sciences",
+            "Biomedische Wetenschappen"
           ]
         },
         {
@@ -3401,32 +3401,32 @@
           "code": "59329",
           "level": "WO-BA",
           "names": [
-            "Pedagogische Wetenschappen van Primair Onderwijs",
-            "Pedagogical Sciences of Primary Education"
+            "Pedagogical Sciences of Primary Education",
+            "Pedagogische Wetenschappen van Primair Onderwijs"
           ]
         },
         {
           "code": "59349",
           "level": "WO-BA",
           "names": [
-            "Humane Neurowetenschappen",
-            "Human Neuroscience"
+            "Human Neuroscience",
+            "Humane Neurowetenschappen"
           ]
         },
         {
           "code": "60087",
           "level": "WO-MA",
           "names": [
-            "Kunst- & cultuurwetenschappen",
-            "Arts & Culture"
+            "Arts & Culture",
+            "Kunst- & cultuurwetenschappen"
           ]
         },
         {
           "code": "60099",
           "level": "WO-MA",
           "names": [
-            "Onderwijswetenschappen",
-            "Educational Sciences"
+            "Educational Sciences",
+            "Onderwijswetenschappen"
           ]
         },
         {
@@ -3513,8 +3513,8 @@
           "code": "60386",
           "level": "WO-MA",
           "names": [
-            "Onderneming en Recht (research)",
-            "Business and Law (research)"
+            "Business and Law (research)",
+            "Onderneming en Recht (research)"
           ]
         },
         {
@@ -3528,8 +3528,8 @@
           "code": "60473",
           "level": "WO-MA",
           "names": [
-            "Curriculumontwikkeling voor Primair Onderwijs",
-            "Curriculum Development for Primary Education"
+            "Curriculum Development for Primary Education",
+            "Curriculumontwikkeling voor Primair Onderwijs"
           ]
         },
         {
@@ -3565,16 +3565,16 @@
           "code": "60815",
           "level": "WO-MA",
           "names": [
-            "Taalwetenschappen",
-            "Linguistics"
+            "Linguistics",
+            "Taalwetenschappen"
           ]
         },
         {
           "code": "60821",
           "level": "WO-MA",
           "names": [
-            "Oudheidstudies",
-            "Classics & Ancient Civilizations"
+            "Classics & Ancient Civilizations",
+            "Oudheidstudies"
           ]
         },
         {
@@ -3641,8 +3641,8 @@
           "code": "65002",
           "level": "WO-MA",
           "names": [
-            "Europese Studies (joint degree)",
-            "European Studies (joint degree)"
+            "European Studies (joint degree)",
+            "Europese Studies (joint degree)"
           ]
         },
         {
@@ -3671,8 +3671,8 @@
           "code": "66451",
           "level": "WO-MA",
           "names": [
-            "Nederlands Recht",
-            "Dutch Law"
+            "Dutch Law",
+            "Nederlands Recht"
           ]
         },
         {
@@ -3687,8 +3687,8 @@
           "code": "66588",
           "level": "WO-MA",
           "names": [
-            "Tandheelkunde",
-            "Dentistry"
+            "Dentistry",
+            "Tandheelkunde"
           ]
         },
         {
@@ -3703,8 +3703,8 @@
           "code": "66607",
           "level": "WO-MA",
           "names": [
-            "Pedagogische Wetenschappen",
-            "Pedagogical Sciences"
+            "Pedagogical Sciences",
+            "Pedagogische Wetenschappen"
           ]
         },
         {
@@ -3750,8 +3750,8 @@
           "code": "66828",
           "level": "WO-MA",
           "names": [
-            "Notarieel Recht",
-            "Notarial Law"
+            "Notarial Law",
+            "Notarieel Recht"
           ]
         },
         {
@@ -3823,8 +3823,8 @@
           "code": "68534",
           "level": "WO-MA",
           "names": [
-            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen",
-            "Language Teaching in Secondary Education"
+            "Language Teaching in Secondary Education",
+            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen"
           ]
         },
         {
@@ -3868,8 +3868,8 @@
           "code": "50004",
           "level": "WO-BA",
           "names": [
-            "Cultuurwetenschappen",
-            "Arts and Culture"
+            "Arts and Culture",
+            "Cultuurwetenschappen"
           ]
         },
         {
@@ -3925,8 +3925,8 @@
           "code": "50700",
           "level": "WO-BA",
           "names": [
-            "Rechtsgeleerdheid",
-            "Dutch Law"
+            "Dutch Law",
+            "Rechtsgeleerdheid"
           ]
         },
         {
@@ -3940,8 +3940,8 @@
           "code": "50950",
           "level": "WO-BA",
           "names": [
-            "Economie en Bedrijfseconomie",
-            "Economics and Business Economics"
+            "Economics and Business Economics",
+            "Economie en Bedrijfseconomie"
           ]
         },
         {
@@ -3955,16 +3955,16 @@
           "code": "56051",
           "level": "WO-BA",
           "names": [
-            "Europese Studies",
-            "European Studies"
+            "European Studies",
+            "Europese Studies"
           ]
         },
         {
           "code": "56402",
           "level": "WO-BA",
           "names": [
-            "Fiscale Economie",
-            "Fiscal Economics"
+            "Fiscal Economics",
+            "Fiscale Economie"
           ]
         },
         {
@@ -4003,8 +4003,8 @@
           "code": "56833",
           "level": "WO-BA",
           "names": [
-            "Econometrie en Operationele Research",
-            "Econometrics and Operations Research"
+            "Econometrics and Operations Research",
+            "Econometrie en Operationele Research"
           ]
         },
         {
@@ -4018,8 +4018,8 @@
           "code": "56990",
           "level": "WO-BA",
           "names": [
-            "Biomedische Wetenschappen",
-            "Biomedical Sciences"
+            "Biomedical Sciences",
+            "Biomedische Wetenschappen"
           ]
         },
         {
@@ -4131,8 +4131,8 @@
           "code": "60087",
           "level": "WO-MA",
           "names": [
-            "Kunst- & cultuurwetenschappen",
-            "Arts and Culture"
+            "Arts and Culture",
+            "Kunst- & cultuurwetenschappen"
           ]
         },
         {
@@ -4153,8 +4153,8 @@
           "code": "60169",
           "level": "WO-MA",
           "names": [
-            "Recht en Arbeid",
-            "Law and Labour"
+            "Law and Labour",
+            "Recht en Arbeid"
           ]
         },
         {
@@ -4268,16 +4268,16 @@
           "code": "60829",
           "level": "WO-MA",
           "names": [
-            "Kunst- & cultuurwetenschappen (research)",
-            "Arts and Culture (research)"
+            "Arts and Culture (research)",
+            "Kunst- & cultuurwetenschappen (research)"
           ]
         },
         {
           "code": "60830",
           "level": "WO-MA",
           "names": [
-            "Mediastudies",
-            "Media Studies"
+            "Media Studies",
+            "Mediastudies"
           ]
         },
         {
@@ -4340,16 +4340,16 @@
           "code": "66402",
           "level": "WO-MA",
           "names": [
-            "Fiscale Economie",
-            "Fiscal Economics"
+            "Fiscal Economics",
+            "Fiscale Economie"
           ]
         },
         {
           "code": "66451",
           "level": "WO-MA",
           "names": [
-            "Nederlands Recht",
-            "Dutch Law"
+            "Dutch Law",
+            "Nederlands Recht"
           ]
         },
         {
@@ -4464,8 +4464,8 @@
           "code": "50950",
           "level": "WO-BA",
           "names": [
-            "Economie en Bedrijfseconomie",
-            "Economics and Business Economics"
+            "Economics and Business Economics",
+            "Economie en Bedrijfseconomie"
           ]
         },
         {
@@ -4487,8 +4487,8 @@
           "code": "55007",
           "level": "WO-BA",
           "names": [
-            "Klinische Technologie (joint degree)",
-            "Clinical Technology (joint degree)"
+            "Clinical Technology (joint degree)",
+            "Klinische Technologie (joint degree)"
           ]
         },
         {
@@ -4555,8 +4555,8 @@
           "code": "56607",
           "level": "WO-BA",
           "names": [
-            "Pedagogische Wetenschappen",
-            "Pedagogical Sciences"
+            "Pedagogical Sciences",
+            "Pedagogische Wetenschappen"
           ]
         },
         {
@@ -4587,8 +4587,8 @@
           "code": "56833",
           "level": "WO-BA",
           "names": [
-            "Econometrie en Operationele Research",
-            "Econometrics and Operations Research"
+            "Econometrics and Operations Research",
+            "Econometrie en Operationele Research"
           ]
         },
         {
@@ -4631,8 +4631,8 @@
           "code": "60081",
           "level": "WO-MA",
           "names": [
-            "Zorgmanagement",
-            "Health Care Management"
+            "Health Care Management",
+            "Zorgmanagement"
           ]
         },
         {
@@ -4660,8 +4660,8 @@
           "code": "60087",
           "level": "WO-MA",
           "names": [
-            "Kunst- & cultuurwetenschappen",
-            "Arts & Culture"
+            "Arts & Culture",
+            "Kunst- & cultuurwetenschappen"
           ]
         },
         {
@@ -4732,8 +4732,8 @@
           "code": "60408",
           "level": "WO-MA",
           "names": [
-            "Ondernemingsrecht",
-            "Company Law"
+            "Company Law",
+            "Ondernemingsrecht"
           ]
         },
         {
@@ -4840,16 +4840,16 @@
           "code": "60830",
           "level": "WO-MA",
           "names": [
-            "Mediastudies",
-            "Media Studies"
+            "Media Studies",
+            "Mediastudies"
           ]
         },
         {
           "code": "60832",
           "level": "WO-MA",
           "names": [
-            "Mediastudies (research)",
-            "Media Studies (research)"
+            "Media Studies (research)",
+            "Mediastudies (research)"
           ]
         },
         {
@@ -5006,8 +5006,8 @@
           "code": "50700",
           "level": "WO-BA",
           "names": [
-            "Rechtsgeleerdheid",
-            "Law"
+            "Law",
+            "Rechtsgeleerdheid"
           ]
         },
         {
@@ -5022,16 +5022,16 @@
           "code": "50755",
           "level": "WO-BA",
           "names": [
-            "Personeelwetenschappen",
-            "Human Resource Studies"
+            "Human Resource Studies",
+            "Personeelwetenschappen"
           ]
         },
         {
           "code": "50950",
           "level": "WO-BA",
           "names": [
-            "Economie en Bedrijfseconomie",
-            "Economics and Business Economics"
+            "Economics and Business Economics",
+            "Economie en Bedrijfseconomie"
           ]
         },
         {
@@ -5068,8 +5068,8 @@
           "code": "56401",
           "level": "WO-BA",
           "names": [
-            "Economie",
-            "Economics"
+            "Economics",
+            "Economie"
           ]
         },
         {
@@ -5139,8 +5139,8 @@
           "code": "56833",
           "level": "WO-BA",
           "names": [
-            "Econometrie en Operationele Research",
-            "Econometrics and Operations Research"
+            "Econometrics and Operations Research",
+            "Econometrie en Operationele Research"
           ]
         },
         {
@@ -5224,8 +5224,8 @@
           "code": "60070",
           "level": "WO-MA",
           "names": [
-            "Sociaal Recht en Sociale Politiek",
-            "Labour Law and Employment Relations"
+            "Labour Law and Employment Relations",
+            "Sociaal Recht en Sociale Politiek"
           ]
         },
         {
@@ -5261,16 +5261,16 @@
           "code": "60084",
           "level": "WO-MA",
           "names": [
-            "Rechtsgeleerdheid",
-            "Law"
+            "Law",
+            "Rechtsgeleerdheid"
           ]
         },
         {
           "code": "60087",
           "level": "WO-MA",
           "names": [
-            "Kunst- & cultuurwetenschappen",
-            "Culture Studies"
+            "Culture Studies",
+            "Kunst- & cultuurwetenschappen"
           ]
         },
         {
@@ -5320,8 +5320,8 @@
           "code": "60408",
           "level": "WO-MA",
           "names": [
-            "Ondernemingsrecht",
-            "Business Law"
+            "Business Law",
+            "Ondernemingsrecht"
           ]
         },
         {
@@ -5372,8 +5372,8 @@
           "code": "60954",
           "level": "WO-MA",
           "names": [
-            "Individual Differences and Assessment (research)",
-            "Individual Differences & Assessment (research)"
+            "Individual Differences & Assessment (research)",
+            "Individual Differences and Assessment (research)"
           ]
         },
         {
@@ -5430,8 +5430,8 @@
           "code": "66581",
           "level": "WO-MA",
           "names": [
-            "Medische Psychologie",
-            "Medical Psychology"
+            "Medical Psychology",
+            "Medische Psychologie"
           ]
         },
         {
@@ -5469,16 +5469,16 @@
           "code": "68075",
           "level": "WO-MA",
           "names": [
-            "Opleiding tot leraar voortgezet onderwijs van de eerste graad in Godsdienst en Levensbeschouwing",
-            "Academic Teacher in Religion and Philosophy of Life"
+            "Academic Teacher in Religion and Philosophy of Life",
+            "Opleiding tot leraar voortgezet onderwijs van de eerste graad in Godsdienst en Levensbeschouwing"
           ]
         },
         {
           "code": "68534",
           "level": "WO-MA",
           "names": [
-            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen",
-            "Language Teaching in Secondary Education"
+            "Language Teaching in Secondary Education",
+            "Leraar Voorbereidend Hoger Onderwijs in de Taal- en cultuurwetenschappen"
           ]
         },
         {
@@ -5514,8 +5514,8 @@
           "code": "50033",
           "level": "WO-BA",
           "names": [
-            "Klinische Technologie",
-            "Clinical Technology"
+            "Clinical Technology",
+            "Klinische Technologie"
           ]
         },
         {
@@ -5571,8 +5571,8 @@
           "code": "56226",
           "level": "WO-BA",
           "names": [
-            "Biomedische Technologie",
-            "Biomedical Engineering"
+            "Biomedical Engineering",
+            "Biomedische Technologie"
           ]
         },
         {
@@ -5624,24 +5624,24 @@
           "code": "56960",
           "level": "WO-BA",
           "names": [
-            "Scheikundige Technologie",
-            "Chemical Science & Engineering"
+            "Chemical Science & Engineering",
+            "Scheikundige Technologie"
           ]
         },
         {
           "code": "56962",
           "level": "WO-BA",
           "names": [
-            "Technische Natuurkunde",
-            "Applied Physics"
+            "Applied Physics",
+            "Technische Natuurkunde"
           ]
         },
         {
           "code": "56994",
           "level": "WO-BA",
           "names": [
-            "Technische Bedrijfskunde",
-            "Industrial Engineering & Management Science"
+            "Industrial Engineering & Management Science",
+            "Technische Bedrijfskunde"
           ]
         },
         {
@@ -5923,8 +5923,8 @@
           "code": "50101",
           "level": "WO-BA",
           "names": [
-            "Economie en Beleid",
-            "Economics and Governance"
+            "Economics and Governance",
+            "Economie en Beleid"
           ]
         },
         {
@@ -5968,8 +5968,8 @@
           "code": "56835",
           "level": "WO-BA",
           "names": [
-            "Plantenwetenschappen",
-            "Plant Sciences"
+            "Plant Sciences",
+            "Plantenwetenschappen"
           ]
         },
         {
@@ -5984,8 +5984,8 @@
           "code": "56837",
           "level": "WO-BA",
           "names": [
-            "Internationale Ontwikkelingsstudies",
-            "International Development Studies"
+            "International Development Studies",
+            "Internationale Ontwikkelingsstudies"
           ]
         },
         {
@@ -6000,8 +6000,8 @@
           "code": "56848",
           "level": "WO-BA",
           "names": [
-            "Landschapsarchitectuur en ruimtelijke planning",
-            "Landscape Architecture and Planning"
+            "Landscape Architecture and Planning",
+            "Landschapsarchitectuur en ruimtelijke planning"
           ]
         },
         {
@@ -6023,8 +6023,8 @@
           "code": "56868",
           "level": "WO-BA",
           "names": [
-            "Voeding en Gezondheid",
-            "Nutrition and Health"
+            "Nutrition and Health",
+            "Voeding en Gezondheid"
           ]
         },
         {
@@ -6342,8 +6342,8 @@
           "code": "56988",
           "level": "WO-BA",
           "names": [
-            "Milieu-natuurwetenschappen",
-            "Environmental Sciences"
+            "Environmental Sciences",
+            "Milieu-natuurwetenschappen"
           ]
         },
         {
@@ -6357,8 +6357,8 @@
           "code": "60087",
           "level": "WO-MA",
           "names": [
-            "Kunst- & cultuurwetenschappen",
-            "Arts & Culture"
+            "Arts & Culture",
+            "Kunst- & cultuurwetenschappen"
           ]
         },
         {
@@ -6372,8 +6372,8 @@
           "code": "60099",
           "level": "WO-MA",
           "names": [
-            "Onderwijswetenschappen",
-            "Educational Sciences"
+            "Educational Sciences",
+            "Onderwijswetenschappen"
           ]
         },
         {
@@ -6430,8 +6430,8 @@
           "code": "69344",
           "level": "WO-MA",
           "names": [
-            "Gegevensbescherming en Privacyrecht",
-            "Data Protection and Privacy Law"
+            "Data Protection and Privacy Law",
+            "Gegevensbescherming en Privacyrecht"
           ]
         }
       ]

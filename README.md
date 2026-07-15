@@ -1,6 +1,6 @@
 # nl-jobflow
 
-Local job discovery, screening, and application-draft generation for applicants in the Netherlands, with maintained Dutch WO study profiles.
+Local job discovery, screening, and application-draft generation for applicants in the Netherlands, with maintained Dutch higher-education study profiles.
 
 The workflow finds vacancies, checks configurable eligibility and CV fit, and drafts reviewable CVs and motivation letters. It never applies, submits forms, contacts employers, or invents candidate facts.
 
@@ -27,7 +27,7 @@ user's actual evidence and eligibility preferences.
   unsupported experience, skills, dates, or metrics fail review.
 - **Netherlands-focused filtering:** configure recognized-sponsor requirements, Dutch level,
   immigration context, education, internships, schedules, workplace, and regulated-role exclusions.
-- **Cross-discipline support:** Dutch WO programmes connect to study profiles, job families, and
+- **Cross-discipline support:** Dutch HBO and WO programmes connect to study profiles, job families, and
   shared roles without assuming every applicant targets a technical career.
 - **Local profile isolation:** CVs, configuration, credentials, SQLite data, reports, and generated
   artifacts remain in user-controlled profile directories.
@@ -146,6 +146,13 @@ If you have no experience or projects, keep the canonical headings empty:
 Do not add `None`, explanatory prose, or template placeholders below an empty heading; that is
 malformed item content. The parser also treats a missing work-bank heading as zero evidence, but
 keeping both headings makes the file easier to validate and extend later.
+
+For education headings, include `HBO`, `WO`, or `Associate Degree` when the programme name exists
+at more than one level, for example `### HBO Bachelor Physiotherapy — Example University of
+Applied Sciences`. `HBO BSc`, `WO MSc`, plain `HBO`/`WO`, `HBO/WO`, `Associate's Degree`,
+`HBO-AD`, and `AD` prefixes are also accepted. Generic bachelor/master headings may match both HBO and WO
+when an exact programme name is registered at both levels; setup prints every matched level
+for review.
 
 The root-profile layout remains available for compatibility, but it is not the recommended setup:
 
@@ -266,7 +273,7 @@ installed and authenticated Codex, Claude Code, or Cursor Agent CLI.
 
 `config.example.yaml` is intentionally neutral and incomplete. Discovery and document commands fail closed until `python jobflow.py setup` records explicit study-profile, job-family, and role selections. Setup prints the exact RIO evidence, confidence, rationale, and regulated-programme warnings behind its suggestions; suggestions are never selected automatically.
 
-Maintained policy lives in `config.defaults.yaml`. The offline DUO RIO catalogue identifies Dutch WO programmes, `study_profiles.yaml` maps education to suggestions, and `role_catalog.yaml` groups reusable roles into job families. Each of the 14 study profiles has one standalone YAML under `presets/`; shared role-writing guidance remains under `prompts/presets/`. Advanced users may create ignored `config.override.yaml`.
+Maintained policy lives in `config.defaults.yaml`. The offline DUO RIO catalogue identifies Dutch HBO Associate Degree, HBO bachelor/master, and WO bachelor/master programmes; `study_profiles.yaml` maps education to suggestions, and `role_catalog.yaml` groups reusable roles into job families. Each of the 14 study profiles has one standalone YAML under `presets/`; shared role-writing guidance remains under `prompts/presets/`. Advanced users may create ignored `config.override.yaml`.
 
 ### Document agent
 
@@ -284,7 +291,7 @@ remains the CLI's local default.
 
 - `residence_route`: `student_permit`, `orientation_year`, `highly_skilled_migrant`, or `other`.
 - `study_status`: `enrolled` or `graduated`. Only an enrolled student-permit profile activates the 16-hour/summer-work warning and full-time rejection.
-- `current_education_level` and `highest_completed_education_level`: `mbo`, `hbo_bachelor`, `wo_bachelor`, `hbo_master`, `wo_master`, or `phd`.
+- `current_education_level` and `highest_completed_education_level`: `mbo`, `hbo_associate`, `hbo_bachelor`, `wo_bachelor`, `hbo_master`, `wo_master`, or `phd`.
 - `graduation_date`: used as context for manual immigration checks; the program does not calculate permit eligibility from it.
 - `dutch_level`: `unknown`, `none`, `A1`, `A2`, `B1`, `B2`, or `C1+`.
   `unknown` defers Dutch requirements for verification; other values enforce filtering.
@@ -292,7 +299,7 @@ remains the CLI's local default.
 
 ### Search criteria
 
-- `study_profiles`: select one or more maintained Dutch WO sector or specialist profiles. Every profile has its own discipline preset.
+- `study_profiles`: select one or more maintained Dutch higher-education sector or specialist profiles. Every profile has its own discipline preset.
 - `job_families`: confirmed employment families suggested from explicit programme-name rules, summary headings, and accepted jobs. Exact programme and source-evidence matches are high confidence; an otherwise-unmapped exact RIO programme receives one low-confidence official-sector fallback that still requires confirmation.
 - `roles`: choose roles belonging to the confirmed families. Suggestions never edit configuration automatically.
 - `max_required_education_level`: rejects vacancies explicitly requiring a higher level.
@@ -383,14 +390,18 @@ See `CONTRIBUTING.md` before opening a change or sanitized bug report.
 
 Study profiles recommend shared role IDs; overlapping studies reuse the same role definition. Later disciplines normally add a profile and reuse catalogue roles, adding new role policy only when necessary.
 
-Maintained profiles cover the principal Dutch WO sectors. `suggest-roles` reports
+Maintained profiles cover the principal Dutch higher-education sectors. `suggest-roles` reports
 exact offline RIO programme matches, advisory job families, and roles from source headings
 and accepted jobs; it never edits configuration. Workday family labels are vocabulary only:
 vacancy title, duties, requirements, and confirmed roles remain authoritative.
-Regulated professions are blocked until dedicated credential rules exist.
+Regulated professions are blocked until dedicated credential rules exist. A regulated HBO
+programme such as Physiotherapy can inform adjacent non-clinical suggestions without making the
+protected occupation eligible. The guard follows the protected professions described by the
+[BIG-register](https://www.bigregister.nl/registratie/nederlands-diploma-registreren/wet--en-regelgeving).
 
 Maintainers can refresh the checked-in, institution-neutral programme snapshot after
-downloading DUO's `Overzicht Erkenningen ho` CSV:
+downloading DUO's [`Overzicht Erkenningen ho`](https://onderwijsdata.duo.nl/datasets/overzicht-erkenningen-ho)
+CSV:
 
 ```bash
 python jobflow.py refresh-programme-catalog /path/to/ho_erkenningen_rio.csv --as-of YYYY-MM-DD

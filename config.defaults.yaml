@@ -21,8 +21,12 @@ visual_references:
   cv: cv-reference.pdf
   letter: motivation-letter.pdf
 regulated_role_patterns:
-  - "\\b(?:physician|medical doctor|basisarts|huisarts|bedrijfsarts|verzekeringsarts|surgeon|nurse|verpleegkundige)\\b"
-  - "\\b(?:clinical psychologist|gezondheidszorgpsycholoog|gz-psycholoog|psychotherapist)\\b"
+  - "\\b(?:physician|physician assistant|medical doctor|basisarts|huisarts|bedrijfsarts|verzekeringsarts|surgeon|nurse|verpleegkundige|midwife|verloskundige)\\b"
+  - "\\b(?:physiotherapist|fysiotherapeut|clinical psychologist|gezondheidszorgpsycholoog|gz-psycholoog|psychotherapist|psychotherapeut|clinical technologist|klinisch technoloog|orthopedagoog-generalist)\\b"
+  - "\\b(?:pharmacist|apotheker|dentist|tandarts)\\b"
+  - "\\b(?:pharmacy assistant|apothekersassistent|dietitian|dietician|di[eë]tist|occupational therapist|ergotherapeut|skin therapist|huidtherapeut|clinical physicist|klinisch fysicus|speech therapist|logopedist)\\b"
+  - "\\b(?:dental hygienist|mondhygi[eë]nist|exercise therapist|remedial therapist|oefentherapeut|optometrist|orthoptist|podiatrist|podotherapeut)\\b"
+  - "\\b(?:diagnostic radiographer|therapeutic radiographer|radiodiagnostic(?:isch)? laborant|radiotherapeutisch laborant|dental prosthetist|tandprotheticus|verzorgende individual healthcare|verzorgende individuele gezondheidszorg|vig'er)\\b"
   - "\\b(?:advocaat|notaris|civil-law notary)\\b"
   - "\\b(?:licensed teacher|bevoegd docent|qualified teacher)\\b"
 marketplace_discovery:
@@ -51,6 +55,8 @@ sponsor_aliases:
   visa: visa europe netherlands
   tno: nederlandse organisatie voor toegepast natuurwetenschappelijk onderzoek tno
   vdl: vdl enabling technologies group eindhoven
+  nxp: nxp semiconductors netherlands
+  idfa: international documentary filmfestival amsterdam
 priority_companies:
   - name: ASML
     career_url: "https://www.asml.com/en/careers/find-your-job"
@@ -112,3 +118,12 @@ priority_companies:
   - name: Wolters Kluwer
     career_url: "https://careers.wolterskluwer.com/en"
     families: [technology_data_digital, product_design, research_development, finance_accounting_risk, sales_marketing_communications, people_hr_organisation, legal_compliance_policy, project_programme_consulting, education_knowledge, customer_business_support]
+  - name: NXP
+    career_url: "https://nxp.wd3.myworkdayjobs.com/careers"
+    families: [engineering_science, technology_data_digital, research_development, quality_regulatory, manufacturing_maintenance, supply_chain_operations]
+  - name: Catawiki
+    career_url: "https://job-boards.greenhouse.io/catawiki"
+    families: [arts_culture_media, technology_data_digital, product_design, sales_marketing_communications, customer_business_support]
+  - name: IDFA
+    career_url: "https://www.idfa.nl/en/about-idfa/werken-bij-idfa/"
+    families: [arts_culture_media, sales_marketing_communications, project_programme_consulting]
